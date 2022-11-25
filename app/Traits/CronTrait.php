@@ -29,7 +29,7 @@ trait CronTrait {
         $job = (new Job())
        ->addTask(
            (new Task('import/url', 'import-2'))
-             ->set('url', url('documents')."/".$case_docs->attachment)
+             ->set('url', url($case_docs->attachment))
              ->set('filename', $case_docs->attachment)
        )
        ->addTask(

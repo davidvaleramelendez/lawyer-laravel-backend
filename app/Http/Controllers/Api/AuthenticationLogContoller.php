@@ -37,7 +37,7 @@ class AuthenticationLogContoller extends Controller
                 if($page > 0) {
                     $page = 1;
                     $skips = $perPage * ($page - 1) ?? 1;
-                    $logs = $this->getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort);
+                    $logs = $this->getLetterFilter($id, $skips, $perPage);
                     $list = $logs['data'];
                     $totalRecord = $logs['count'];
                 }

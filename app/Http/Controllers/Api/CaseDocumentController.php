@@ -9,9 +9,12 @@ use PhpOffice\PhpWord\TemplateProcessor;
 use DB;
 use Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\CronTrait;
 
 class CaseDocumentController extends Controller
 {
+    use CronTrait;
+    
     public function index(Request $request)
     {
         try {
