@@ -12,27 +12,30 @@ use App\Models\CustomNotification;
 use App\Notifications\EmailSentNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use App\Models\Attachment;
+use App\Models\EmailDraft;
 
 class EmailController extends Controller
 {
 
-    use EmailTrait; 
-    
+    use EmailTrait;
+
     public function inbox() {
         try {
-        $users = User::where('id', '!=', auth()->user()->id)
-            ->get();
-        $notifications = auth()->user()->notifications()->orderBy('created_at', 'DESC')->get();
-        
-        $response = array();
-        $response['flag'] = true; 
-        $response['message'] = "Success.";
-        $response['data'] = ['userData'=>$users,'notificationData'=>$notifications];
-        return response()->json($response);
+            $users = User::where('id', '!=', auth()->user()->id)
+                ->get();
+            $notifications = auth()->user()->notifications()->orderBy('created_at', 'DESC')->get();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = "Success.";
+            $response['data'] = ['userData'=>$users,'notificationData'=>$notifications];
+            return response()->json($response);
+
         } catch (\Exception $e) {
             $response = array();
-            $response['flag'] = false; 
+            $response['flag'] = false;
             $response['message'] = $e->getMEssage();
             $response['data'] = [];
             return response()->json($response);
@@ -87,12 +90,12 @@ class EmailController extends Controller
                             ->groupBy('email_group_id')
                             ->where('imap_id', auth()->user()->imap->id)
                             ->where('is_delete', 0);
-        
+
         $notificationTotalRecord = CustomNotification::with('receiver', 'sender', 'attachment')
                                     ->groupBy('email_group_id')
                                     ->where('sender_id', auth()->id())
                                     ->where('is_delete', 0);
-       
+
 
         if($folder == 'important') {
             $emails = $emails->where('is_trash', 0)->where('important', 1);
@@ -201,27 +204,27 @@ class EmailController extends Controller
             }
             $inboxCount = $meta->where('folder', 'inbox')->count();
             $spamCount = $meta->where('folder', 'spam')->count();
-            
+
             $emails = $emails->get();
             $notification = $notification->get();
-            
+
             $emailTotalRecord = $emailTotalRecord->get();
             $notificationTotalRecord = $notificationTotalRecord->get();
             if($folder == 'trash') {
                 $messages = array_merge($emails->toArray(),$notification->toArray());
-                
+
                 $notificationTotalRecord = $notificationTotalRecord->count();
                 $emailTotalRecord = $emailTotalRecord->count();
                 $totalRecord = $emailTotalRecord + $notificationTotalRecord;
             } else if($folder == 'sent') {
                 $messages = $notification;
                 $totalRecord = $notificationTotalRecord->count();
-                
+
             } else {
                 $messages = $emails;
                 $totalRecord = $emailTotalRecord->count();
             }
-            
+
             $users = User::where('id', '!=', auth()->user()->id)->get();
 
             return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'spamCount' => $spamCount];
@@ -239,7 +242,8 @@ class EmailController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = $email;
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -270,7 +274,7 @@ class EmailController extends Controller
             }
 
             $data = $this->emailFilter($type, $lable, $folder, $inboxCount, $spamCount, $search, $perPage);
-             
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -280,7 +284,8 @@ class EmailController extends Controller
             $response['pagination'] = ['perPage' => $perPage,
                                         'totalRecord' => $data['count']];
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -322,7 +327,7 @@ class EmailController extends Controller
 
                 $to_id = User::where('id', '=', $email->to_id)->first();
                 $from_id = User::where('id', '=', $email->from_id)->first();
-            
+
                 $old_message = "";
 
                 $old_message .= "<HR><BR><B>From: </B>" . $to_id->name;
@@ -342,7 +347,7 @@ class EmailController extends Controller
                 $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
 
                 $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-                
+
                 if($request->attachment_ids && count($request->attachment_ids) > 0) {
                     foreach($request->attachment_ids as $key => $attachment_id) {
                         $attachmentIds = $request->attachment_ids[$key];
@@ -407,7 +412,7 @@ class EmailController extends Controller
                 $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
                 $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
                 $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-                
+
                 if($request->attachment_ids && count($request->attachment_ids) > 0) {
                     foreach($request->attachment_ids as $key => $attachment_id) {
                         $attachmentIds = $request->attachment_ids[$key];
@@ -419,7 +424,7 @@ class EmailController extends Controller
                     }
                 }
 
-                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));                
+                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
 
                 $response = array();
                 $response['flag'] = true;
@@ -429,11 +434,10 @@ class EmailController extends Controller
             }
     }
 
-    public function send_mail(Request $request) 
+    public function send_mail(Request $request)
     {
         $validation = Validator::make($request->all(), [
             'email_to'     => 'required',
-
         ]);
 
         if($validation->fails()){
@@ -441,7 +445,7 @@ class EmailController extends Controller
             return response()->json(['error' => $error]);
         }
 
-        try{
+        try {
             $cc = [];
             $bcc = [];
             $userSchema = User::whereIn('id', $request->email_to)->get();
@@ -457,8 +461,6 @@ class EmailController extends Controller
             }
             $attachments = [];
             $fileNames = [];
-            
-            
 
             $email_group_id = date("Y") . date("m") . date("d") . rand(1111, 9999);
             $new_subject = $request->subject;
@@ -466,7 +468,7 @@ class EmailController extends Controller
             $new_subject = str_replace("[Tgicket#:" . $email_group_id . "] ", "", $new_subject);
             $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
             $new_subject = "[Ticket#:" . $email_group_id . "] " . $new_subject;
-            
+
             if($request->attachment_ids) {
                 foreach($request->attachment_ids as $key => $attachment_id) {
                     $attachmentIds = $request->attachment_ids[$key];
@@ -483,7 +485,7 @@ class EmailController extends Controller
                 Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $request->message, $request->message, $attachments, $fileNames, $email_group_id));
             }
             $list = CustomNotification::where('email_group_id', $email_group_id)->first();
-            
+
             if($request->attachment_ids) {
                 foreach($request->attachment_ids as $key => $attachment_id) {
                     $attachmentIds = $request->attachment_ids[$key];
@@ -500,7 +502,8 @@ class EmailController extends Controller
             $response['message'] = 'Mail send successfully.';
             $response['data'] = $notificationData;
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -510,7 +513,7 @@ class EmailController extends Controller
     }
 
     public function get_email_trash()
-    { 
+    {
         $id = auth()->id();
         $notifications = DB::table("notifications")->where("sender_id", $id)->where("is_trash", 1)->where("is_delete", 0)->get();
         $notifications2 = DB::table("notifications")->Where('notifiable_id', $id)->where("is_trash", 1)->where("is_delete", 0)->get();
@@ -523,7 +526,7 @@ class EmailController extends Controller
 
         $users = User::where('id', '!=', auth()->user()->id)
             ->get();
-        
+
         $response = array();
         $response['flag'] = true;
         $response['message'] = 'Success.';
@@ -531,9 +534,9 @@ class EmailController extends Controller
         return response()->json($response);
     }
 
-    public function delete(Request $request) 
+    public function delete(Request $request)
     {
-        try { 
+        try {
             $validation = Validator::make($request->all(), [
                 'id'       => 'required',
             ]);
@@ -560,7 +563,8 @@ class EmailController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = $messages;
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -596,7 +600,8 @@ class EmailController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = ['users' => $users, 'notifications' => $notifications];
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -630,7 +635,7 @@ class EmailController extends Controller
     }
 
     public function emailImportant(Request $request)  {
-        try{
+        try {
             $validation = \Validator::make($request->all(), [
                 'id' => 'required',
             ]);
@@ -668,7 +673,8 @@ class EmailController extends Controller
             $response['message'] = 'Email important successfully.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Email important failed.';
@@ -684,7 +690,7 @@ class EmailController extends Controller
                 ->first();
 
             $current_notification = CustomNotification::where('id', $request->current_id)->first();
-            
+
             if ($current_notification && auth()->id() != $current_notification->sender_id) {
                 $current_notification->markAsRead();
             } else {
@@ -718,7 +724,8 @@ class EmailController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = ['notificationReply'=>$notificationReply,'notification'=>$notification,'userData'=>$users];
             return response()->json($response);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -761,12 +768,13 @@ class EmailController extends Controller
             $response['data'] = ['users'=>$users] ?? null;
             $response['data']['mailData'] = ['replies'=>$notificationReply,'mail'=>$notification] ?? null;
             return response()->json($response);
-        } catch (\Exception $e) {
-                $response = array();
-                $response['flag'] = false;
-                $response['message'] = "Failed.";
-                $response['data'] = null;
-                return response()->json($response);
+
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Failed.";
+            $response['data'] = null;
+            return response()->json($response);
         }
     }
 
@@ -857,7 +865,7 @@ class EmailController extends Controller
         return response()->json($response);
     }
 
-    
+
     public function mark_trash(Request $request)
     {
         $validation = Validator::make($request->all(), [
@@ -1015,6 +1023,174 @@ class EmailController extends Controller
         $response['flag'] = true;
         $response['message'] = "Success.";
         $response['data'] = [];
+        return response()->json($response);
+    }
+
+    /**
+     * Return draft mail data by mail id
+     */
+    public function getDraftList(Request $request) {
+        $response = array();
+        $response['flag'] = false;
+        $response['message'] = "";
+        $response['data'] = [];
+
+        try {
+            $user_id = auth()->user()->id;
+            $perPage = $request->get('perPage', 10);
+            $draftList = EmailDraft::where('user_id', $user_id)->get();
+
+            $response['flag'] = true;
+            $response['message'] = "Success.";
+            $response['data'] = $draftList;
+
+        } catch (Exception $e) {
+            $response['message'] = $e->getMessage();
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Return draft mail data by mail id
+     */
+    public function getDraftMail(Request $request) {
+        $response = array();
+        $response['flag'] = false;
+        $response['message'] = "";
+        $response['data'] = [];
+
+        Log::info("Get Draft Mail");
+
+        try {
+            $id = $request->id ?? 0;
+
+            if ($id > 0) {
+                $response['flag'] = true;
+                $response['message'] = "Success.";
+
+                $draft = EmailDraft::find($id);
+                $response['data'] = $draft;
+
+                $attachments = array();
+                if (!empty($draft->attached_ids)) {
+                    $ids = explode(",", $draft->attached_ids);
+                    foreach ($ids as $attachment_id) {
+                        $attachment = Attachment::find($attachment_id);
+                        array_push($attachments, $attachment);
+                    }
+                }
+                $response['attachments'] =$attachments;
+
+            } else {
+                $response['message'] = "Draft id doesn't exist in the request";
+            }
+
+        } catch (Exception $e) {
+            $response['message'] = $e->getMessage();
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Process Save Draft Mail request
+     * Request format
+     *      id: draft mail id, 0: new draft
+     *      to_ids: (optional)
+     *          destination user ids
+     *      cc_ids: (optional)
+     *          carbon copy user ids
+     *      bcc_ids: (optional)
+     *          blind carbon copy user ids
+     *      subject: (optional)
+     *          mail's subject
+     *      body:   (optional)
+     *          mail's content
+     *      attached_files: (optional)
+     *          attached files' names
+     *      attached_ids: (optional)
+     *          attached files' ids
+     */
+    public function saveDraftMail(Request $request) {
+        $response = array();
+        $response['flag'] = false;
+        $response['message'] = "";
+        $response['data'] = null;
+
+        try {
+            $user_id = auth()->user()->id;
+            $id = $request->id ?? 0;
+            $to_ids = $request->to_ids ?? '';
+            $cc_ids = $request->cc_ids ?? '';
+            $bcc_ids = $request->bcc_ids ?? '';
+            $subject = $request->subject ?? '';
+            $body = $request->body ?? '';
+            $attached_files = $request->attached_files ?? '';
+            $attached_ids = $request->attached_ids ?? '';
+
+            // if no data
+            if ($id == 0
+                && empty($to_ids) && empty($cc_ids) && empty($bcc_ids) && empty($subject)
+                && empty($body) && empty($attached_files) && empty($attached_ids)) {
+
+                $response['message'] = "No data to save";
+
+            } else {
+
+                $draft = new EmailDraft();
+                if ($id > 0)
+                    $draft = EmailDraft::find($id);
+
+                $draft->user_id = $user_id;
+                $draft->to_ids = $to_ids;
+                $draft->cc_ids = $cc_ids;
+                $draft->bcc_ids = $bcc_ids;
+                $draft->subject = $subject;
+                $draft->body = $body;
+                $draft->attached_files = $attached_files;
+                $draft->attached_ids = $attached_ids;
+                $draft->save();
+
+                $response['flag'] = true;
+                $response['data'] = $draft;
+            }
+
+        } catch (Exception $e) {
+            $response['message'] = $e->getMessage();
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Return draft mail data by mail id
+     */
+    public function deleteDrafts(Request $request) {
+        $response = array();
+        $response['flag'] = false;
+        $response['message'] = "";
+        $response['data'] = null;
+
+        try {
+            $ids = $request->ids ?? "";
+
+            if (!empty($ids)) {
+                $idList = explode(",", $ids);
+                EmailDraft::whereIn('id', $idList)->delete();
+
+                $response['flag'] = true;
+                $response['message'] = "Success.";
+                $response['data'] = $ids;
+
+            } else {
+                $response['message'] = "There is no ids in the request";
+            }
+
+        } catch (Exception $e) {
+            $response['message'] = $e->getMessage();
+        }
+
         return response()->json($response);
     }
 }

@@ -55,7 +55,7 @@ Route::group([
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
-    
+
 });
 
 Route::group([
@@ -110,14 +110,14 @@ Route::group([
     Route::get('/admin/letter/{id}', [LetterController::class,'get_letter']);
     Route::get('/admin/letter/update_archived/{id}', [LetterController::class,'case_documents_archived'])->name('admin-letter-archived');
     Route::get('/admin/letter/update_status/{id}', [LetterController::class, 'case_letter_update_status'])->name('case_letter_update_status');
-    
+
 
     Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class,'case_letter_erledigt'])->name('admin-case_letter_erledigt');
-    
+
     Route::post('/admin/case/case_records/email', [CaseRecordController::class,'case_send_email'])->name('send-email');
     Route::get('/admin/case/case_records/{id}', [CaseRecordController::class,'get_case_records'])->name('get_case_record');
     Route::post('/admin/case/case_record/delete', [CaseRecordController::class,'delete_case_record'])->name('delete_case_record');
-    
+
     Route::get('/admin/case/note/case_records', [CaseRecordController::class,'get_case_record_notes']);
     Route::get('/admin/case/note/case_record/{id}', [CaseRecordController::class,'get_case_record_note']);
     Route::post('/admin/case/note/case_record/create', [CaseRecordController::class,'add_case_record_note']);
@@ -133,36 +133,40 @@ Route::group([
 
     Route::get('/admin/get_contact_detail', [ContactController::class,'get_contact_detail'])->name('admin-get_contact_detail');
 
-    Route::get('/email/imap/{folder}', [EmailController::class, 'emailImap'])->name('admin-email-imap');
-    Route::get('/email/{id}', [EmailController::class, 'getEmail']);
-    Route::get('email/importants', [EmailController::class,'getImportantEmail'])->name('admin-important');
-    Route::get('email', [EmailController::class,'emailApp'])->name('admin-email-sent');
-    Route::get('email/delete', [EmailController::class,'get_email_trash'])->name('admin-deleted-email');
+    Route::get('/admin/email/imap/{folder}', [EmailController::class, 'emailImap'])->name('admin-email-imap');
+    Route::get('/admin/email/{id}', [EmailController::class, 'getEmail']);
+    Route::get('/admin/email/importants', [EmailController::class,'getImportantEmail'])->name('admin-important');
+    Route::get('/admin/email', [EmailController::class,'emailApp'])->name('admin-email-sent');
+    Route::get('/admin/email/delete', [EmailController::class,'get_email_trash'])->name('admin-deleted-email');
 
-    Route::post('/email/imap_reply', [EmailController::class,'sendReply_IMAP_Email'])->name('admin-email-imap-reply');
-    Route::post('email/send_mail', [EmailController::class,'send_mail'])->name('admin-email-send');
-    Route::post('/email/delete', [EmailController::class,'delete'])->name('admin-email-delete');
-    Route::post('email/trash', [EmailController::class,'emailTrash'])->name('admin-email-trash');
-    Route::get('email/important/create', [EmailController::class,'emailImportant'])->name('admin-email-important');
-    Route::post('email/reply', [EmailController::class,'sendReplyEmail'])->name('admin-email-reply');
-    Route::get('email/reply/{id}', [EmailController::class,'getEmailReply'])->name('get-admin-email-reply');
-    Route::get('email/details-imap/{id}', [EmailController::class, 'showImapEmailDetails'])->name('admin-details-imap');
-    Route::get('new/email', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
-    Route::get('email/email-imap/INBOX/cron', [EmailController::class,'emailCron'])->name('email-cron');
+    Route::post('/admin/email/imap_reply', [EmailController::class,'sendReply_IMAP_Email'])->name('admin-email-imap-reply');
+    Route::post('/admin/email/send_mail', [EmailController::class,'send_mail'])->name('admin-email-send');
+    Route::post('/admin/email/delete', [EmailController::class,'delete'])->name('admin-email-delete');
+    Route::post('/admin/email/trash', [EmailController::class,'emailTrash'])->name('admin-email-trash');
+    Route::get('/admin/email/important/create', [EmailController::class,'emailImportant'])->name('admin-email-important');
+    Route::post('/admin/email/reply', [EmailController::class,'sendReplyEmail'])->name('admin-email-reply');
+    Route::get('/admin/email/reply/{id}', [EmailController::class,'getEmailReply'])->name('get-admin-email-reply');
+    Route::get('/admin/email/details-imap/{id}', [EmailController::class, 'showImapEmailDetails'])->name('admin-details-imap');
+    Route::get('/admin/new/email', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
+    Route::get('/admin/email/email-imap/INBOX/cron', [EmailController::class,'emailCron'])->name('email-cron');
 
-    Route::post('attachment/create', [AttachmentController::class,'uploadAttachment']);
-    Route::get('attachment/delete/{id}', [AttachmentController::class,'deleteAttachment']);
+    Route::post('/admin/attachment/create', [AttachmentController::class,'uploadAttachment']);
+    Route::get('/admin/attachment/delete/{id}', [AttachmentController::class,'deleteAttachment']);
 
-    Route::any('email/inbox_count', [EmailController::class, 'inbox_count']);
-    Route::any('email/important_count', [EmailController::class, 'important_count']);
-    Route::any('email/mark_important', [EmailController::class, 'mark_important']);
-    Route::post('email/mark_trash', [EmailController::class, 'mark_trash']);
-    Route::post('email/mark_restore', [EmailController::class, 'mark_restore']);
-    Route::post('email/mark_delete', [EmailController::class, 'mark_delete']);
-    Route::get('email/inbox', [EmailController::class,'inbox'])->name('admin-inbox');
-    Route::get('email/status', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
+    Route::any('/admin/email/inbox_count', [EmailController::class, 'inbox_count']);
+    Route::any('/admin/email/important_count', [EmailController::class, 'important_count']);
+    Route::any('/admin/email/mark_important', [EmailController::class, 'mark_important']);
+    Route::post('/admin/email/mark_trash', [EmailController::class, 'mark_trash']);
+    Route::post('/admin/email/mark_restore', [EmailController::class, 'mark_restore']);
+    Route::post('/admin/email/mark_delete', [EmailController::class, 'mark_delete']);
+    Route::get('/admin/email/inbox', [EmailController::class,'inbox'])->name('admin-inbox');
+    Route::get('/admin/email/status', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
 
-
+    // // Email Draft
+    Route::get('/admin/draft', [EmailController::class, 'getDraftList']);
+    Route::get('/admin/draft/{id}', [EmailController::class, 'getDraftMail']);
+    Route::post('/admin/draft', [EmailController::class, 'saveDraftMail']);
+    Route::delete('/admin/draft/{ids}', [EmailController::class, 'deleteDrafts']);
 
     Route::get('/admin/invoice/list', [InvoiceController::class,'invoice_list'])->name('admin-invoice_list');
     Route::get('/admin/invoice/info', [InvoiceController::class,'invoice_info'])->name('admin-invoice_info');
@@ -184,7 +188,7 @@ Route::group([
     Route::get('/admin/google/oauth', [GoogleController::class, 'store'])->name('google.store');
     Route::get('/admin/google/get_accounts', [GoogleController::class, 'get_accounts'])->name('google.get_accounts');
     Route::delete('google/{googleAccount}', [GoogleController::class, 'destroy'])->name('google.destroy');
-    
+
     Route::get('/admin/todo/get_users', [TodoController::class,'get_users'])->name('admin-todo-get_users');
     Route::get('/admin/todo/get_todos', [TodoController::class,'get_todos'])->name('admin-todo-gets');
     Route::get('/admin/todo/get_todo/{id}', [TodoController::class,'get_todo'])->name('admin-todo-get_todo');
@@ -210,8 +214,8 @@ Route::group([
     Route::get('/admin/chat/get_chat', [ChatController::class,'get_chat'])->name('admin-chat-get_chats');
     Route::get('/admin/chat/get_users', [ChatController::class,'get_users'])->name('admin-chat-get_users');
     Route::post('/admin/chat/send_chat', [ChatController::class,'send_chat'])->name('admin-chat-send');
-    Route::get('admin/chat/history/{id}', [ChatController::class,'chatHistory'])->name('admin-chat-history');
-    
+    Route::get('/admin/chat/history/{id}', [ChatController::class,'chatHistory'])->name('admin-chat-history');
+
 
     Route::get('/admin/helper/get_contacts', [AppsController::class, 'get_contacts'])->name('admin-helper-get_contacts');
     Route::get('/admin/helper/get_notifications', [AppsController::class, 'get_notifications'])->name('admin-helper-get_notifications');
@@ -231,9 +235,9 @@ Route::group([
     Route::get('/contact-imap', [ContactImapController::class, 'index']);
     Route::post('/update-imap', [ContactImapController::class, 'updateAccount'])->name('admin-update-imap');
 
-    Route::get('admin/get-site-setting', [SiteSettingsController::class,'getnavbarSetting'])->name('admin-get-setting-navbar');
-    Route::post('admin/site-setting', [SiteSettingsController::class,'navbarSetting'])->name('admin-setting-navbar');
-    
+    Route::get('/admin/get-site-setting', [SiteSettingsController::class,'getnavbarSetting'])->name('admin-get-setting-navbar');
+    Route::post('/admin/site-setting', [SiteSettingsController::class,'navbarSetting'])->name('admin-setting-navbar');
+
     Route::get('/admin/documents', [MusterDocumentController::class, 'index']);
     Route::get('/admin/document/{id}', [MusterDocumentController::class, 'get_document']);
     Route::post('/admin/document/create', [MusterDocumentController::class, 'create']);
@@ -261,14 +265,14 @@ Route::group([
     Route::post('/admin/case-type/update', [CaseTypeController::class, 'case_type_update']);
     Route::get('/admin/case-type/delete/{id}', [CaseTypeController::class, 'case_type_delete']);
 
-    Route::get('/admin/folders', [CloudStorageController::class, 'get_folders']);                       
+    Route::get('/admin/folders', [CloudStorageController::class, 'get_folders']);
     Route::get('/admin/folder/{id}', [CloudStorageController::class, 'get_folder']);
     Route::post('/admin/folder/create', [CloudStorageController::class, 'folder_create']);
     Route::post('/admin/folder/update', [CloudStorageController::class, 'folder_update']);
     Route::get('/admin/folder/trash/{id}', [CloudStorageController::class, 'markFolderTrash']);
     Route::get('/admin/folder/delete/{id}', [CloudStorageController::class, 'markFolderDelete']);
     Route::get('/admin/tree/folder', [CloudStorageController::class, 'treeStructure']);
-    
+
     Route::get('/admin/files', [CloudStorageController::class, 'get_files']);
     Route::get('/admin/file/{id}', [CloudStorageController::class, 'get_file']);
     Route::post('/admin/file/create', [CloudStorageController::class, 'file_create']);
@@ -281,7 +285,7 @@ Route::group([
     Route::get('/admin/top-notification-email', [TopNotificationController::class, 'getAllUnreadNotification']);
     Route::get('/admin/top-notification-chat', [TopNotificationController::class, 'getAllUnreadChat']);
     Route::get('/admin/top-notification-contacts', [TopNotificationController::class, 'getContacts']);
-    
+
     Route::get('/get-user-logs', [AuthenticationLogContoller::class, 'getUserLogs']);
     Route::get('/get-user-log/{id}', [AuthenticationLogContoller::class, 'getUserLog']);
 });
