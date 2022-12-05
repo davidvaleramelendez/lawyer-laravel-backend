@@ -5,7 +5,11 @@
 
 # Node artifact files
 node_modules/
+vendor/
 dist/
+
+# environment
+.env
 
 # Compiled Java class files
 *.class
