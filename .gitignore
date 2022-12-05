@@ -52,3 +52,11 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Lock files
+*.lock
+
+# Env file
+.env
+
+# Vendor
+vendor/
