@@ -24,6 +24,7 @@ class CreateUsersTable extends Migration
             $table->string('two_factor_recovery_codes')->nullable();
             $table->string('current_team_id')->nullable();
             $table->string('profile_photo_path')->nullable();
+            $table->string('language')->nullable();
             $table->string('Status')->enum('Active','InActive')->default('Active');
             $table->string('Contact')->nullable();
             $table->string('Company')->nullable();
