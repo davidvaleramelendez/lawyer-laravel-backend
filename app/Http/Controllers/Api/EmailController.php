@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Validator;
 
 class EmailController extends Controller
 {
+
     use EmailTrait;
 
     public function inbox()
@@ -65,9 +66,14 @@ class EmailController extends Controller
         }
     }
 
-    public function emailFilter($type, $lable, $folder, $inboxCount, $spamCount, $search, $perPage)
+    public function emailFilter($type, $lable, $folder, $search, $perPage)
     {
         $messages = array();
+        $inboxCount = 0;
+        $draftCount = 0;
+        $importantCount = 0;
+        $spamCount = 0;
+
         $totalRecord = 0;
 
         $emails = Email::with('sender', 'receiver', 'attachment')
@@ -201,8 +207,14 @@ class EmailController extends Controller
                         });
                 }
             }
-            $inboxCount = $meta->where('folder', 'inbox')->count();
-            $spamCount = $meta->where('folder', 'spam')->count();
+            $inboxCount = $meta->where('folder', 'inbox')->where('important', 0)->count();
+
+            $draftCount = EmailDraft::where('user_id', auth()->id())->count() ?? 0;
+
+            $importantCount = Email::where('important', 1)->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
+            // dd($importantCount);
+
+            $spamCount = Email::where('folder', 'spam')->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
 
             $emails = $emails->get();
             $notification = $notification->get();
@@ -226,7 +238,7 @@ class EmailController extends Controller
 
             $users = User::where('id', '!=', auth()->user()->id)->get();
 
-            return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'spamCount' => $spamCount];
+            return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'draftCount' => $draftCount, 'importantCount' => $importantCount, 'spamCount' => $spamCount];
         }
     }
 
@@ -257,8 +269,6 @@ class EmailController extends Controller
             $type = $request->type;
             $lable = $request->lable;
 
-            $inboxCount = 0;
-            $spamCount = 0;
             $search = $request->input(key:'search') ?? '';
             $perPage = $request->input(key:'perPage') ?? 100;
 
@@ -270,14 +280,14 @@ class EmailController extends Controller
                 return response()->json($response);
             }
 
-            $data = $this->emailFilter($type, $lable, $folder, $inboxCount, $spamCount, $search, $perPage);
+            $data = $this->emailFilter($type, $lable, $folder, $search, $perPage);
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = ['mails' => $data['data']];
             $response['data']['users'] = $data['users'];
-            $response['data']['emailsMeta'] = ['inbox' => $data['inboxCount'], 'spam' => $data['spamCount']];
+            $response['data']['emailsMeta'] = ['inbox' => $data['inboxCount'], 'draft' => $data['draftCount'], 'important' => $data['importantCount'], 'spam' => $data['spamCount']];
             $response['pagination'] = ['perPage' => $perPage,
                 'totalRecord' => $data['count']];
             return response()->json($response);
