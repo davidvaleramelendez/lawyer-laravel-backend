@@ -74,7 +74,7 @@ class ProfileController extends Controller
             $filePath = 'public/images/avatars';
             $f = finfo_open();
             $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
-        
+
             @$mime_type = explode('/', $mime_type);
             @$mime_type = $mime_type[1];
             if ($mime_type) {
@@ -120,7 +120,7 @@ class ProfileController extends Controller
                     $filePath = 'public/images/logo';
                     $f = finfo_open();
                     $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
-                
+
                     @$mime_type = explode('/', $mime_type);
                     @$mime_type = $mime_type[1];
                     if ($mime_type) {
@@ -155,6 +155,7 @@ class ProfileController extends Controller
                         'City'=>$request->City,
                         'Casetype'=>$request->Casetype,
                         'Invoice_text'=>$request->Invoice_text,
+                        'language'=>$request->language ?? "English"
                     ]
                 );
                 $account = AccountSetting::where('id',$data->id)->first();
@@ -183,9 +184,9 @@ class ProfileController extends Controller
         try {
             $validation = Validator::make($request->all(), [
                 'UserID'     => 'required',
-    
+
             ]);
-    
+
             if($validation->fails()){
                 $response = array();
                 $response['flag'] = false;
@@ -214,7 +215,7 @@ class ProfileController extends Controller
                                     'account' => $account,
                                     'roles' => $roles ];
 
-            
+
             return response()->json($response);
         }
         catch (\Exception $e) {

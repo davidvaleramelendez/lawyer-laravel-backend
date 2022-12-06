@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\ContactImapController;
 use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TopNotificationController;
 use App\Http\Controllers\Api\AuthenticationLogContoller;
+use App\Http\Controllers\Api\LanguageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 /*
@@ -184,6 +185,9 @@ Route::group([
     Route::post('/admin/profile/save_account_setting', [ProfileController::class,'save_account_setting'])->name('admin-profile_save_account_setting');
     Route::post('/admin/profile/save_account_imap', [ProfileController::class,'save_account_imap'])->name('admin-profile_save_account_imap');
 
+    Route::get('/admin/language', [LanguageController::class,'getLanguages'])->name('admin-language-getting');
+    Route::get('/admin/language/labels', [LanguageController::class,'getLanguageLables'])->name('admin-language-labels-getting');
+    Route::post('/admin/language/labels', [LanguageController::class,'setLanguageLabels'])->name('admin-language-labels-setting');
 
     Route::get('/admin/google/oauth', [GoogleController::class, 'store'])->name('google.store');
     Route::get('/admin/google/get_accounts', [GoogleController::class, 'get_accounts'])->name('google.get_accounts');
@@ -206,7 +210,7 @@ Route::group([
     Route::get('/admin/event/delete/{id}', [AddEventController::class,'deleteEvent'])->name('admin-delete-event');
 
     Route::get('account-settings', [PagesController::class,'account_settings'])->name('admin-account-settings');
-    Route::Post('account-update', [PagesController::class,'account_update'])->name('admin-account-update');
+    Route::post('account-update', [PagesController::class,'account_update'])->name('admin-account-update');
 
     Route::get('/admin/timeline/get_all', [TimelineController::class,'get_all'])->name('admin-timeline-get_all');
     Route::post('/admin/timeline/save', [TimelineController::class,'save'])->name('admin-timeline-save');
