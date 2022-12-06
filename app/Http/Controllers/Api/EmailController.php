@@ -3,25 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attachment;
+use App\Models\CustomNotification;
+use App\Models\Email;
+use App\Models\EmailDraft;
+use App\Models\User;
+use App\Notifications\EmailSentNotification;
+use App\Traits\EmailTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Email;
-use App\Traits\EmailTrait;
-use App\Models\User;
-use App\Models\CustomNotification;
-use App\Notifications\EmailSentNotification;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
-use App\Models\Attachment;
-use App\Models\EmailDraft;
 
 class EmailController extends Controller
 {
-
     use EmailTrait;
 
-    public function inbox() {
+    public function inbox()
+    {
         try {
             $users = User::where('id', '!=', auth()->user()->id)
                 ->get();
@@ -30,10 +30,10 @@ class EmailController extends Controller
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";
-            $response['data'] = ['userData'=>$users,'notificationData'=>$notifications];
+            $response['data'] = ['userData' => $users, 'notificationData' => $notifications];
             return response()->json($response);
 
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMEssage();
@@ -48,19 +48,19 @@ class EmailController extends Controller
 
         if ($type == 'email') {
             $data = Email::find($id);
-            if($data->lable != $lable){
-                Email::where('id', $id)->update(['lable' => $data->lable.$updateLable]);
-            } else{
+            if ($data->lable != $lable) {
+                Email::where('id', $id)->update(['lable' => $data->lable . $updateLable]);
+            } else {
                 $updateLable = null;
-                Email::where('id', $id)->update(['lable' => $data->lable.$updateLable]);
+                Email::where('id', $id)->update(['lable' => $data->lable . $updateLable]);
             }
         } else {
             $data = CustomNotification::find($id);
-            if($data->lable != $lable) {
-                CustomNotification::where('id', $id)->update(['lable' => $data->lable.$updateLable]);
+            if ($data->lable != $lable) {
+                CustomNotification::where('id', $id)->update(['lable' => $data->lable . $updateLable]);
             } else {
                 $updateLable = null;
-                CustomNotification::where('id', $id)->update(['lable' => $data->lable.$updateLable]);
+                CustomNotification::where('id', $id)->update(['lable' => $data->lable . $updateLable]);
             }
         }
     }
@@ -71,36 +71,35 @@ class EmailController extends Controller
         $totalRecord = 0;
 
         $emails = Email::with('sender', 'receiver', 'attachment')
-                    ->select('*', DB::raw('count(*) as count2'))
-                    ->groupBy('email_group_id')
-                    ->where('imap_id', auth()->user()->imap->id)
-                    ->where('is_delete', 0)
-                    ->take($perPage)
-                    ->orderBy('id', 'DESC');
+            ->select('*', DB::raw('count(*) as count2'))
+            ->groupBy('email_group_id')
+            ->where('imap_id', auth()->user()->imap->id)
+            ->where('is_delete', 0)
+            ->take($perPage)
+            ->orderBy('id', 'DESC');
 
         $notification = CustomNotification::with('receiver', 'sender', 'attachment')
-                        ->select('*', DB::raw('count(*) as count2'))
-                        ->groupBy('email_group_id')
-                        ->where('sender_id', auth()->id())
-                        ->where('is_delete', 0)
-                        ->take($perPage)
-                        ->orderBy('id', 'DESC');
+            ->select('*', DB::raw('count(*) as count2'))
+            ->groupBy('email_group_id')
+            ->where('sender_id', auth()->id())
+            ->where('is_delete', 0)
+            ->take($perPage)
+            ->orderBy('id', 'DESC');
 
         $emailTotalRecord = Email::with('sender', 'receiver', 'attachment')
-                            ->groupBy('email_group_id')
-                            ->where('imap_id', auth()->user()->imap->id)
-                            ->where('is_delete', 0);
+            ->groupBy('email_group_id')
+            ->where('imap_id', auth()->user()->imap->id)
+            ->where('is_delete', 0);
 
         $notificationTotalRecord = CustomNotification::with('receiver', 'sender', 'attachment')
-                                    ->groupBy('email_group_id')
-                                    ->where('sender_id', auth()->id())
-                                    ->where('is_delete', 0);
+            ->groupBy('email_group_id')
+            ->where('sender_id', auth()->id())
+            ->where('is_delete', 0);
 
-
-        if($folder == 'important') {
+        if ($folder == 'important') {
             $emails = $emails->where('is_trash', 0)->where('important', 1);
             $emailTotalRecord = $emailTotalRecord->where('is_trash', 0)->where('important', 1);
-        } else if($folder !== 'trash'){
+        } else if ($folder !== 'trash') {
             $emails = $emails->where('folder', $folder)->where('is_trash', 0)->where('important', 0);
             $notification = $notification->where('is_trash', 0);
             $emailTotalRecord = $emailTotalRecord->where('folder', $folder)->where('is_trash', 0)->where('important', 0);
@@ -116,90 +115,90 @@ class EmailController extends Controller
         if (isset(auth()->user()->id)) {
             $meta = Email::where('is_read', '==', 0)->where('imap_id', auth()->user()->imap->id);
 
-            if($folder == 'sent') {
-                if($search){
+            if ($folder == 'sent') {
+                if ($search) {
                     $notification = $notification
-                            ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
-                            ->select('notifications.*', 'senderUser.name as sender_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('senderUser.name', 'LIKE', "%{$search}%")
-                                    ->orWhere('email_group_id', 'LIKE', "%{$search}%");
-                            });
+                        ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
+                        ->select('notifications.*', 'senderUser.name as sender_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('senderUser.name', 'LIKE', "%{$search}%")
+                                ->orWhere('email_group_id', 'LIKE', "%{$search}%");
+                        });
 
                     $notificationTotalRecord = $notificationTotalRecord
-                            ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
-                            ->select('notifications.*', 'senderUser.name as sender_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('senderUser.name', 'LIKE', "%{$search}%")
-                                    ->orWhere('email_group_id', 'LIKE', "%{$search}%");
-                            });
+                        ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
+                        ->select('notifications.*', 'senderUser.name as sender_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('senderUser.name', 'LIKE', "%{$search}%")
+                                ->orWhere('email_group_id', 'LIKE', "%{$search}%");
+                        });
                 }
             } elseif ($folder == 'trash') {
-                if($search){
+                if ($search) {
                     $notification = $notification
-                            ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
-                            ->select('notifications.*', 'senderUser.name as sender_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('senderUser.name', 'LIKE', "%{$search}%")
-                                    ->orWhere('email_group_id', 'LIKE', "%{$search}%");
-                            });
-                    $emails =  $emails
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                        ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
+                        ->select('notifications.*', 'senderUser.name as sender_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('senderUser.name', 'LIKE', "%{$search}%")
+                                ->orWhere('email_group_id', 'LIKE', "%{$search}%");
+                        });
+                    $emails = $emails
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
 
                     $meta = $meta
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
 
                     $notificationTotalRecord = $notificationTotalRecord
-                            ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
-                            ->select('notifications.*', 'senderUser.name as sender_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('senderUser.name', 'LIKE', "%{$search}%")
-                                    ->orWhere('email_group_id', 'LIKE', "%{$search}%");
-                            });
+                        ->join('users as senderUser', 'notifications.sender_id', '=', 'senderUser.id')
+                        ->select('notifications.*', 'senderUser.name as sender_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('senderUser.name', 'LIKE', "%{$search}%")
+                                ->orWhere('email_group_id', 'LIKE', "%{$search}%");
+                        });
 
                     $emailTotalRecord = $emailTotalRecord
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
                 }
             } else {
-                if($search) {
-                    $emails =  $emails
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                if ($search) {
+                    $emails = $emails
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
 
                     $meta = $meta
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
 
                     $emailTotalRecord = $emailTotalRecord
-                            ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
-                            ->select('emails.*', 'fromUser.name as from_name')
-                            ->where(function ($query) use($search) {
-                                $query->where('fromUser.name', 'LIKE', "%{$search}%")
+                        ->join('users as fromUser', 'emails.from_id', '=', 'fromUser.id')
+                        ->select('emails.*', 'fromUser.name as from_name')
+                        ->where(function ($query) use ($search) {
+                            $query->where('fromUser.name', 'LIKE', "%{$search}%")
                                 ->orWhere('subject', 'LIKE', "%{$search}%");
-                            });
+                        });
                 }
             }
             $inboxCount = $meta->where('folder', 'inbox')->count();
@@ -210,13 +209,13 @@ class EmailController extends Controller
 
             $emailTotalRecord = $emailTotalRecord->get();
             $notificationTotalRecord = $notificationTotalRecord->get();
-            if($folder == 'trash') {
-                $messages = array_merge($emails->toArray(),$notification->toArray());
+            if ($folder == 'trash') {
+                $messages = array_merge($emails->toArray(), $notification->toArray());
 
                 $notificationTotalRecord = $notificationTotalRecord->count();
                 $emailTotalRecord = $emailTotalRecord->count();
                 $totalRecord = $emailTotalRecord + $notificationTotalRecord;
-            } else if($folder == 'sent') {
+            } else if ($folder == 'sent') {
                 $messages = $notification;
                 $totalRecord = $notificationTotalRecord->count();
 
@@ -236,7 +235,7 @@ class EmailController extends Controller
         try {
             $email = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
 
-            Email::where('id',$id)->update(['is_read' => 1]);
+            Email::where('id', $id)->update(['is_read' => 1]);
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -260,10 +259,8 @@ class EmailController extends Controller
 
             $inboxCount = 0;
             $spamCount = 0;
-            $search = $request->input(key: 'search') ?? '';
-            $perPage = $request->input(key: 'perPage') ?? 100;
-
-
+            $search = $request->input(key:'search') ?? '';
+            $perPage = $request->input(key:'perPage') ?? 100;
 
             if (empty(auth()->user()->imap->id)) {
                 $response = array();
@@ -282,7 +279,7 @@ class EmailController extends Controller
             $response['data']['users'] = $data['users'];
             $response['data']['emailsMeta'] = ['inbox' => $data['inboxCount'], 'spam' => $data['spamCount']];
             $response['pagination'] = ['perPage' => $perPage,
-                                        'totalRecord' => $data['count']];
+                'totalRecord' => $data['count']];
             return response()->json($response);
 
         } catch (Exception $e) {
@@ -296,152 +293,151 @@ class EmailController extends Controller
 
     public function sendReplyEmail(Request $request)
     {
-            $validation = Validator::make($request->all(), [
-                'id' => 'required',
-            ]);
+        $validation = Validator::make($request->all(), [
+            'id' => 'required',
+        ]);
 
-            if($validation->fails()){
-                $response = array();
-                $response['flag'] = false;
-                $response['message'] = "Id is required";
-                $response['data'] = [];
-                return response()->json($response);
+        if ($validation->fails()) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Id is required";
+            $response['data'] = [];
+            return response()->json($response);
+        }
+
+        $type = $request->type ?? 'email';
+
+        if ($type == 'email') {
+            $cc = [];
+            $bcc = [];
+            $user = null;
+            $email_group_id = "";
+
+            $email = Email::where('id', $request->id)->first();
+
+            $email_group_id = $email->email_group_id;
+
+            $attachments = [];
+            $fileNames = [];
+
+            $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
+
+            $to_id = User::where('id', '=', $email->to_id)->first();
+            $from_id = User::where('id', '=', $email->from_id)->first();
+
+            $old_message = "";
+
+            $old_message .= "<HR><BR><B>From: </B>" . $to_id->name;
+            $old_message .= "<BR><B>To: </B>" . $from_id->name;
+            $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
+            $old_message .= "<BR><B>Subject:</B> " . $email->subject;
+            $old_message .= "<BR><B>Last Message:</B> " . $email->body;
+
+            $last_message = "" . $email->body;
+
+            $complete_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
+            $display_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
+
+            $new_subject = $email->subject;
+            $new_subject = str_replace("Re:", "", $new_subject);
+            $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+            $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
+
+            $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+
+            if ($request->attachment_ids && count($request->attachment_ids) > 0) {
+                foreach ($request->attachment_ids as $key => $attachment_id) {
+                    $attachmentIds = $request->attachment_ids[$key];
+                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                    $attachmentUpdate->email_group_id = $email_group_id;
+                    $attachmentUpdate->type = 'notification';
+                    $attachmentUpdate->save();
+                    $attachments[] = $attachmentUpdate->path;
+                    $fileNames[] = $attachmentUpdate->id;
+                }
             }
 
-            $type = $request->type ?? 'email';
+            Notification::send($to_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
 
-            if ($type == 'email') {
-                $cc = [];
-                $bcc = [];
-                $user = Null;
-                $email_group_id = "";
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Replied successfully!';
+            $response['data'] = null;
+            return response()->json($response);
+        } else {
+            $cc = [];
+            $bcc = [];
+            $user = null;
+            $email_group_id = "";
 
-                $email = Email::where('id', $request->id)->first();
+            $notification = CustomNotification::where('id', $request->id)->first();
+            $email_group_id = $notification->email_group_id;
 
-                $email_group_id = $email->email_group_id;
-
-                $attachments = [];
-                $fileNames = [];
-
-                $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
-
-                $to_id = User::where('id', '=', $email->to_id)->first();
-                $from_id = User::where('id', '=', $email->from_id)->first();
-
-                $old_message = "";
-
-                $old_message .= "<HR><BR><B>From: </B>" . $to_id->name;
-                $old_message .= "<BR><B>To: </B>" . $from_id->name;
-                $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
-                $old_message .= "<BR><B>Subject:</B> " . $email->subject;
-                $old_message .= "<BR><B>Last Message:</B> " . $email->body;
-
-                $last_message = "" . $email->body;
-
-                $complete_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
-                $display_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
-
-                $new_subject = $email->subject;
-                $new_subject = str_replace("Re:", "", $new_subject);
-                $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
-                $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
-
-                $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-
-                if($request->attachment_ids && count($request->attachment_ids) > 0) {
-                    foreach($request->attachment_ids as $key => $attachment_id) {
-                        $attachmentIds = $request->attachment_ids[$key];
-                        $attachmentUpdate =  Attachment::where('id', $attachmentIds)->first();
-                        $attachmentUpdate->email_group_id = $email_group_id;
-                        $attachmentUpdate->type = 'notification';
-                        $attachmentUpdate->save();
-                        $attachments[] = $attachmentUpdate->path;
-                        $fileNames[] = $attachmentUpdate->id;
-                    }
-                }
-
-                Notification::send($to_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
-
-                $response = array();
-                $response['flag'] = true;
-                $response['message'] = 'Replied successfully!';
-                $response['data'] = null;
-                return response()->json($response);
+            if (auth()->id() == $notification->sender_id) {
+                $user = $notification->receiver;
             } else {
-                $cc = [];
-                $bcc = [];
-                $user = null;
-                $email_group_id = "";
-
-                $notification = CustomNotification::where('id', $request->id)->first();
-                $email_group_id = $notification->email_group_id;
-
-                if (auth()->id() == $notification->sender_id) {
-                    $user = $notification->receiver;
-                } else {
-                    $user = $notification->sender;
-                }
-
-                $attachments = [];
-                $fileNames = [];
-
-
-                $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
-                $old_message = "";
-                $u1 = User::where('id', '=', $t->notifiable_id)->first();
-                $u2 = User::where('id', '=', $t->sender_id)->first();
-                $old_message .= "<HR><BR><B>From: </B>" . $u1->name;
-                $old_message .= "<BR><B>To: </B>" . $u2->name;
-                $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
-                $old_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
-                $old_message .= "<BR><B>Message:</B> " . $t->data['data']['message'] . "";
-
-                $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
-                $last_message = "";
-                $u1 = User::where('id', '=', $t->notifiable_id)->first();
-                $u2 = User::where('id', '=', $t->sender_id)->first();
-                $last_message .= "<HR><BR><B>From: </B>" . $u1->name;
-                $last_message .= "<BR><B>To: </B>" . $u2->name;
-                $last_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
-                $last_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
-                $last_message .= "<HR><B>Last Message:</B><BR> " . $t->data['data']['message'] . "";
-                $complete_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $old_message . "</p></details>";
-                $display_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $last_message . "</p></details>";
-                $new_subject = $request->subject;
-                $new_subject = str_replace("Re:", "", $new_subject);
-                $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
-                $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
-                $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-
-                if($request->attachment_ids && count($request->attachment_ids) > 0) {
-                    foreach($request->attachment_ids as $key => $attachment_id) {
-                        $attachmentIds = $request->attachment_ids[$key];
-                        $attachmentUpdate =  Attachment::where('id', $attachmentIds)->first();
-                        $attachmentUpdate->type = 'notification';
-                        $attachmentUpdate->save();
-                        $attachments[] = $attachmentUpdate->path;
-                        $fileNames[] = $attachmentUpdate->id;
-                    }
-                }
-
-                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
-
-                $response = array();
-                $response['flag'] = true;
-                $response['message'] = 'Success.';
-                $response['data'] = null;
-                return response()->json($response);
+                $user = $notification->sender;
             }
+
+            $attachments = [];
+            $fileNames = [];
+
+            $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
+            $old_message = "";
+            $u1 = User::where('id', '=', $t->notifiable_id)->first();
+            $u2 = User::where('id', '=', $t->sender_id)->first();
+            $old_message .= "<HR><BR><B>From: </B>" . $u1->name;
+            $old_message .= "<BR><B>To: </B>" . $u2->name;
+            $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
+            $old_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
+            $old_message .= "<BR><B>Message:</B> " . $t->data['data']['message'] . "";
+
+            $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
+            $last_message = "";
+            $u1 = User::where('id', '=', $t->notifiable_id)->first();
+            $u2 = User::where('id', '=', $t->sender_id)->first();
+            $last_message .= "<HR><BR><B>From: </B>" . $u1->name;
+            $last_message .= "<BR><B>To: </B>" . $u2->name;
+            $last_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
+            $last_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
+            $last_message .= "<HR><B>Last Message:</B><BR> " . $t->data['data']['message'] . "";
+            $complete_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $old_message . "</p></details>";
+            $display_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $last_message . "</p></details>";
+            $new_subject = $request->subject;
+            $new_subject = str_replace("Re:", "", $new_subject);
+            $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
+            $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+            $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+
+            if ($request->attachment_ids && count($request->attachment_ids) > 0) {
+                foreach ($request->attachment_ids as $key => $attachment_id) {
+                    $attachmentIds = $request->attachment_ids[$key];
+                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                    $attachmentUpdate->type = 'notification';
+                    $attachmentUpdate->save();
+                    $attachments[] = $attachmentUpdate->path;
+                    $fileNames[] = $attachmentUpdate->id;
+                }
+            }
+
+            Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Success.';
+            $response['data'] = null;
+            return response()->json($response);
+        }
     }
 
     public function send_mail(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'email_to'     => 'required',
+            'email_to' => 'required',
         ]);
 
-        if($validation->fails()){
-            $error=$validation->errors();
+        if ($validation->fails()) {
+            $error = $validation->errors();
             return response()->json(['error' => $error]);
         }
 
@@ -469,10 +465,10 @@ class EmailController extends Controller
             $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
             $new_subject = "[Ticket#:" . $email_group_id . "] " . $new_subject;
 
-            if($request->attachment_ids) {
-                foreach($request->attachment_ids as $key => $attachment_id) {
+            if ($request->attachment_ids) {
+                foreach ($request->attachment_ids as $key => $attachment_id) {
                     $attachmentIds = $request->attachment_ids[$key];
-                    $attachmentUpdate =  Attachment::where('id', $attachmentIds)->first();
+                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                     $attachmentUpdate->email_group_id = $email_group_id;
                     $attachmentUpdate->type = 'notification';
                     $attachmentUpdate->save();
@@ -486,10 +482,10 @@ class EmailController extends Controller
             }
             $list = CustomNotification::where('email_group_id', $email_group_id)->first();
 
-            if($request->attachment_ids) {
-                foreach($request->attachment_ids as $key => $attachment_id) {
+            if ($request->attachment_ids) {
+                foreach ($request->attachment_ids as $key => $attachment_id) {
                     $attachmentIds = $request->attachment_ids[$key];
-                    $attachmentUpdate =  Attachment::where('id', $attachmentIds)->first();
+                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                     $attachmentUpdate->reference_id = $list->id;
                     $attachmentUpdate->save();
                 }
@@ -538,17 +534,17 @@ class EmailController extends Controller
     {
         try {
             $validation = Validator::make($request->all(), [
-                'id'       => 'required',
+                'id' => 'required',
             ]);
 
-            if($validation->fails()){
-                $error=$validation->errors();
+            if ($validation->fails()) {
+                $error = $validation->errors();
                 return response()->json(['error' => $error]);
             }
 
             Email::where('id', $request->id)->update(array('is_delete' => 1, 'is_trash' => 1));
             $messages = [];
-            if (isset(auth()->user()->id))
+            if (isset(auth()->user()->id)) {
                 $messages = DB::table('emails')
                     ->select('*', DB::raw('count(*) as count2'))
                     ->groupBy('email_group_id')
@@ -557,6 +553,7 @@ class EmailController extends Controller
                     ->where('folder', $request->folder)
                     ->where('imap_id', auth()->user()->imap->id)
                     ->orderBy('id', 'DESC')->get();
+            }
 
             $response = array();
             $response['flag'] = true;
@@ -579,7 +576,6 @@ class EmailController extends Controller
 
             $users = User::where('id', '!=', auth()->user()->id)
                 ->get();
-
 
             $notifications = DB::table('notifications')
                 ->select('*', DB::raw('count(*) as count2'))
@@ -610,7 +606,8 @@ class EmailController extends Controller
         }
     }
 
-    public function getImportantEmail() {
+    public function getImportantEmail()
+    {
         $messages = [];
 
         if (isset(auth()->user()->imap->id)) {
@@ -627,21 +624,22 @@ class EmailController extends Controller
         $users = User::where('id', '!=', auth()->user()->id)
             ->get();
 
-        $response=array();
+        $response = array();
         $response['flag'] = true;
         $response['message'] = 'Success.';
         $response['data'] = ['userData' => $users, 'messageData' => $messages];
         return response()->json($response);
     }
 
-    public function emailImportant(Request $request)  {
+    public function emailImportant(Request $request)
+    {
         try {
             $validation = \Validator::make($request->all(), [
                 'id' => 'required',
             ]);
 
-            if($validation->fails()){
-                $error=$validation->errors();
+            if ($validation->fails()) {
+                $error = $validation->errors();
                 return response()->json(['error' => $error]);
             }
             if ($request->type == 'email') {
@@ -722,7 +720,7 @@ class EmailController extends Controller
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
-            $response['data'] = ['notificationReply'=>$notificationReply,'notification'=>$notification,'userData'=>$users];
+            $response['data'] = ['notificationReply' => $notificationReply, 'notification' => $notification, 'userData' => $users];
             return response()->json($response);
 
         } catch (Exception $e) {
@@ -734,14 +732,15 @@ class EmailController extends Controller
         }
     }
 
-    public function showImapEmailDetails(Request $request, $id)  {
+    public function showImapEmailDetails(Request $request, $id)
+    {
 
         try {
             $validation = Validator::make($request->all(), [
-                'email_group_id'     => 'required',
+                'email_group_id' => 'required',
             ]);
 
-            if($validation->fails()){
+            if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
                 $response['message'] = "Email group id is required.";
@@ -751,7 +750,7 @@ class EmailController extends Controller
             $type = $request->type ?? 'inbox';
             $email_group_id = $request->email_group_id;
 
-            if($type == 'notification') {
+            if ($type == 'notification') {
                 $notificationReply = [];
                 $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
             } else {
@@ -765,8 +764,8 @@ class EmailController extends Controller
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
-            $response['data'] = ['users'=>$users] ?? null;
-            $response['data']['mailData'] = ['replies'=>$notificationReply,'mail'=>$notification] ?? null;
+            $response['data'] = ['users' => $users] ?? null;
+            $response['data']['mailData'] = ['replies' => $notificationReply, 'mail' => $notification] ?? null;
             return response()->json($response);
 
         } catch (Exception $e) {
@@ -793,7 +792,7 @@ class EmailController extends Controller
                 );
             }
         }
-        return response()->json(['status' =>'success', 'data'=>'']);
+        return response()->json(['status' => 'success', 'data' => '']);
     }
 
     public function checkNewEmail()
@@ -802,11 +801,11 @@ class EmailController extends Controller
             ->where('read_at', null)
             ->latest()
             ->first();
-            $response = array();
-            $response['flag'] = true;
-            $response['message'] = "Success";
-            $response['data'] = $notification;
-            return response()->json($response);
+        $response = array();
+        $response['flag'] = true;
+        $response['message'] = "Success";
+        $response['data'] = $notification;
+        return response()->json($response);
     }
 
     public function inbox_count(Request $request)
@@ -822,9 +821,8 @@ class EmailController extends Controller
             ->where('important', 0)
             ->where('imap_id', auth()->user()->imap->id)->first();
 
-         return response()->json(['status' =>'success', 'data'=>$messages->count2]);
+        return response()->json(['status' => 'success', 'data' => $messages->count2]);
     }
-
 
     public function important_count(Request $request)
     {
@@ -834,20 +832,19 @@ class EmailController extends Controller
             ->where('is_trash', 0)
             ->where('imap_id', auth()->user()->imap->id)->first();
 
-
         $t = $a->count2;
 
-        return response()->json(['status' =>'success', 'data'=>$t]);
+        return response()->json(['status' => 'success', 'data' => $t]);
     }
 
     public function emailTrash(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'ids'       => 'required',
+            'ids' => 'required',
         ]);
 
-        if($validation->fails()){
-            $error=$validation->errors();
+        if ($validation->fails()) {
+            $error = $validation->errors();
             return response()->json(['error' => $error]);
         }
 
@@ -865,14 +862,13 @@ class EmailController extends Controller
         return response()->json($response);
     }
 
-
     public function mark_trash(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'emailIds'     => 'required',
+            'emailIds' => 'required',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = "Email ids is required.";
@@ -888,11 +884,11 @@ class EmailController extends Controller
                 Email::where('email_group_id', $email->email_group_id)->update(['is_trash' => 1, 'is_read' => 1]);
             } else if ($id['type'] == 'both') {
                 $email = Email::where('id', $id['id'])->first();
-                if($email && $email->email_group_id) {
+                if ($email && $email->email_group_id) {
                     Email::where('email_group_id', $email->email_group_id)->update(['is_trash' => 1, 'is_read' => 1]);
                 }
                 $notification = CustomNotification::where('id', $id['id'])->first();
-                if($notification && $notification->email_group_id) {
+                if ($notification && $notification->email_group_id) {
                     CustomNotification::where('email_group_id', $notification->email_group_id)->update(['is_trash' => 1]);
                 }
             } else {
@@ -910,10 +906,10 @@ class EmailController extends Controller
     public function mark_delete(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'emailIds'     => 'required',
+            'emailIds' => 'required',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = "Email ids is required.";
@@ -926,12 +922,12 @@ class EmailController extends Controller
         foreach ($ids as $id) {
             if ($id['type'] == 'email') {
                 $email = Email::where('id', $id['id'])->first();
-                if($email && $email->email_group_id) {
+                if ($email && $email->email_group_id) {
                     Email::where('email_group_id', $email->email_group_id)->update(['is_delete' => 1]);
                 }
             } else {
                 $notification = CustomNotification::where('id', $id['id'])->first();
-                if($notification && $notification->email_group_id) {
+                if ($notification && $notification->email_group_id) {
                     CustomNotification::where('email_group_id', $notification->email_group_id)->update(['is_delete' => 1]);
                 }
             }
@@ -946,10 +942,10 @@ class EmailController extends Controller
     public function mark_restore(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'emailIds'     => 'required',
+            'emailIds' => 'required',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = "Email ids is required.";
@@ -962,21 +958,21 @@ class EmailController extends Controller
         foreach ($ids as $id) {
             if ($id['type'] == 'email') {
                 $email = Email::where('id', $id['id'])->first();
-                if($email && $email->email_group_id) {
+                if ($email && $email->email_group_id) {
                     Email::where('email_group_id', $email->email_group_id)->update(['is_trash' => 0]);
                 }
-            }  else if ($id['type'] == 'both') {
+            } else if ($id['type'] == 'both') {
                 $email = Email::where('id', $id['id'])->first();
-                if($email && $email->email_group_id) {
+                if ($email && $email->email_group_id) {
                     Email::where('email_group_id', $email->email_group_id)->update(['is_trash' => 0]);
                 }
                 $notification = CustomNotification::where('id', $id['id'])->first();
-                if($notification && $notification->email_group_id) {
+                if ($notification && $notification->email_group_id) {
                     CustomNotification::where('email_group_id', $notification->email_group_id)->update(['is_trash' => 0]);
                 }
             } else {
                 $notification = CustomNotification::where('id', $id['id'])->first();
-                if($notification && $notification->email_group_id) {
+                if ($notification && $notification->email_group_id) {
                     CustomNotification::where('email_group_id', $notification->email_group_id)->update(['is_trash' => 0]);
                 }
             }
@@ -991,10 +987,10 @@ class EmailController extends Controller
     public function mark_important(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'id'     => 'required',
+            'id' => 'required',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = "Id is required.";
@@ -1029,7 +1025,8 @@ class EmailController extends Controller
     /**
      * Return draft mail data by mail id
      */
-    public function getDraftList(Request $request) {
+    public function getDraftList(Request $request)
+    {
         $response = array();
         $response['flag'] = false;
         $response['message'] = "";
@@ -1054,7 +1051,8 @@ class EmailController extends Controller
     /**
      * Return draft mail data by mail id
      */
-    public function getDraftMail(Request $request) {
+    public function getDraftMail(Request $request)
+    {
         $response = array();
         $response['flag'] = false;
         $response['message'] = "";
@@ -1080,7 +1078,7 @@ class EmailController extends Controller
                         array_push($attachments, $attachment);
                     }
                 }
-                $response['attachments'] =$attachments;
+                $response['attachments'] = $attachments;
 
             } else {
                 $response['message'] = "Draft id doesn't exist in the request";
@@ -1112,7 +1110,8 @@ class EmailController extends Controller
      *      attached_ids: (optional)
      *          attached files' ids
      */
-    public function saveDraftMail(Request $request) {
+    public function saveDraftMail(Request $request)
+    {
         $response = array();
         $response['flag'] = false;
         $response['message'] = "";
@@ -1139,8 +1138,9 @@ class EmailController extends Controller
             } else {
 
                 $draft = new EmailDraft();
-                if ($id > 0)
+                if ($id > 0) {
                     $draft = EmailDraft::find($id);
+                }
 
                 $draft->user_id = $user_id;
                 $draft->to_ids = $to_ids;
@@ -1166,7 +1166,8 @@ class EmailController extends Controller
     /**
      * Return draft mail data by mail id
      */
-    public function deleteDrafts(Request $request) {
+    public function deleteDrafts(Request $request)
+    {
         $response = array();
         $response['flag'] = false;
         $response['message'] = "";
