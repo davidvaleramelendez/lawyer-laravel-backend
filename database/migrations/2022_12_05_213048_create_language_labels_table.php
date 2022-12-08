@@ -17,9 +17,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('user_id');
             $table->string('language');
-            $table->string('category');
-            $table->text('origin');
-            $table->text('translation')->nullable();
+            $table->longtext('translation');
             $table->text('note')->nullable();
             $table->timestamps();
         });

@@ -7,6 +7,7 @@ use App\Models\Role;
 use Validator;
 use App\Http\Controllers\Controller;
 use App\Models\PersonalAccessToken;
+use App\Models\LanguageLabel;
 use Carbon\Carbon;
 use Nullix\CryptoJsAes\CryptoJsAes;
 use Illuminate\Support\Facades\Crypt;
@@ -31,13 +32,13 @@ class AuthController extends Controller
             if($request->password){
                 $key = hex2bin(env('CRYPTO_KEY'));
                 $iv = hex2bin(env('CRYPTO_IV'));
-               
+
                 $decrypted = openssl_decrypt($request->password, 'AES-128-CBC', $key, OPENSSL_ZERO_PADDING, $iv);
-    
+
                 $request->password = trim($decrypted);
-    
+
                 $UserArray = $request->all();
-    
+
                 $UserArray['password'] = $request->password;
             }
             $validator = Validator::make($UserArray, [
@@ -47,7 +48,7 @@ class AuthController extends Controller
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
-    
+
             if (! $token = auth()->attempt($validator->validated())) {
                 return response()->json(['flag' => false, 'message' => 'Invalid username or password'], 201);
             }
@@ -59,7 +60,7 @@ class AuthController extends Controller
             $response['data'] = null;
             return response()->json($response);
         }
-        
+
     }
     /**
      * Register a User.
@@ -159,11 +160,24 @@ class AuthController extends Controller
         $access_token=$user->createToken('MyApp')->plainTextToken;
         [$id, $token] = explode('|', $access_token, 2);
         \DB::table('personal_access_tokens')->where('id', $id)->update( array('expires_at'=>Carbon::now()->addDays()));
-        
+
+        $languageLabels = array();
+        $languageList = LanguageLabel::distinct()->select('language')->get();
+
+        foreach ($languageList as $language) {
+            $labels = LanguageLabel::select('translation')
+                                ->where('user_id', $user->id)
+                                ->where('language', $language->language)->get();
+
+            if (count($labels)) {
+                $languageLabels[$language->language] = json_decode($labels[0]->translation);
+            }
+        }
+
         $response = array();
         $response['flag'] = true;
         $response['message'] = 'User logged successfully';
-        $response['data'] = ['userData' => $user, 'accessToken' => $access_token, 'tokenType' => 'bearer', 'expiresIn' => 86400];
+        $response['data'] = ['userData' => $user, 'accessToken' => $access_token, 'tokenType' => 'bearer', 'languageLabels' => $languageLabels, 'expiresIn' => 86400];
         return response()->json($response);
     }
 }

@@ -45,6 +45,8 @@ class ProfileController extends Controller
 
     public function save_account(Request $request) {
         $id = Auth::user()->id;
+        $preLanguage = Auth::user()->language;
+
         $validation = Validator::make($request->all(), [
             'name'     => 'required',
             'email'    => 'required',
@@ -88,18 +90,19 @@ class ProfileController extends Controller
             }
         }
 
-        $is_save=User::where('id',$id)->update($param);
-        $user = User::with('role')->where('id',$id)->first();
+        $is_save = User::where('id', $id)->update($param);
+        $user = User::with('role')->where('id', $id)->first();
         $account = AccountSetting::find($id);
         $roles = Role::where('IsActive', 1)->get();
         $imap = auth()->user()->imap;
-        if($is_save){
+        if ($is_save){
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Account saved successfully.';
             $response['data'] = [   'userData' => $user,
                                     'account' => $account,
                                     'imap' => $imap,
+                                    'languageChanged' => $preLanguage != $user->language,
                                     'roles' => $roles ];
             return response()->json($response);
         }else{
