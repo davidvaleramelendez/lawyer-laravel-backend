@@ -261,6 +261,7 @@ class CaseRecordController extends Controller
         $case_record = CasesRecord::find($RecordID);
         if($case_record){
             $case_record->end_time = Carbon::now()->format('H:i:s');
+            $case_record->interval_time = $request->interval_time;
             $case_record->save();
         }else{
             $response = array();
