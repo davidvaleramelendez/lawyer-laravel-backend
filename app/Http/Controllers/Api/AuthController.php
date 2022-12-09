@@ -162,16 +162,10 @@ class AuthController extends Controller
         \DB::table('personal_access_tokens')->where('id', $id)->update( array('expires_at'=>Carbon::now()->addDays()));
 
         $languageLabels = array();
-        $languageList = LanguageLabel::distinct()->select('language')->get();
 
-        foreach ($languageList as $language) {
-            $labels = LanguageLabel::select('translation')
-                                ->where('user_id', $user->id)
-                                ->where('language', $language->language)->get();
-
-            if (count($labels)) {
-                $languageLabels[$language->language] = json_decode($labels[0]->translation);
-            }
+        $labels = LanguageLabel::select('translation', 'language')->get();
+        foreach ($labels as $label) {
+            $languageLabels[$label->language] = json_decode($label->translation);
         }
 
         $response = array();

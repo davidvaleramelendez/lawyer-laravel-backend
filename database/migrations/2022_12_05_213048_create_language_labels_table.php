@@ -15,7 +15,6 @@ return new class extends Migration
     {
         Schema::create('language_labels', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('user_id');
             $table->string('language');
             $table->longtext('translation');
             $table->text('note')->nullable();

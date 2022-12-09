@@ -37,10 +37,9 @@ class LanguageController extends Controller
     }
 
     /**
-     * get language labels for (user, language)
+     * get language labels for language
      */
     public function getLanguageLables(Request $request) {
-        $user_id = auth()->user()->id;
         $language = $request->language ?? "";
 
         $response = array();
@@ -64,9 +63,7 @@ class LanguageController extends Controller
 
             $languageLabels = array();
             foreach ($languages as $lang) {
-                $labels = LanguageLabel::select('translation')
-                                    ->where('user_id', $user_id)
-                                    ->where('language', $lang)->get();
+                $labels = LanguageLabel::select('translation')->where('language', $lang)->get();
 
                 if (count($labels)) {
                     $languageLabels[$lang] = json_decode($labels[0]->translation);
@@ -97,7 +94,6 @@ class LanguageController extends Controller
             return response()->json(['error' => $error]);
         }
 
-        $user_id = auth()->user()->id;
         $language = $request->language;
         $labels = $request->labels;
 
@@ -108,11 +104,10 @@ class LanguageController extends Controller
 
         try {
             foreach ($labels as $label) {
-                $labelObj = LanguageLabel::where('user_id', $user_id)->where('language', $language)->first();
+                $labelObj = LanguageLabel::where('language', $language)->first();
 
                 if (!isset($labelObj)) {
                     $labelObj = new LanguageLabel();
-                    $labelObj->user_id = $user_id;
                     $labelObj->language = $language;
                     $labelObj->translation = json_encode($labels);
 
@@ -124,16 +119,10 @@ class LanguageController extends Controller
             }
 
             $languageLabels = array();
-            $languageList = LanguageLabel::distinct()->select('language')->get();
 
-            foreach ($languageList as $language) {
-                $labels = LanguageLabel::select('translation')
-                                    ->where('user_id', $user_id)
-                                    ->where('language', $language->language)->get();
-
-                if (count($labels)) {
-                    $languageLabels[$language->language] = json_decode($labels[0]->translation);
-                }
+            $labels = LanguageLabel::select('translation', 'language')->get();
+            foreach ($labels as $label) {
+                $languageLabels[$label->language] = json_decode($label->translation);
             }
 
             $response['data'] = $languageLabels;
