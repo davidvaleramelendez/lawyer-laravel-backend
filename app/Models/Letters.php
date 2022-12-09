@@ -9,8 +9,7 @@ class Letters extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -25,8 +24,15 @@ class Letters extends Model
     protected $primaryKey = 'id';
     protected $guarded = [];
     public $timestamps = false;
-     protected $hidden = [
-        'CreatedAt'
+    protected $hidden = [
+        'CreatedAt',
+    ];
+
+    protected $casts = [
+        'is_print' => 'integer',
+        'deleted' => 'integer',
+        'is_archived' => 'integer',
+        'isErledigt' => 'integer',
     ];
 
     public function user()
@@ -38,7 +44,4 @@ class Letters extends Model
     {
         return $this->hasOne('App\Models\Cases', 'CaseID', 'case_id');
     }
-   
- 
-
 }

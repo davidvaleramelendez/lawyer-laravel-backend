@@ -16,7 +16,15 @@ class Todo extends Model
         'due_date',
         'tag',
         'description',
-        'complete'
+        'is_important',
+        'is_completed',
+        'is_deleted',
+    ];
+
+    protected $casts = [
+        'is_important' => 'boolean',
+        'is_completed' => 'boolean',
+        'is_deleted' => 'boolean',
     ];
 
     public function user()
