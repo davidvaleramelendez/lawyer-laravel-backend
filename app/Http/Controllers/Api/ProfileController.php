@@ -96,12 +96,11 @@ class ProfileController extends Controller
         $account = AccountSetting::find($id);
         $roles = Role::where('IsActive', 1)->get();
         $imap = auth()->user()->imap;
+
         if ($is_save) {
 
             // default language is changed, set it to all account
-            if ($preLanguage != $user->language) {
-                DB::statement("Update users Set language = '{$user->language}'");
-            }
+            DB::statement("Update users Set language = '{$user->language}'");
 
             $response = array();
             $response['flag'] = true;
