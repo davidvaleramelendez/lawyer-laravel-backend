@@ -98,9 +98,11 @@ class ProfileController extends Controller
         $imap = auth()->user()->imap;
 
         if ($is_save) {
-
             // default language is changed, set it to all account
-            DB::statement("Update users Set language = '{$user->language}'");
+            if ($preLanguage != $user->language) {
+                DB::statement("UPDATE users SET language = '{$user->language}'");
+                DB::statement("DELETE FROM personal_access_tokens WHERE tokenable_id <> {$user->id}");
+            }
 
             $response = array();
             $response['flag'] = true;
