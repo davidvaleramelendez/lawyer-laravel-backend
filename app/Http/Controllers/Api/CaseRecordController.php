@@ -273,6 +273,7 @@ class CaseRecordController extends Controller
 
         $response = array();
         $response['status'] = 'success';
+        $response['flag'] = true;
         $response['data']=$case_record;
 
         return response()->json($response);
