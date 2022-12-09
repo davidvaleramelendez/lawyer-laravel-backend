@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\ContactImap;
@@ -95,7 +96,13 @@ class ProfileController extends Controller
         $account = AccountSetting::find($id);
         $roles = Role::where('IsActive', 1)->get();
         $imap = auth()->user()->imap;
-        if ($is_save){
+        if ($is_save) {
+
+            // default language is changed, set it to all account
+            if ($preLanguage != $user->language) {
+                DB::statement("Update users Set language = '{$user->language}'");
+            }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Account saved successfully.';
@@ -105,7 +112,7 @@ class ProfileController extends Controller
                                     'languageChanged' => $preLanguage != $user->language,
                                     'roles' => $roles ];
             return response()->json($response);
-        }else{
+        } else {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
