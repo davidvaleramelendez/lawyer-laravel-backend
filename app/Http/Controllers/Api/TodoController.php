@@ -3,26 +3,27 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Todo;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class TodoController extends Controller
 {
 
-    public function get_users() {
+    public function get_users()
+    {
         try {
-            $users=DB::table('users')->get();
+            $users = DB::table('users')->get();
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = $users;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -34,7 +35,11 @@ class TodoController extends Controller
     public function todoFilter($type, $tag, $search, $sortBy, $date, $perPage)
     {
         $messages = array();
+        $importantCount = 0;
+
         $totalRecord = 0;
+
+        $importantCount = Todo::where('is_important', 1)->where('is_deleted', 0)->count() ?? 0;
 
         $list = Todo::with('user', 'assign');
         $totalRecord = new Todo();
@@ -51,62 +56,61 @@ class TodoController extends Controller
             $list = $list->where('tag', $tag)->where('is_deleted', 0);
             $totalRecord = $totalRecord->where('tag', $tag)->where('is_deleted', 1);
         } else {
-            $list = $list->where('is_important', 0)->where('is_deleted', 0);
-            $totalRecord = $totalRecord->where('is_important', 0)->where('is_deleted', 0);
+            $list = $list->where('is_completed', 0)->where('is_important', 0)->where('is_deleted', 0);
+            $totalRecord = $totalRecord->where('is_completed', 0)->where('is_important', 0)->where('is_deleted', 0);
         }
 
-
-        if($search) {
-            $list = $list->where(function ($query) use($search) {
+        if ($search) {
+            $list = $list->where(function ($query) use ($search) {
                 $query->Where('title', 'LIKE', "%{$search}%")
-                ->orWhere('due_date', 'LIKE', "%{$search}%")
-                ->orWhere('tag', 'LIKE', "%{$search}%");
-                });
-            $totalRecord = $totalRecord->where(function ($query) use($search) {
+                    ->orWhere('due_date', 'LIKE', "%{$search}%")
+                    ->orWhere('tag', 'LIKE', "%{$search}%");
+            });
+            $totalRecord = $totalRecord->where(function ($query) use ($search) {
                 $query->Where('title', 'LIKE', "%{$search}%")
-                ->orWhere('due_date', 'LIKE', "%{$search}%")
-                ->orWhere('tag', 'LIKE', "%{$search}%");
-                });
+                    ->orWhere('due_date', 'LIKE', "%{$search}%")
+                    ->orWhere('tag', 'LIKE', "%{$search}%");
+            });
         }
 
-        if($date) {
+        if ($date) {
             $list = $list->where('due_date', $date);
             $totalRecord = $totalRecord->where('due_date', $date);
         }
 
-        if($sortBy) {
-            $sorting = explode("-",$sortBy);
-            if($sorting && count($sorting) > 1) {
-                $list = $list->orderBy($sorting[0],$sorting[1]);
+        if ($sortBy) {
+            $sorting = explode("-", $sortBy);
+            if ($sorting && count($sorting) > 1) {
+                $list = $list->orderBy($sorting[0], $sorting[1]);
             }
         }
 
         $list = $list->take($perPage)->get();
         $totalRecord = $totalRecord->count();
-        return ['data' => $list, 'count' => $totalRecord];
+        return ['data' => $list, 'count' => $totalRecord, 'importantCount' => $importantCount];
     }
 
-    public function get_todos(Request $request) {
+    public function get_todos(Request $request)
+    {
         try {
             $type = $request->filter;
             $tag = $request->tag;
-            $search = $request->input(key: 'search') ?? '';
-            $sortBy = $request->input(key: 'sortBy') ?? '';
-            $date = $request->input(key: 'date') ?? '';
-            $perPage = $request->input(key: 'perPage') ?? 100;
+            $search = $request->input(key:'search') ?? '';
+            $sortBy = $request->input(key:'sortBy') ?? '';
+            $date = $request->input(key:'date') ?? '';
+            $perPage = $request->input(key:'perPage') ?? 100;
 
             $todos = $this->todoFilter($type, $tag, $search, $sortBy, $date, $perPage);
-            $list = $todos['data'];
-            $totalRecord = $todos['count'];
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
-            $response['data'] = $list;
+            $response['data'] = $todos['data'];
+            $response['todosMeta'] = ['important' => $todos['importantCount']];
             $response['pagination'] = ['perPage' => $perPage,
-                                        'totalRecord' => $totalRecord];
+                'totalRecord' => $todos['count']];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -118,13 +122,13 @@ class TodoController extends Controller
     public function get_todo($id)
     {
         try {
-            $todo  = Todo::where('id', $id)->first();
+            $todo = Todo::where('id', $id)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = $todo;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -133,22 +137,22 @@ class TodoController extends Controller
         }
     }
 
-    public function create_todo(Request $request) 
+    public function create_todo(Request $request)
     {
         try {
 
             $validation = Validator::make($request->all(), [
                 'title' => 'required',
-                'Assign'    => 'required',
-                'due_date'    => 'required',
-                'tag'  => 'required'
+                'Assign' => 'required',
+                'due_date' => 'required',
+                'tag' => 'required',
             ]);
-    
-            if($validation->fails()){
+
+            if ($validation->fails()) {
                 $response['flag'] = false;
                 $response['message'] = 'Failed.';
                 $response['data'] = [];
-                $response['error']=$validation->errors();
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
             $todoCreate = [
@@ -156,21 +160,21 @@ class TodoController extends Controller
                 'title' => $request->title,
                 'Assign' => $request->Assign,
                 'due_date' => $request->due_date,
-                'tag' => $request->tag
+                'tag' => $request->tag,
             ];
             if (isset($request->description)) {
                 $todoCreate['description'] = $request->description;
             }
-            $data= Todo::updateOrCreate(
-                    ['id' => $request->id],
-                    $todoCreate
-                );
+            $data = Todo::updateOrCreate(
+                ['id' => $request->id],
+                $todoCreate
+            );
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -179,7 +183,8 @@ class TodoController extends Controller
         }
     }
 
-    public function complete_todo($id) {
+    public function complete_todo($id)
+    {
         try {
             $todo = Todo::findOrFail($id);
             if ($todo->is_completed) {
@@ -194,7 +199,7 @@ class TodoController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -203,7 +208,8 @@ class TodoController extends Controller
         }
     }
 
-    public function important_todo($id) {
+    public function important_todo($id)
+    {
         try {
             $todo = Todo::findOrFail($id);
             if ($todo->is_important) {
@@ -218,7 +224,7 @@ class TodoController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -227,7 +233,8 @@ class TodoController extends Controller
         }
     }
 
-    public function trash_todo($id) {
+    public function trash_todo($id)
+    {
         try {
             $todo = Todo::findOrFail($id);
             $todo->is_deleted = 1;
@@ -238,7 +245,7 @@ class TodoController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -247,16 +254,17 @@ class TodoController extends Controller
         }
     }
 
-    public function delete_todo($id) {
+    public function delete_todo($id)
+    {
         try {
             Todo::where('id', $id)->delete();
-            
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -265,18 +273,19 @@ class TodoController extends Controller
         }
     }
 
-    public function restore_todo($id) {
+    public function restore_todo($id)
+    {
         try {
             $todo = Todo::findOrFail($id);
             $todo->is_deleted = 0;
             $todo->save();
-            
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
