@@ -40,7 +40,7 @@ return new class extends Migration
             $table->integer('is_delete')->default(0);
             $table->integer('is_trash')->default(0);
             $table->integer('important')->default(0);
-            $table->json('label')->default(json_encode(['important']));
+            $table->string('label')->default('important');
             $table->timestamps();
         });
     }

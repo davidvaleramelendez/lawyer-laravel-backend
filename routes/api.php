@@ -1,37 +1,38 @@
 <?php
 
+use App\Http\Controllers\Api\AddEventController;
 use App\Http\Controllers\Api\AppsController;
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CalendarController;
+use App\Http\Controllers\Api\AuthenticationLogContoller;
 use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\CaseDocumentController;
+use App\Http\Controllers\Api\CaseRecordController;
+use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\CloudStorageController;
+use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\ContactImapController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\EmailTemplateAttachmentController;
+use App\Http\Controllers\Api\EmailTemplateController;
 use App\Http\Controllers\Api\GoogleController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\LanguageController;
 use App\Http\Controllers\Api\LetterController;
+use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SiteSettingsController;
+use App\Http\Controllers\Api\TestsController;
 use App\Http\Controllers\Api\TimelineController;
 use App\Http\Controllers\Api\TodoController;
-use App\Http\Controllers\Api\TestsController;
-use App\Http\Controllers\Api\CaseRecordController;
-use App\Http\Controllers\Api\CaseDocumentController;
-use App\Http\Controllers\GoogleWebhookController;
-use App\Http\Controllers\Api\MusterDocumentController;
-use App\Http\Controllers\Api\EmailTemplateController;
-use App\Http\Controllers\Api\EmailTemplateAttachmentController;
-use App\Http\Controllers\Api\CaseTypeController;
-use App\Http\Controllers\Api\CloudStorageController;
-use App\Http\Controllers\Api\AttachmentController;
-use App\Http\Controllers\Api\AddEventController;
-use App\Http\Controllers\Api\ContactImapController;
-use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TopNotificationController;
-use App\Http\Controllers\Api\AuthenticationLogContoller;
-use App\Http\Controllers\Api\LanguageController;
+use App\Http\Controllers\GoogleWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -41,7 +42,7 @@ use Illuminate\Support\Facades\Route;
 | routes are loaded by the RouteServiceProvider within a group which
 | is assigned the "api" middleware group. Enjoy building your API!
 |
-*/
+ */
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -76,83 +77,82 @@ Route::group([
     Route::get('/admin/user/{id}', [AppsController::class, 'get_user']);
     Route::post('/admin/user/update', [AppsController::class, 'update_user']);
     Route::get('/admin/user/delete/{id}', [AppsController::class, 'delete_user']);
-    Route::post('againstperson', [AppsController::class,'againstperson'])->name('admin-add-againstperson');
+    Route::post('againstperson', [AppsController::class, 'againstperson'])->name('admin-add-againstperson');
 
-    Route::get('admin/contact', [ContactController::class,'contact_list'])->name('admin-contact');
-    Route::get('/admin/get_contact_list', [ContactController::class,'get_contact_list'])->name('admin-get_contact_list');
-    Route::post('/admin/add_contact', [ContactController::class,'add_contact'])->name('admin-add_contact');
-    Route::post('/admin/get_contact', [ContactController::class,'get_contact'])->name('admin-get_contact');
-    Route::get('/admin/get_contact_detail', [ContactController::class,'get_contact_detail'])->name('admin-get_contact_detail');
-    Route::post('/admin/convert_contact_to_case', [ContactController::class,'convert_contact_to_case'])->name('admin-convert_contact_to_case');
-    Route::post('/admin/contact/add_note', [ContactController::class,'contact_add_note'])->name('contact_add_note');
-    Route::post('admin/contact/update/{id}', [ContactController::class,'update_contact'])->name('update-contact');
-    Route::get('admin/contact/view/{id}', [ContactController::class,'contact_view'])->name('admin-contact-view');
-    Route::get('admin/contact/delete/{id}', [ContactController::class,'contact_delete'])->name('admin-contact-delete');
-    Route::post('admin/contact/replyemail', [ContactController::class,'replyemail'])->name('admin-contact-replyemail');
+    Route::get('admin/contact', [ContactController::class, 'contact_list'])->name('admin-contact');
+    Route::get('/admin/get_contact_list', [ContactController::class, 'get_contact_list'])->name('admin-get_contact_list');
+    Route::post('/admin/add_contact', [ContactController::class, 'add_contact'])->name('admin-add_contact');
+    Route::post('/admin/get_contact', [ContactController::class, 'get_contact'])->name('admin-get_contact');
+    Route::get('/admin/get_contact_detail', [ContactController::class, 'get_contact_detail'])->name('admin-get_contact_detail');
+    Route::post('/admin/convert_contact_to_case', [ContactController::class, 'convert_contact_to_case'])->name('admin-convert_contact_to_case');
+    Route::post('/admin/contact/add_note', [ContactController::class, 'contact_add_note'])->name('contact_add_note');
+    Route::post('admin/contact/update/{id}', [ContactController::class, 'update_contact'])->name('update-contact');
+    Route::get('admin/contact/view/{id}', [ContactController::class, 'contact_view'])->name('admin-contact-view');
+    Route::get('admin/contact/delete/{id}', [ContactController::class, 'contact_delete'])->name('admin-contact-delete');
+    Route::post('admin/contact/replyemail', [ContactController::class, 'replyemail'])->name('admin-contact-replyemail');
 
     Route::post('/admin/permissions/update', [AppsController::class, 'user_permissions_update'])->name('user_permissions_update');
     Route::get('/admin/permissions/get/{userID}', [AppsController::class, 'user_permissions_get'])->name('user_permissions_update');
 
-    Route::get('/admin/get_case_list', [CaseController::class,'get_list'])->name('admin-get_case_list');
+    Route::get('/admin/get_case_list', [CaseController::class, 'get_list'])->name('admin-get_case_list');
 
-    Route::get('/admin/case/get/{id}', [CaseController::class,'get_detail'])->name('admin-get_case_detail');
-    Route::post('/admin/case/update_case', [CaseController::class,'update_case'])->name('admin_update_case');
-    Route::get('/admin/case/close_case/{id}', [CaseController::class,'close_case'])->name('admin_close_case');
-    Route::get('/admin/case/share_case/{id}', [CaseController::class,'share_case'])->name('admin_share_case');
+    Route::get('/admin/case/get/{id}', [CaseController::class, 'get_detail'])->name('admin-get_case_detail');
+    Route::post('/admin/case/update_case', [CaseController::class, 'update_case'])->name('admin_update_case');
+    Route::get('/admin/case/close_case/{id}', [CaseController::class, 'close_case'])->name('admin_close_case');
+    Route::get('/admin/case/share_case/{id}', [CaseController::class, 'share_case'])->name('admin_share_case');
 
-    Route::get('case/delete/{id}', [AppsController::class,'delete_case'])->name('delete_case');
+    Route::get('case/delete/{id}', [AppsController::class, 'delete_case'])->name('delete_case');
 
-    Route::post('/admin/case/add_letter', [CaseController::class,'letter_add'])->name('admin-case_letter_add');
-    Route::post('/admin/case/update_letter', [CaseController::class,'letter_update'])->name('admin-case_letter_update');
-    Route::get('/admin/case/delete_letter/{id}', [CaseController::class,'letter_delete'])->name('admin-case_letter_delete');
-    Route::post('/admin/case/add_fighter', [CaseController::class,'fighter_add'])->name('admin-case_fighter_add');
+    Route::post('/admin/case/add_letter', [CaseController::class, 'letter_add'])->name('admin-case_letter_add');
+    Route::post('/admin/case/update_letter', [CaseController::class, 'letter_update'])->name('admin-case_letter_update');
+    Route::get('/admin/case/delete_letter/{id}', [CaseController::class, 'letter_delete'])->name('admin-case_letter_delete');
+    Route::post('/admin/case/add_fighter', [CaseController::class, 'fighter_add'])->name('admin-case_fighter_add');
 
-    Route::get('/admin/letter/get_list', [LetterController::class,'get_letters'])->name('admin-kanban');
-    Route::get('/admin/letter/{id}', [LetterController::class,'get_letter']);
-    Route::get('/admin/letter/update_archived/{id}', [LetterController::class,'case_documents_archived'])->name('admin-letter-archived');
+    Route::get('/admin/letter/get_list', [LetterController::class, 'get_letters'])->name('admin-kanban');
+    Route::get('/admin/letter/{id}', [LetterController::class, 'get_letter']);
+    Route::get('/admin/letter/update_archived/{id}', [LetterController::class, 'case_documents_archived'])->name('admin-letter-archived');
     Route::get('/admin/letter/update_status/{id}', [LetterController::class, 'case_letter_update_status'])->name('case_letter_update_status');
 
+    Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class, 'case_letter_erledigt'])->name('admin-case_letter_erledigt');
 
-    Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class,'case_letter_erledigt'])->name('admin-case_letter_erledigt');
+    Route::post('/admin/case/case_records/email', [CaseRecordController::class, 'case_send_email'])->name('send-email');
+    Route::get('/admin/case/case_records/{id}', [CaseRecordController::class, 'get_case_records'])->name('get_case_record');
+    Route::post('/admin/case/case_record/delete', [CaseRecordController::class, 'delete_case_record'])->name('delete_case_record');
 
-    Route::post('/admin/case/case_records/email', [CaseRecordController::class,'case_send_email'])->name('send-email');
-    Route::get('/admin/case/case_records/{id}', [CaseRecordController::class,'get_case_records'])->name('get_case_record');
-    Route::post('/admin/case/case_record/delete', [CaseRecordController::class,'delete_case_record'])->name('delete_case_record');
+    Route::get('/admin/case/note/case_records', [CaseRecordController::class, 'get_case_record_notes']);
+    Route::get('/admin/case/note/case_record/{id}', [CaseRecordController::class, 'get_case_record_note']);
+    Route::post('/admin/case/note/case_record/create', [CaseRecordController::class, 'add_case_record_note']);
+    Route::post('/admin/case/case_records/text/update', [CaseRecordController::class, 'update_case_record_text']);
 
-    Route::get('/admin/case/note/case_records', [CaseRecordController::class,'get_case_record_notes']);
-    Route::get('/admin/case/note/case_record/{id}', [CaseRecordController::class,'get_case_record_note']);
-    Route::post('/admin/case/note/case_record/create', [CaseRecordController::class,'add_case_record_note']);
-    Route::post('/admin/case/case_records/text/update', [CaseRecordController::class,'update_case_record_text']);
+    Route::post('/admin/case/case_records/file/update', [CaseRecordController::class, 'update_case_record_file']);
 
-    Route::post('/admin/case/case_records/file/update', [CaseRecordController::class,'update_case_record_file']);
+    Route::get('/admin/case/case_record/times/{id}', [CaseRecordController::class, 'get_case_record_times']);
+    Route::get('/admin/case/case_record/time/{id}', [CaseRecordController::class, 'get_case_record_time']);
+    Route::post('/admin/case/case_records/time/create', [CaseRecordController::class, 'add_case_record_time']);
+    Route::post('/admin/case/case_records/time/update', [CaseRecordController::class, 'update_case_record_time']);
+    Route::post('/admin/case/case_records/time/delete', [CaseRecordController::class, 'delete_case_record']);
 
-    Route::get('/admin/case/case_record/times/{id}', [CaseRecordController::class,'get_case_record_times']);
-    Route::get('/admin/case/case_record/time/{id}', [CaseRecordController::class,'get_case_record_time']);
-    Route::post('/admin/case/case_records/time/create', [CaseRecordController::class,'add_case_record_time']);
-    Route::post('/admin/case/case_records/time/update', [CaseRecordController::class,'update_case_record_time']);
-    Route::post('/admin/case/case_records/time/delete', [CaseRecordController::class,'delete_case_record']);
-
-    Route::get('/admin/get_contact_detail', [ContactController::class,'get_contact_detail'])->name('admin-get_contact_detail');
+    Route::get('/admin/get_contact_detail', [ContactController::class, 'get_contact_detail'])->name('admin-get_contact_detail');
 
     Route::get('/admin/email/imap/{folder}', [EmailController::class, 'emailImap'])->name('admin-email-imap');
     Route::get('/admin/email/{id}', [EmailController::class, 'getEmail']);
-    Route::get('/admin/email/importants', [EmailController::class,'getImportantEmail'])->name('admin-important');
-    Route::get('/admin/email', [EmailController::class,'emailApp'])->name('admin-email-sent');
-    Route::get('/admin/email/delete', [EmailController::class,'get_email_trash'])->name('admin-deleted-email');
+    Route::get('/admin/email/importants', [EmailController::class, 'getImportantEmail'])->name('admin-important');
+    Route::get('/admin/email', [EmailController::class, 'emailApp'])->name('admin-email-sent');
+    Route::get('/admin/email/delete', [EmailController::class, 'get_email_trash'])->name('admin-deleted-email');
 
-    Route::post('/admin/email/imap_reply', [EmailController::class,'sendReply_IMAP_Email'])->name('admin-email-imap-reply');
-    Route::post('/admin/email/send_mail', [EmailController::class,'send_mail'])->name('admin-email-send');
-    Route::post('/admin/email/delete', [EmailController::class,'delete'])->name('admin-email-delete');
-    Route::post('/admin/email/trash', [EmailController::class,'emailTrash'])->name('admin-email-trash');
-    Route::get('/admin/email/important/create', [EmailController::class,'emailImportant'])->name('admin-email-important');
-    Route::post('/admin/email/reply', [EmailController::class,'sendReplyEmail'])->name('admin-email-reply');
-    Route::get('/admin/email/reply/{id}', [EmailController::class,'getEmailReply'])->name('get-admin-email-reply');
+    Route::post('/admin/email/imap_reply', [EmailController::class, 'sendReply_IMAP_Email'])->name('admin-email-imap-reply');
+    Route::post('/admin/email/send_mail', [EmailController::class, 'send_mail'])->name('admin-email-send');
+    Route::post('/admin/email/delete', [EmailController::class, 'delete'])->name('admin-email-delete');
+    Route::post('/admin/email/trash', [EmailController::class, 'emailTrash'])->name('admin-email-trash');
+    Route::get('/admin/email/important/create', [EmailController::class, 'emailImportant'])->name('admin-email-important');
+    Route::post('/admin/email/reply', [EmailController::class, 'sendReplyEmail'])->name('admin-email-reply');
+    Route::get('/admin/email/reply/{id}', [EmailController::class, 'getEmailReply'])->name('get-admin-email-reply');
     Route::get('/admin/email/details-imap/{id}', [EmailController::class, 'showImapEmailDetails'])->name('admin-details-imap');
-    Route::get('/admin/new/email', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
-    Route::get('/admin/email/email-imap/INBOX/cron', [EmailController::class,'emailCron'])->name('email-cron');
+    Route::get('/admin/new/email', [EmailController::class, 'checkNewEmail'])->name('get-admin-new-email');
+    Route::get('/admin/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron'])->name('email-cron');
 
-    Route::post('/admin/attachment/create', [AttachmentController::class,'uploadAttachment']);
-    Route::get('/admin/attachment/delete/{id}', [AttachmentController::class,'deleteAttachment']);
+    Route::post('/admin/attachment/create', [AttachmentController::class, 'uploadAttachment']);
+    Route::get('/admin/attachment/delete/{id}', [AttachmentController::class, 'deleteAttachment']);
 
     Route::any('/admin/email/inbox_count', [EmailController::class, 'inbox_count']);
     Route::any('/admin/email/important_count', [EmailController::class, 'important_count']);
@@ -160,8 +160,8 @@ Route::group([
     Route::post('/admin/email/mark_trash', [EmailController::class, 'mark_trash']);
     Route::post('/admin/email/mark_restore', [EmailController::class, 'mark_restore']);
     Route::post('/admin/email/mark_delete', [EmailController::class, 'mark_delete']);
-    Route::get('/admin/email/inbox', [EmailController::class,'inbox'])->name('admin-inbox');
-    Route::get('/admin/email/status', [EmailController::class,'checkNewEmail'])->name('get-admin-new-email');
+    Route::get('/admin/email/inbox', [EmailController::class, 'inbox'])->name('admin-inbox');
+    Route::get('/admin/email/status', [EmailController::class, 'checkNewEmail'])->name('get-admin-new-email');
 
     // // Email Draft
     Route::get('/admin/draft', [EmailController::class, 'getDraftList']);
@@ -169,57 +169,56 @@ Route::group([
     Route::post('/admin/draft', [EmailController::class, 'saveDraftMail']);
     Route::delete('/admin/draft/{ids}', [EmailController::class, 'deleteDrafts']);
 
-    Route::get('/admin/invoice/list', [InvoiceController::class,'invoice_list'])->name('admin-invoice_list');
-    Route::get('/admin/invoice/info', [InvoiceController::class,'invoice_info'])->name('admin-invoice_info');
-    Route::get('/admin/invoice/{id}', [InvoiceController::class,'invoice'])->name('admin-invoice');
-    Route::post('/admin/invoice/save', [InvoiceController::class,'invoice_save'])->name('admin-invoice_save');
-    Route::post('/admin/invoice/update', [InvoiceController::class,'invoice_update'])->name('admin-invoice-update');
-    Route::get('/admin/invoice/delete/{id}', [InvoiceController::class,'invoice_delete'])->name('admin-invoice-delete');
-    Route::post('/admin/invoice/pay', [InvoiceController::class,'makePayment'])->name('admin-invoice-pay');
-    Route::post('/admin/invoice/send', [InvoiceController::class,'sendInvoice'])->name('admin-send-invoice');
-    Route::get('invoice/search/{id}', [InvoiceController::class,'search'])->name('admin-search-caseid');
-    Route::get('admin/invoice/customer/{id}', [InvoiceController::class,'invoice_customer'])->name('admin-invoice-customer');
+    Route::get('/admin/invoice/list', [InvoiceController::class, 'invoice_list'])->name('admin-invoice_list');
+    Route::get('/admin/invoice/info', [InvoiceController::class, 'invoice_info'])->name('admin-invoice_info');
+    Route::get('/admin/invoice/{id}', [InvoiceController::class, 'invoice'])->name('admin-invoice');
+    Route::post('/admin/invoice/save', [InvoiceController::class, 'invoice_save'])->name('admin-invoice_save');
+    Route::post('/admin/invoice/update', [InvoiceController::class, 'invoice_update'])->name('admin-invoice-update');
+    Route::get('/admin/invoice/delete/{id}', [InvoiceController::class, 'invoice_delete'])->name('admin-invoice-delete');
+    Route::post('/admin/invoice/pay', [InvoiceController::class, 'makePayment'])->name('admin-invoice-pay');
+    Route::post('/admin/invoice/send', [InvoiceController::class, 'sendInvoice'])->name('admin-send-invoice');
+    Route::get('invoice/search/{id}', [InvoiceController::class, 'search'])->name('admin-search-caseid');
+    Route::get('admin/invoice/customer/{id}', [InvoiceController::class, 'invoice_customer'])->name('admin-invoice-customer');
 
-    Route::get('/admin/profile/get_setting', [ProfileController::class,'get_account_setting'])->name('admin-profile_get_setting');
-    Route::post('/admin/profile/save_account', [ProfileController::class,'save_account'])->name('admin-profile_save_account');
-    Route::post('/admin/profile/save_account_setting', [ProfileController::class,'save_account_setting'])->name('admin-profile_save_account_setting');
-    Route::post('/admin/profile/save_account_imap', [ProfileController::class,'save_account_imap'])->name('admin-profile_save_account_imap');
+    Route::get('/admin/profile/get_setting', [ProfileController::class, 'get_account_setting'])->name('admin-profile_get_setting');
+    Route::post('/admin/profile/save_account', [ProfileController::class, 'save_account'])->name('admin-profile_save_account');
+    Route::post('/admin/profile/save_account_setting', [ProfileController::class, 'save_account_setting'])->name('admin-profile_save_account_setting');
+    Route::post('/admin/profile/save_account_imap', [ProfileController::class, 'save_account_imap'])->name('admin-profile_save_account_imap');
 
-    Route::get('/admin/language', [LanguageController::class,'getLanguages'])->name('admin-language-getting');
-    Route::get('/admin/language/labels', [LanguageController::class,'getLanguageLables'])->name('admin-language-labels-getting');
-    Route::post('/admin/language/labels', [LanguageController::class,'setLanguageLabels'])->name('admin-language-labels-setting');
+    Route::get('/admin/language', [LanguageController::class, 'getLanguages'])->name('admin-language-getting');
+    Route::get('/admin/language/labels', [LanguageController::class, 'getLanguageLables'])->name('admin-language-labels-getting');
+    Route::post('/admin/language/labels', [LanguageController::class, 'setLanguageLabels'])->name('admin-language-labels-setting');
 
     Route::get('/admin/google/oauth', [GoogleController::class, 'store'])->name('google.store');
     Route::get('/admin/google/get_accounts', [GoogleController::class, 'get_accounts'])->name('google.get_accounts');
     Route::delete('google/{googleAccount}', [GoogleController::class, 'destroy'])->name('google.destroy');
 
-    Route::get('/admin/todo/get_users', [TodoController::class,'get_users'])->name('admin-todo-get_users');
-    Route::get('/admin/todo/get_todos', [TodoController::class,'get_todos'])->name('admin-todo-gets');
-    Route::get('/admin/todo/get_todo/{id}', [TodoController::class,'get_todo'])->name('admin-todo-get_todo');
-    Route::post('/admin/todo/create', [TodoController::class,'create_todo'])->name('admin-todo-create_todo');
-    Route::get('/admin/todo/complete/{id}', [TodoController::class,'complete_todo'])->name('admin-todo-complete_todo');
-    Route::get('/admin/todo/important/{id}', [TodoController::class,'important_todo'])->name('admin-todo-important_todo');
-    Route::get('/admin/todo/trash/{id}', [TodoController::class,'trash_todo'])->name('admin-todo-trash_todo');
-    Route::get('/admin/todo/restore/{id}', [TodoController::class,'restore_todo'])->name('admin-todo-restore_todo');
-    Route::get('/admin/todo/delete/{id}', [TodoController::class,'delete_todo'])->name('admin-todo-delete_todo');
+    Route::get('/admin/todo/get_users', [TodoController::class, 'get_users'])->name('admin-todo-get_users');
+    Route::get('/admin/todo/get_todos', [TodoController::class, 'get_todos'])->name('admin-todo-gets');
+    Route::get('/admin/todo/get_todo/{id}', [TodoController::class, 'get_todo'])->name('admin-todo-get_todo');
+    Route::post('/admin/todo/create', [TodoController::class, 'create_todo'])->name('admin-todo-create_todo');
+    Route::get('/admin/todo/complete/{id}', [TodoController::class, 'complete_todo'])->name('admin-todo-complete_todo');
+    Route::get('/admin/todo/important/{id}', [TodoController::class, 'important_todo'])->name('admin-todo-important_todo');
+    Route::get('/admin/todo/trash/{id}', [TodoController::class, 'trash_todo'])->name('admin-todo-trash_todo');
+    Route::get('/admin/todo/restore/{id}', [TodoController::class, 'restore_todo'])->name('admin-todo-restore_todo');
+    Route::get('/admin/todo/delete/{id}', [TodoController::class, 'delete_todo'])->name('admin-todo-delete_todo');
 
-    Route::get('/admin/event/get_users', [AddEventController::class,'getUsers'])->name('admin-calendar_get_users');
-    Route::get('/admin/event/get_events', [AddEventController::class,'getEvents'])->name('admin-get-events');
-    Route::post('/admin/event/add_event', [AddEventController::class,'addEvent'])->name('admin-add-event');
-    Route::post('/admin/event/update', [AddEventController::class,'updateEvent'])->name('admin-update-event');
-    Route::get('/admin/event/delete/{id}', [AddEventController::class,'deleteEvent'])->name('admin-delete-event');
+    Route::get('/admin/event/get_users', [AddEventController::class, 'getUsers'])->name('admin-calendar_get_users');
+    Route::get('/admin/event/get_events', [AddEventController::class, 'getEvents'])->name('admin-get-events');
+    Route::post('/admin/event/add_event', [AddEventController::class, 'addEvent'])->name('admin-add-event');
+    Route::post('/admin/event/update', [AddEventController::class, 'updateEvent'])->name('admin-update-event');
+    Route::get('/admin/event/delete/{id}', [AddEventController::class, 'deleteEvent'])->name('admin-delete-event');
 
-    Route::get('account-settings', [PagesController::class,'account_settings'])->name('admin-account-settings');
-    Route::post('account-update', [PagesController::class,'account_update'])->name('admin-account-update');
+    Route::get('account-settings', [PagesController::class, 'account_settings'])->name('admin-account-settings');
+    Route::post('account-update', [PagesController::class, 'account_update'])->name('admin-account-update');
 
-    Route::get('/admin/timeline/get_all', [TimelineController::class,'get_all'])->name('admin-timeline-get_all');
-    Route::post('/admin/timeline/save', [TimelineController::class,'save'])->name('admin-timeline-save');
+    Route::get('/admin/timeline/get_all', [TimelineController::class, 'get_all'])->name('admin-timeline-get_all');
+    Route::post('/admin/timeline/save', [TimelineController::class, 'save'])->name('admin-timeline-save');
 
-    Route::get('/admin/chat/get_chat', [ChatController::class,'get_chat'])->name('admin-chat-get_chats');
-    Route::get('/admin/chat/get_users', [ChatController::class,'get_users'])->name('admin-chat-get_users');
-    Route::post('/admin/chat/send_chat', [ChatController::class,'send_chat'])->name('admin-chat-send');
-    Route::get('/admin/chat/history/{id}', [ChatController::class,'chatHistory'])->name('admin-chat-history');
-
+    Route::get('/admin/chat/get_chat', [ChatController::class, 'get_chat'])->name('admin-chat-get_chats');
+    Route::get('/admin/chat/get_users', [ChatController::class, 'get_users'])->name('admin-chat-get_users');
+    Route::post('/admin/chat/send_chat', [ChatController::class, 'send_chat'])->name('admin-chat-send');
+    Route::get('/admin/chat/history/{id}', [ChatController::class, 'chatHistory'])->name('admin-chat-history');
 
     Route::get('/admin/helper/get_contacts', [AppsController::class, 'get_contacts'])->name('admin-helper-get_contacts');
     Route::get('/admin/helper/get_notifications', [AppsController::class, 'get_notifications'])->name('admin-helper-get_notifications');
@@ -235,12 +234,11 @@ Route::group([
     Route::get('/admin/case/case_document_delete/{id}', [CaseDocumentController::class, 'case_document_delete'])->name('case_document_delete');
     Route::post('/admin/case/case_documents_archived', [CaseDocumentController::class, 'case_documents_archived']);
 
-
     Route::get('/contact-imap', [ContactImapController::class, 'index']);
     Route::post('/update-imap', [ContactImapController::class, 'updateAccount'])->name('admin-update-imap');
 
-    Route::get('/admin/get-site-setting', [SiteSettingsController::class,'getnavbarSetting'])->name('admin-get-setting-navbar');
-    Route::post('/admin/site-setting', [SiteSettingsController::class,'navbarSetting'])->name('admin-setting-navbar');
+    Route::get('/admin/get-site-setting', [SiteSettingsController::class, 'getnavbarSetting'])->name('admin-get-setting-navbar');
+    Route::post('/admin/site-setting', [SiteSettingsController::class, 'navbarSetting'])->name('admin-setting-navbar');
 
     Route::get('/admin/documents', [MusterDocumentController::class, 'index']);
     Route::get('/admin/document/{id}', [MusterDocumentController::class, 'get_document']);
@@ -292,5 +290,9 @@ Route::group([
 
     Route::get('/get-user-logs', [AuthenticationLogContoller::class, 'getUserLogs']);
     Route::get('/get-user-log/{id}', [AuthenticationLogContoller::class, 'getUserLog']);
+
+    Route::post('/admin/companies/create_update', [CompanyController::class, 'createOrUpdate']);
+    Route::get('/admin/companies/detail', [CompanyController::class, 'getCompanyDetail']);
+    Route::get('/admin/companies/delete/{id}', [CompanyController::class, 'deleteCompany']);
 });
-Route::post('google/webhook', [GoogleWebhookController::class,'index'])->name('google.webhook');
+Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
