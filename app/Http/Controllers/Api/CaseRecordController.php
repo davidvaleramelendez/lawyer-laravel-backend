@@ -382,7 +382,7 @@ class CaseRecordController extends Controller
                 $request->CaseID= $request->CaseID;
         
                 Notification::send($userSchema, new EmailSentNotification($userSchema, $cc, $bcc, $new_subject, $request->message, $request->message, $request->message, $attachments, $fileNames, $email_group_id));
-                $is_save=CasesRecord::insertGetId(['CaseID'=>$id, 'ToUserID'=> $request->email_to,'Email'=>$request->email ,'UserID'=> Auth::user()->id ?? 0,  'Subject'=> $request->emailSubject, 'Content'=>$request->message, 'File'=> json_encode($fileNames), 'Type'=> "Email"]);
+                $is_save=CasesRecord::insertGetId(['CaseID'=>$request->CaseID, 'ToUserID'=> $request->email_to,'Email'=>$request->email ,'UserID'=> Auth::user()->id ?? 0,  'Subject'=> $request->emailSubject, 'Content'=>$request->message, 'File'=> json_encode($fileNames), 'Type'=> "Email"]);
                 $response = array();
                 $response['flag'] = true;
                 $response['message'] = 'Successfully mail send.';
