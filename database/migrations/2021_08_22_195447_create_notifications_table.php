@@ -24,7 +24,8 @@ class CreateNotificationsTable extends Migration
             $table->text('message_only');
             $table->integer('read_later')->default(0);
             $table->text('reply_id')->nullable();
-            $table->json('label')->default(json_encode(['important']));
+            // $table->json('label')->default(json_encode(['important']));
+            $table->string('label')->default('important');
             $table->morphs('notifiable');
             $table->text('data');
             $table->text('attachment_id')->nullable();

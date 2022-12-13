@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('extension')->nullable();
             $table->text('path');
             $table->enum('type', ['folder', 'file'])->comment('[folder, file]');
-            $table->timestame('important_at')->nullable();
+            $table->timestamp('important_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
