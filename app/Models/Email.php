@@ -11,6 +11,13 @@ class Email extends Model
     public $timestamps = false;
     protected $guarded = [];
 
+    protected $casts = [
+        'is_read' => 'integer',
+        'is_delete' => 'integer',
+        'is_trash' => 'integer',
+        'important' => 'integer',
+    ];
+
     public function sender()
     {
         return $this->hasOne('App\Models\User', 'id', 'from_id');
