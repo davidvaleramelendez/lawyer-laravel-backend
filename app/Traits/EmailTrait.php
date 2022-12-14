@@ -2,36 +2,36 @@
 
 namespace App\Traits;
 
-use App\Models\User;
+use App\Mail\OnlineAnfrage;
 use App\Models\Email;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Webklex\IMAP\Facades\Client;
-use App\Mail\OnlineAnfrage;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use PHPUnit\Framework\Constraint\LessThan;
 
 trait EmailTrait
 {
     // For working with notifications table
-    public function insertEmails($user_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password) {
+    public function insertEmails($user_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
+    {
         $oClient = Client::make([
 
-            'host'          => $imap_host,
+            'host' => $imap_host,
 
-            'port'          => $imap_port,
+            'port' => $imap_port,
 
-            'encryption'    => $imap_ssl ? 'ssl' : '',
+            'encryption' => $imap_ssl ? 'ssl' : '',
 
             'validate_cert' => false,
 
-            'username'      => $imap_email,
+            'username' => $imap_email,
 
-            'password'      => $imap_password,
+            'password' => $imap_password,
 
-            'protocol'      => 'imap'
+            'protocol' => 'imap',
 
         ]);
 
@@ -55,8 +55,7 @@ trait EmailTrait
             $msg['reply_toaddress'] = (string) $attr['reply_toaddress'];
             $msg['senderaddress'] = (string) $attr['senderaddress'];
             $msg['hasAttachment'] = 0;
-            $msg['attachedFiles']="";
-
+            $msg['attachedFiles'] = "";
 
             if ($message->hasAttachments()) {
                 $msg['hasAttachment'] = 1;
@@ -89,11 +88,11 @@ trait EmailTrait
             $sender_id = @User::where('email', $sender)->first()->id;
             $msg_data = [
 
-                        'subject' => $msg['subject'],
+                'subject' => $msg['subject'],
 
-                        'message' => $msg['body'],
+                'message' => $msg['body'],
 
-                        'attachments' => json_encode([])
+                'attachments' => json_encode([])
 
             ];
 
@@ -107,7 +106,7 @@ trait EmailTrait
 
             if (is_null($email) && $sender_id) {
                 DB::table('notifications')
-                ->insert([
+                    ->insert([
 
                         'id' => $id,
                         'type' => $notifiable_type,
@@ -115,20 +114,18 @@ trait EmailTrait
                         'notifiable_id' => $notifiable_id,
                         'sender_id' => $sender_id,
                         'data' => json_encode([
-                        'data' => $msg_data
+                            'data' => $msg_data,
 
-                    ]),
+                        ]),
 
                         'message_id' => $message_id,
                         'date' => $msg_date,
                         'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now()
+                        'updated_at' => Carbon::now(),
 
-                ]);
+                    ]);
             }
         }
-
-
 
         foreach ($data as $msg) {
             if (Str::contains($msg['subject'], 'Re: ')) {
@@ -138,11 +135,11 @@ trait EmailTrait
 
                 if ($oMsg) {
                     $reMsg = DB::table('notifications')
-                    ->where('data->data->subject', $msg['subject'])
-                    ->first();
+                        ->where('data->data->subject', $msg['subject'])
+                        ->first();
                     if ($reMsg) {
                         DB::table('notifications')
-                    ->where('id', $reMsg->id)->update(['reply_id'=>$oMsg->id]);
+                            ->where('id', $reMsg->id)->update(['reply_id' => $oMsg->id]);
                     }
                 }
             }
@@ -150,32 +147,35 @@ trait EmailTrait
 
     }
 
-    public function insertImapEmails($imap_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password) {
-        $oClient = Client::make([
-                                'host'          => $imap_host,
-                                'port'          => $imap_port,
-                                'encryption'    => $imap_ssl ? 'ssl' : '',
-                                'validate_cert' => false,
-                                'username'      => $imap_email,
-                                'password'      => $imap_password,
-                                'protocol'      => 'imap'
-
-        ]);
+    public function insertImapEmails($imap_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
+    {
         try {
+            $oClient = Client::make([
+                'host' => $imap_host,
+                'port' => $imap_port,
+                'encryption' => $imap_ssl ? 'ssl' : '',
+                'validate_cert' => false,
+                'username' => $imap_email,
+                'password' => $imap_password,
+                'protocol' => 'imap',
+            ]);
             $oClient->connect();
+
             $date = @Email::orderBy('date', 'desc')
-            ->first()->date;
+                ->first()->date;
+
             if ($date) {
-                $date = date('d.m.yy', strtotime($date));
+                // $date = date('d.m.yy', strtotime($date));
+                $date = date('d.m.Y', strtotime($date));
             } else {
                 $data = null;
             }
+
             $folders = $oClient->getFolders();
             $data = [];
 
-
             foreach ($folders as $folder) {
-                if ($folder->name!='INBOX' &&  $folder->name!='Spam') {
+                if ($folder->name != 'INBOX' && $folder->name != 'Spam') {
                     continue;
                 }
                 if ($date) {
@@ -197,38 +197,36 @@ trait EmailTrait
                     $msg['date'] = (string) $attr['date'];
                     $msg['toaddress'] = (string) $attr['toaddress'];
                     $msg['fromaddress'] = (string) $attr['fromaddress'];
-                    $email_group_id=$this->get_imap_email_group((string) $attr['subject']);
-                    $new_subject=(string) $attr['subject'];
-                    $new_subject=str_replace("Re:", "", $new_subject);
-                    $new_subject=str_replace("[Tgicket#:".$email_group_id."] ", "", $new_subject);
-                    $new_subject=str_replace("[Ticket#:".$email_group_id."]", "", $new_subject);
+                    $email_group_id = $this->get_imap_email_group((string) $attr['subject']);
+                    $new_subject = (string) $attr['subject'];
+                    $new_subject = str_replace("Re:", "", $new_subject);
+                    $new_subject = str_replace("[Tgicket#:" . $email_group_id . "] ", "", $new_subject);
+                    $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
 
                     if (stristr((string) $attr['subject'], "Re:")) {
-                        $new_subject="Re: [Ticket#:".$email_group_id."] ". $new_subject;
-                    } 
-                    else {
-                        $new_subject="[Ticket#:".$email_group_id."] ". $new_subject;
+                        $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+                    } else {
+                        $new_subject = "[Ticket#:" . $email_group_id . "] " . $new_subject;
                     }
 
-                    $msg["email_group_id"]=$email_group_id;
+                    $msg["email_group_id"] = $email_group_id;
                     $msg['subject'] = $new_subject;
 
-                    $body=$msg['body'];
-                    $p1= stripos($body, '"har_start"');
+                    $body = $msg['body'];
+                    $p1 = stripos($body, '"har_start"');
 
-                    if ($p1!=0) {
-                        $b1 = substr($body, 0, ($p1+12));
+                    if ($p1 != 0) {
+                        $b1 = substr($body, 0, ($p1 + 12));
                         $b2 = "<BR><details><summary>Show more...</summary><p>";
-                        $b3 = substr($body, $p1+12);
-                        $b4="</details>";
-                        $new_body=$b1.$b2.$b3.$b4;
-                    } 
-                    else {
-                        $new_body =$body;
+                        $b3 = substr($body, $p1 + 12);
+                        $b4 = "</details>";
+                        $new_body = $b1 . $b2 . $b3 . $b4;
+                    } else {
+                        $new_body = $body;
                     }
-                    $msg['body']=$new_body;
+                    $msg['body'] = $new_body;
                     $msg['hasAttachment'] = 0;
-                    $msg['attachedFiles']="";
+                    $msg['attachedFiles'] = "";
 
                     if ($message->hasAttachments()) {
                         $msg['hasAttachment'] = 1;
@@ -236,7 +234,7 @@ trait EmailTrait
                         $att = [];
 
                         foreach ($message->getAttachments() as $attachment) {
-                            if ($attachment->name!="" && $attachment->name!="undefined") {
+                            if ($attachment->name != "" && $attachment->name != "undefined") {
                                 array_push($att, '' . $uid . '-' . $attachment->name);
                                 Storage::disk('public')->put('email/attachments/' . $uid . '-' . $attachment->name, $attachment->content);
                             }
@@ -250,7 +248,6 @@ trait EmailTrait
             }
 
             foreach ($data as $msg) {
-
                 $msg['body'] = str_replace('<html>', '', $msg['body']);
                 $msg['body'] = str_replace('<head>', '', $msg['body']);
                 $msg['body'] = str_replace('</html>', '', $msg['body']);
@@ -267,43 +264,45 @@ trait EmailTrait
                 if (stristr($msg['to'], "<")) {
                     $to_email = $this->getBetween($msg['to'], "<", ">");
                 } else {
-                    $to_email =$msg['to'];
+                    $to_email = $msg['to'];
                 }
 
                 $to_id = User::where('email', '=', trim($to_email))->first();
                 $from_id = User::where('email', '=', trim($from_email))->first();
 
                 if (isset($to_id->name) && isset($from_id->name)) {
-                    $msg['from_id']=$to_id->id;
-                    $msg['to_id']=$from_id->id;
+                    $msg['from_id'] = $to_id->id;
+                    $msg['to_id'] = $from_id->id;
                     $email = Email::where('message_id', $msg['message_id'])
-                    ->first();
+                        ->first();
 
                     if (isset($email->id)) {
-                        $ttt=0;
+                        $ttt = 0;
                     } else {
                         Email::Create($msg);
                     }
                 }
 
             }
-            } catch (\Throwable $th) {
-                return true;
+            return true;
+        } catch (\Exception$e) {
+            echo $imap_email . " Catch <pre>";
+            print_r($e);
+            return false;
         }
     }
-
 
     public function insertImapContacts()
     {
         $oClient = Client::make([
 
-                                'host'          => 'imap.ionos.de',
-                                'port'          => '993',
-                                'encryption'    => 'ssl',
-                                'validate_cert' => false,
-                                'username'      => 'contact@valera-melendez.com',
-                                'password'      => 'D44378472v.',
-                                'protocol'      => 'imap'
+            'host' => 'imap.ionos.de',
+            'port' => '993',
+            'encryption' => 'ssl',
+            'validate_cert' => false,
+            'username' => 'contact@valera-melendez.com',
+            'password' => 'D44378472v.',
+            'protocol' => 'imap',
 
         ]);
 
@@ -321,13 +320,11 @@ trait EmailTrait
                 if ($message->hasHTMLBody()) {
                     $data[$key]['message_id'] = (string) $attr['message_id'];
                     $data[$key]['body'] = $message->getHTMLBody();
-                } 
-                elseif ($message->hasTextBody()) {
+                } elseif ($message->hasTextBody()) {
                     $data[$key]['message_id'] = (string) $attr['message_id'];
                     $data[$key]['body'] = $message->getTextBody();
                 }
-            } 
-            else {
+            } else {
                 if ($message->hasHTMLBody()) {
                     $data[$key]['body'] = $message->getHTMLBody();
                 } elseif ($message->hasTextBody()) {
@@ -351,8 +348,7 @@ trait EmailTrait
                 foreach ($senderArr as $sndr) {
                     if (strpos($sndr, '@')) {
                         $email = $sndr;
-                    } 
-                    else {
+                    } else {
                         $from .= $sndr . ' ';
                     }
                 }
@@ -363,10 +359,10 @@ trait EmailTrait
                 $contact['message'] = $body;
             } else {
                 $msg['body'] = strip_tags($msg['body']);
-                $contact['from'] =  $this->getBetween($msg['body'], 'Name:', 'Email:');
-                $contact['email'] =  trim($this->getBetween($msg['body'], 'Email:', 'Telephone:'));
-                $contact['telephone'] =  $this->getBetween($msg['body'], 'Telephone:', 'Message:');
-                $contact['message'] =  $this->getBetween($msg['body'], 'Message:', '</body>');
+                $contact['from'] = $this->getBetween($msg['body'], 'Name:', 'Email:');
+                $contact['email'] = trim($this->getBetween($msg['body'], 'Email:', 'Telephone:'));
+                $contact['telephone'] = $this->getBetween($msg['body'], 'Telephone:', 'Message:');
+                $contact['message'] = $this->getBetween($msg['body'], 'Message:', '</body>');
             }
 
             $contactID = @DB::table('contact')->select('ContactID')->orderBy('ContactID', 'desc')->first()->ContactID;
@@ -382,41 +378,40 @@ trait EmailTrait
             if (DB::table('contact')
                 ->where('message_id', $msg['message_id'])->doesntExist()) {
                 DB::table('contact')
-                ->insert([
+                    ->insert([
 
                         'ContactID' => $contact['id'],
                         'Name' => $contact['from'],
                         'Email' => $contact['email'],
-                        'PhoneNo' => @$contact['telephone'] ?? '' ,
+                        'PhoneNo' => @$contact['telephone'] ?? '',
                         'Subject' => $contact['message'],
                         'message_id' => $msg['message_id'],
-                        'CreatedAt' => Carbon::now()
+                        'CreatedAt' => Carbon::now(),
 
-                ]);
+                    ]);
 
                 Mail::to($contact['email'])->send(new OnlineAnfrage($contact['id'], $contact['from']));
             }
         }
     }
 
-
     public function get_imap_email_group($str)
     {
-        $email_group_id=$this->getBetween($str, "[Ticket#:", "]");
-        if ($email_group_id=="") {
-            $email_group_id=date("Y").date("m").date("d").rand(1111, 9999);
+        $email_group_id = $this->getBetween($str, "[Ticket#:", "]");
+        if ($email_group_id == "") {
+            $email_group_id = date("Y") . date("m") . date("d") . rand(1111, 9999);
         }
 
-        return  $email_group_id;
+        return $email_group_id;
     }
 
     public function getBetween($string, $start = "", $end = "")
     {
-        if (strpos($string, $start)) { 
+        if (strpos($string, $start)) {
             $startCharCount = strpos($string, $start) + strlen($start);
             $firstSubStr = substr($string, $startCharCount, strlen($string));
             $endCharCount = strpos($firstSubStr, $end);
-            
+
             if ($endCharCount == 0) {
                 $endCharCount = strlen($firstSubStr);
             }

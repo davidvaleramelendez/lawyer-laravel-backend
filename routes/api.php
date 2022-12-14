@@ -57,8 +57,9 @@ Route::group([
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
-
 });
+
+Route::get('/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron'])->name('email-cron');
 
 Route::group([
     'middleware' => 'auth:sanctum',

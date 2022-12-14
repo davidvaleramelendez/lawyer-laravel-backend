@@ -790,6 +790,7 @@ class EmailController extends Controller
     public function emailCron()
     {
         $users = User::with('imap')->get();
+
         foreach ($users as $user) {
             if ($user->imap) {
                 $this->insertImapEmails(
@@ -802,7 +803,7 @@ class EmailController extends Controller
                 );
             }
         }
-        return response()->json(['status' => 'success', 'data' => '']);
+        return response()->json();
     }
 
     public function checkNewEmail()

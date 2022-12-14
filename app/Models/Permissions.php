@@ -9,8 +9,7 @@ class Permissions extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -25,16 +24,16 @@ class Permissions extends Model
     protected $primaryKey = 'id';
     protected $guarded = [];
     public $timestamps = false;
-     protected $hidden = [
-        'CreatedAt'
+    protected $hidden = [
+        'CreatedAt',
+    ];
+
+    protected $casts = [
+        'permission_id' => 'integer',
     ];
 
     public function user()
     {
         return $this->hasOne('App\Models\User', 'id', 'user_id');
     }
-
-
- 
-
 }
