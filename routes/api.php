@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\GoogleController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LanguageController;
 use App\Http\Controllers\Api\LetterController;
+use App\Http\Controllers\Api\LetterTemplateController;
 use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
@@ -292,8 +293,18 @@ Route::group([
     Route::get('/get-user-logs', [AuthenticationLogContoller::class, 'getUserLogs']);
     Route::get('/get-user-log/{id}', [AuthenticationLogContoller::class, 'getUserLog']);
 
+    /* Companies */
     Route::post('/admin/companies/create_update', [CompanyController::class, 'createOrUpdate']);
     Route::get('/admin/companies/detail', [CompanyController::class, 'getCompanyDetail']);
     Route::get('/admin/companies/delete/{id}', [CompanyController::class, 'deleteCompany']);
+    /* /Companies */
+
+    /* Letter Templates */
+    Route::get('/admin/letter-template/list', [LetterTemplateController::class, 'getLetterTemplateList']);
+    Route::get('/admin/letter-template/{id}', [LetterTemplateController::class, 'getLetterTemplate']);
+    Route::post('/admin/letter-template/create', [LetterTemplateController::class, 'letterTemplateCreate']);
+    Route::post('/admin/letter-template/update', [LetterTemplateController::class, 'letterTemplateUpdate']);
+    Route::get('/admin/letter-template/delete/{id}', [LetterTemplateController::class, 'letterTemplateDelete']);
+    /* /Letter Templates */
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

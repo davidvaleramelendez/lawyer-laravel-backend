@@ -17,8 +17,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('case_id');
+            $table->unsignedInteger('letter_template_id')->nullable();
             $table->text('subject');
             $table->text('message');
+            $table->string('best_regards')->nullable();
             $table->date('frist_date')->nullable();
             $table->datetime('last_date')->useCurrent();
             $table->integer('is_print')->default(0);
