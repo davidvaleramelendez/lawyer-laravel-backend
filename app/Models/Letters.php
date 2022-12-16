@@ -44,4 +44,9 @@ class Letters extends Model
     {
         return $this->hasOne('App\Models\Cases', 'CaseID', 'case_id');
     }
+
+    public function letterTemplate()
+    {
+        return $this->hasOne('App\Models\LetterTemplate', 'id', 'letter_template_id');
+    }
 }
