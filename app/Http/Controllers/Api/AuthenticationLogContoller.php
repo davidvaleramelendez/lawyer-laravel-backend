@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\AuthenticationLog;
+use Illuminate\Http\Request;
 
 class AuthenticationLogContoller extends Controller
 {
-    public function getuserLogsFilter($id, $skips, $perPage) {
+    public function getuserLogsFilter($id, $skips, $perPage)
+    {
         $list = AuthenticationLog::with('user')->where('authenticatable_id', $id)->orderBy('id', 'DESC')->skip($skips)->take($perPage)->get();
         $totalRecord = AuthenticationLog::where('authenticatable_id', $id)->count();
         return ['data' => $list, 'count' => $totalRecord];
     }
-    
+
     public function getUserLogs(Request $request)
     {
         try {
@@ -21,8 +22,8 @@ class AuthenticationLogContoller extends Controller
             $startIndex = 0;
             $endIndex = 0;
             $skips = 0;
-            $page = $request->input(key: 'page') ?? 1;
-            $perPage = $request->input(key: 'perPage') ?? 100;
+            $page = $request->input(key:'page') ?? 1;
+            $perPage = $request->input(key:'perPage') ?? 100;
             $skips = $perPage * ($page - 1) ?? 1;
             $id = $request->user_id ?? auth()->user()->id;
 
@@ -33,16 +34,16 @@ class AuthenticationLogContoller extends Controller
             $list = $logs['data'];
             $totalRecord = $logs['count'];
             $totalPages = ceil($totalRecord / $perPage);
-            if(count($list) == 0) {
-                if($page > 0) {
+            if (count($list) == 0) {
+                if ($page > 0) {
                     $page = 1;
                     $skips = $perPage * ($page - 1) ?? 1;
-                    $logs = $this->getLetterFilter($id, $skips, $perPage);
+                    $logs = $this->getuserLogsFilter($id, $skips, $perPage);
                     $list = $logs['data'];
                     $totalRecord = $logs['count'];
                 }
             }
-            if(!empty($list) && $list->count() > 0) {
+            if (!empty($list) && $list->count() > 0) {
                 $pageIndex = ($page - 1) ?? 0;
                 $startIndex = ($pageIndex * $perPage) + 1;
                 $endIndex = min($startIndex - 1 + $perPage, $totalRecord);
@@ -53,13 +54,13 @@ class AuthenticationLogContoller extends Controller
             $response['message'] = "Success.";
             $response['data'] = $list;
             $response['pagination'] = ['perPage' => $perPage,
-                                        'totalRecord' => $totalRecord,
-                                        'totalPages' => $totalPages,
-                                        'pageIndex' => $pageIndex,
-                                        'startIndex' => $startIndex,
-                                        'endIndex' => $endIndex ];
+                'totalRecord' => $totalRecord,
+                'totalPages' => $totalPages,
+                'pageIndex' => $pageIndex,
+                'startIndex' => $startIndex,
+                'endIndex' => $endIndex];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -77,7 +78,7 @@ class AuthenticationLogContoller extends Controller
             $response['message'] = "Success.";
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
