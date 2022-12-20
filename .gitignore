@@ -60,3 +60,6 @@ Thumbs.db
 
 # Vendor
 vendor/
+
+# Public storage
+public/storage
