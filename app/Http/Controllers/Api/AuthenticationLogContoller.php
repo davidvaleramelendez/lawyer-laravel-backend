@@ -27,8 +27,6 @@ class AuthenticationLogContoller extends Controller
             $skips = $perPage * ($page - 1) ?? 1;
             $id = $request->user_id ?? auth()->user()->id;
 
-            $totalRecord = AuthenticationLog::where('authenticatable_id', $id)->get();
-
             $logs = $this->getuserLogsFilter($id, $skips, $perPage);
 
             $list = $logs['data'];

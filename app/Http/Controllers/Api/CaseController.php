@@ -123,8 +123,6 @@ class CaseController extends Controller
             $UserID = $request->UserID;
             $id = $request->case_id ?? '';
 
-            $totalRecord = Cases::with('user', 'laywer', 'type')->get();
-
             $cases = $this->getCaseFilter($id, $status, $UserID, $search, $skips, $perPage, $sortColumn, $sort);
             $list = $cases['data'];
             $totalRecord = $cases['count'];
@@ -348,7 +346,6 @@ class CaseController extends Controller
     public function letter_add(Request $request)
     {
         try {
-
             $validation = Validator::make($request->all(), [
                 'case_id' => 'required',
                 'subject' => 'required',

@@ -34,15 +34,14 @@ class TodoController extends Controller
 
     public function todoFilter($type, $tag, $search, $sortBy, $date, $perPage)
     {
-        $messages = array();
         $importantCount = 0;
-
         $totalRecord = 0;
 
-        $importantCount = Todo::where('is_important', 1)->where('is_deleted', 0)->count() ?? 0;
+        $userId = auth()->user()->id;
+        $importantCount = Todo::where('is_important', 1)->where('Assign', $userId)->where('is_deleted', 0)->count() ?? 0;
 
-        $list = Todo::with('user', 'assign');
-        $totalRecord = new Todo();
+        $list = Todo::with('user', 'assign')->where('Assign', $userId);
+        $totalRecord = Todo::where('Assign', $userId);
         if ($type == 'important') {
             $list = $list->where('is_important', 1)->where('is_deleted', 0);
             $totalRecord = $totalRecord->where('is_important', 1)->where('is_deleted', 0);

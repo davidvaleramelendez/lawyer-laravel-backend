@@ -17,6 +17,8 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->unsignedInteger('role_id');
             $table->string('name');
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -25,7 +27,7 @@ class CreateUsersTable extends Migration
             $table->string('current_team_id')->nullable();
             $table->string('profile_photo_path')->nullable();
             $table->string('language')->nullable();
-            $table->string('Status')->enum('Active','InActive')->default('Active');
+            $table->string('Status')->enum('Active', 'InActive')->default('Active');
             $table->string('Contact')->nullable();
             $table->string('Company')->nullable();
             $table->string('DOB')->nullable();

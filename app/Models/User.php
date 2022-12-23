@@ -5,10 +5,8 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 use Yadahan\AuthenticationLog\AuthenticationLogable;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -22,9 +20,11 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
-        'role_id'
+        'role_id',
     ];
 
     /**
@@ -46,15 +46,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-
     /*this is for rolebase*/
     public function role()
     {
         return $this->hasOne('App\Models\Role', 'role_id', 'role_id');
     }
-
-
-
 
     /*this is for rolebase*/
     public function permission()
@@ -132,7 +128,8 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return mixed
      */
-    public function getJWTIdentifier() {
+    public function getJWTIdentifier()
+    {
         return $this->getKey();
     }
     /**
@@ -140,29 +137,29 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return array
      */
-    public function getJWTCustomClaims() {
+    public function getJWTCustomClaims()
+    {
         return [];
     }
 
     public function scopeOfSearch($query, $q)
     {
-        if ( $q ) {
+        if ($q) {
             $query->orWhere('name', 'LIKE', '%' . $q . '%');
         }
         return $query;
     }
 
-public function scopeOfSort($query, $sort = [])
-{
-    if ( ! empty($sort) ) {
-        foreach ( $sort as $column => $direction ) {
-            $query->orderBy($column, $direction);
+    public function scopeOfSort($query, $sort = [])
+    {
+        if (!empty($sort)) {
+            foreach ($sort as $column => $direction) {
+                $query->orderBy($column, $direction);
+            }
+        } else {
+            $query->orderBy('id');
         }
-    } 
-    else {
-        $query->orderBy('id'); 
-    }
 
-    return $query;
-}
+        return $query;
+    }
 }
