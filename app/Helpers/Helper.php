@@ -1,30 +1,32 @@
 <?php // Code within app\Helpers\Helper.php
 
 namespace App\Helpers;
+
 use App\Models\Contact;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Permissions;
 use App\Models\SiteSettings;
 use Config;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use App\Models\Permissions;
+
 class Helper
 {
     public static function applClasses()
     {
-        $siteSetting = SiteSettings::where('name','nav_bar')
-        ->where('user_id',auth()->id())
-        ->first();
+        $siteSetting = SiteSettings::where('name', 'nav_bar')
+            ->where('user_id', auth()->id())
+            ->first();
 
-        if($siteSetting){
-        $siteSetting =  json_decode($siteSetting->value,true);
+        if ($siteSetting) {
+            $siteSetting = json_decode($siteSetting->value, true);
 
         }
-        
+
         $fullURL = request()->fullurl();
         if (App()->environment() === 'production') {
             for ($i = 1; $i < 7; $i++) {
                 $contains = Str::contains($fullURL, 'demo-' . $i);
-            $data = config('custom.custom');
+                $data = config('custom.custom');
                 if ($contains === true) {
                     $data = config('custom.' . 'demo-' . $i);
                 }
@@ -36,23 +38,23 @@ class Helper
 
         // default data array
         $DefaultData = [
-          'mainLayoutType' => 'vertical',
-          'theme' => 'light',
-          'sidebarCollapsed' => false,
-          'navbarColor' => '',
-          'horizontalMenuType' => 'floating',
-          'verticalMenuNavbarType' => 'floating',
-          'footerType' => 'static', //footer
-          'layoutWidth' => 'full',
-          'showMenu' => true,
-          'bodyClass' => '',
-          'bodyStyle' => '',
-          'pageClass' => '',
-          'pageHeader' => true,
-          'contentLayout' => 'default',
-          'blankPage' => false,
-          'defaultLanguage'=>'en',
-          'direction' => env('MIX_CONTENT_DIRECTION', 'ltr'),
+            'mainLayoutType' => 'vertical',
+            'theme' => 'light',
+            'sidebarCollapsed' => false,
+            'navbarColor' => '',
+            'horizontalMenuType' => 'floating',
+            'verticalMenuNavbarType' => 'floating',
+            'footerType' => 'static', //footer
+            'layoutWidth' => 'full',
+            'showMenu' => true,
+            'bodyClass' => '',
+            'bodyStyle' => '',
+            'pageClass' => '',
+            'pageHeader' => true,
+            'contentLayout' => 'default',
+            'blankPage' => false,
+            'defaultLanguage' => 'en',
+            'direction' => env('MIX_CONTENT_DIRECTION', 'ltr'),
         ];
 
         // if any key missing of array from custom.php file it will be merge and set a default value from dataDefault array and store in data variable
@@ -76,7 +78,7 @@ class Helper
             'blankPage' => array(false, true),
             'sidebarPositionClass' => array('content-left-sidebar' => 'sidebar-left', 'content-right-sidebar' => 'sidebar-right', 'content-detached-left-sidebar' => 'sidebar-detached sidebar-left', 'content-detached-right-sidebar' => 'sidebar-detached sidebar-right', 'default' => 'default-sidebar-position'),
             'contentsidebarClass' => array('content-left-sidebar' => 'content-right', 'content-right-sidebar' => 'content-left', 'content-detached-left-sidebar' => 'content-detached content-right', 'content-detached-right-sidebar' => 'content-detached content-left', 'default' => 'default-sidebar'),
-            'defaultLanguage'=>array('en'=>'en','fr'=>'fr','de'=>'de','pt'=>'pt'),
+            'defaultLanguage' => array('en' => 'en', 'fr' => 'fr', 'de' => 'de', 'pt' => 'pt'),
             'direction' => array('ltr', 'rtl'),
         ];
 
@@ -107,13 +109,13 @@ class Helper
             }
         }
 
-        $data['theme'] = isset($siteSetting['skin']) ? $siteSetting['skin'] :  $data['theme'];
-        $data['layoutWidth'] = isset($siteSetting['layoutWidth']) ?  $siteSetting['layoutWidth'] :  $data['layoutWidth'];
+        $data['theme'] = isset($siteSetting['skin']) ? $siteSetting['skin'] : $data['theme'];
+        $data['layoutWidth'] = isset($siteSetting['layoutWidth']) ? $siteSetting['layoutWidth'] : $data['layoutWidth'];
         $data['navbarColor'] = isset($siteSetting['navColor']) ? $siteSetting['navColor'] : $data['navbarColor'];
         $data['verticalMenuNavbarType'] = isset($siteSetting['navType']) ? $siteSetting['navType'] : $data['verticalMenuNavbarType'];
         $data['footerType'] = isset($siteSetting['footerType']) ? $siteSetting['footerType'] : $data['footerType'];
-        $data['sidebarCollapsed'] = isset($siteSetting['collapse_sidebar']) ?  $siteSetting['collapse_sidebar'] : $data['sidebarCollapsed'];
-        $data['showMenu'] = isset($siteSetting['showMenu']) ?  $siteSetting['showMenu'] : $data['showMenu'];
+        $data['sidebarCollapsed'] = isset($siteSetting['collapse_sidebar']) ? $siteSetting['collapse_sidebar'] : $data['sidebarCollapsed'];
+        $data['showMenu'] = isset($siteSetting['showMenu']) ? $siteSetting['showMenu'] : $data['showMenu'];
 
         //layout classes
         $layoutClasses = [
@@ -139,11 +141,11 @@ class Helper
             'sidebarPositionClass' => $allOptions['sidebarPositionClass'][$data['contentLayout']],
             'contentsidebarClass' => $allOptions['contentsidebarClass'][$data['contentLayout']],
             'mainLayoutType' => $data['mainLayoutType'],
-            'defaultLanguage'=>$allOptions['defaultLanguage'][$data['defaultLanguage']],
+            'defaultLanguage' => $allOptions['defaultLanguage'][$data['defaultLanguage']],
             'direction' => $data['direction'],
         ];
         // set default language if session hasn't locale value the set default language
-        if(!session()->has('locale')){
+        if (!session()->has('locale')) {
             app()->setLocale($layoutClasses['defaultLanguage']);
         }
 
@@ -184,14 +186,13 @@ class Helper
     public static function getSettings($name = 'nav_bar')
     {
 
-        $siteSetting = SiteSettings::where('name','nav_bar')
-        ->where('user_id',auth()->id())
-        ->first();
-        if($siteSetting)
-        {
-            $siteSetting =  json_decode($siteSetting->value);
+        $siteSetting = SiteSettings::where('name', 'nav_bar')
+            ->where('user_id', auth()->id())
+            ->first();
+        if ($siteSetting) {
+            $siteSetting = json_decode($siteSetting->value);
 
-        }else{
+        } else {
             $siteSetting = config('custom');
         }
 
@@ -199,68 +200,50 @@ class Helper
 
     }
 
-
-
-
-
-    public static function get_user_permissions($id="0")
+    public static function get_user_permissions($id = "0")
     {
+        $user_id = auth('sanctum')->user()->id;
+        $per = Permissions::where(['user_id' => $user_id, 'permission_id' => $id])->get()->first();
 
-      $user_id=auth('sanctum')->user()->id;
-      $per=Permissions::where(['user_id'=>$user_id,'permission_id'=>$id])->get()->first();
+        if (isset($per->id)) {
+            return 1;
+        } else {
+            return 0;
+        }
 
+        return false;
 
-      if(isset($per->id))
-      return 1;
-  else
-  return 0;
-
-
-     return false;
-
-
-        if(isset($per->id))
-             echo json_encode(array('status'=> "1",'msg'   => "Success",));
-         else
-            echo json_encode(array('status'=> "0",'msg'   => "Error",));
-
-
+        if (isset($per->id)) {
+            echo json_encode(array('status' => "1", 'msg' => "Success"));
+        } else {
+            echo json_encode(array('status' => "0", 'msg' => "Error"));
+        }
 
     }
 
-
-
-    public static  function get_contact_count()
+    public static function get_contact_count()
     {
-        if(self::get_user_permissions(3)==1)
-        {
-            return  Contact::where('IsCase',0)
-            ->where('read_at',0)
-            ->count();
+        if (self::get_user_permissions(3) == 1) {
+            return Contact::where('IsCase', 0)
+                ->where('read_at', 0)
+                ->count();
 
         }
         return 0;
     }
 
-
     public static function get_contacts()
     {
 
-        if(self::get_user_permissions(3)==1)
-        {
-            return  Contact::where('IsCase',0)
-            ->orderBy('ContactID','DESC')
-            ->where('read_at',0)
-            ->paginate(5);
+        if (self::get_user_permissions(3) == 1) {
+            return Contact::where('IsCase', 0)
+                ->orderBy('ContactID', 'DESC')
+                ->where('read_at', 0)
+                ->paginate(5);
 
-        }else{
+        } else {
             return collect();
         }
     }
 
-
 }
-
-
-
-

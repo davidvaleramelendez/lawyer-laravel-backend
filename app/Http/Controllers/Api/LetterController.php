@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Casedocs;
 use App\Models\Letters;
@@ -11,8 +12,14 @@ class LetterController extends Controller
 {
     public function getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort)
     {
-        $list = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
-        $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->get();
+        $userId = auth()->user()->id;
+        if (Helper::get_user_permissions(6) == 1) {
+            $list = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
+            $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->get();
+        } else {
+            $list = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
+            $totalRecord = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0)->get();
+        }
 
         if ($search) {
             $list = $list->where(function ($query) use ($search) {
@@ -28,6 +35,7 @@ class LetterController extends Controller
                     ->orWhere('message', 'LIKE', "%{$search}%");
             });
         }
+
         $list = $list->skip($skips)->take($perPage)->get();
         $totalRecord = $totalRecord->count();
         return ['data' => $list, 'count' => $totalRecord];
@@ -48,8 +56,6 @@ class LetterController extends Controller
             $search = $request->input(key:'search') ?? '';
             $id = $request->case_id ?? '';
 
-            $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->get();
-
             $letters = $this->getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort);
 
             $list = $letters['data'];
@@ -69,6 +75,7 @@ class LetterController extends Controller
                 $startIndex = ($pageIndex * $perPage) + 1;
                 $endIndex = min($startIndex - 1 + $perPage, $totalRecord);
             }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
