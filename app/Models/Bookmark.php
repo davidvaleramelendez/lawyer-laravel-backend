@@ -11,6 +11,7 @@ class Bookmark extends Model
 
     protected $guarded = [];
     protected $casts = [
+        'is_customer' => 'boolean',
         'is_bookmarked' => 'boolean',
     ];
 }

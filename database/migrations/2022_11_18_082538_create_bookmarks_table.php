@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedInteger('user_id')->nullable();
             $table->integer('bookmark_id')->nullable();
             $table->text('icon')->nullable();
+            $table->boolean('is_customer')->default(false);
             $table->boolean('is_bookmarked')->default(true);
             $table->text('link')->nullable();
             $table->text('target')->nullable();

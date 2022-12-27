@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->increments('role_id');
-            $table->unsignedInteger('RoleName');
-            $table->integer('RoleDescription');
+            $table->string('RoleName');
+            $table->text('RoleDescription');
             $table->tinyinteger('IsActive')->default(1);
             $table->timestamps();
         });

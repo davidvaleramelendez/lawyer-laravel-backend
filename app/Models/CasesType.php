@@ -9,8 +9,7 @@ class CasesType extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -25,10 +24,7 @@ class CasesType extends Model
     protected $primaryKey = 'CaseTypeID';
     protected $guarded = [];
     public $timestamps = false;
-     protected $hidden = [
-        'CreatedAt'
+    protected $hidden = [
+        'CreatedAt',
     ];
-
-   
-
 }

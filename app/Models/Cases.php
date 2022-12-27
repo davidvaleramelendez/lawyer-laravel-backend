@@ -9,8 +9,7 @@ class Cases extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -25,8 +24,14 @@ class Cases extends Model
     protected $primaryKey = 'CaseID';
     protected $guarded = [];
     public $timestamps = false;
+    protected $casts = [
+        'UserID' => 'integer',
+        'ContactID' => 'integer',
+        'LaywerID' => 'integer',
+        'CaseTypeID' => 'integer',
+    ];
 
-     public function user()
+    public function user()
     {
         return $this->hasOne('App\Models\User', 'id', 'UserID');
     }
@@ -39,8 +44,8 @@ class Cases extends Model
     public function laywer()
     {
         return $this->hasOne('App\Models\User', 'id', 'LaywerID');
-    }  
-    
+    }
+
     public function type()
     {
         return $this->hasOne('App\Models\CasesType', 'CaseTypeID', 'CaseTypeID');
