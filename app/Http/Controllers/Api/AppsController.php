@@ -173,10 +173,11 @@ class AppsController extends Controller
         }
     }
 
-    public function createPermission($permissions, $userId)
+    public function updatePermission($permissions, $userId)
     {
         try {
             if ($permissions && count($permissions) > 0) {
+                Permissions::where('user_id', $userId)->delete();
                 foreach ($permissions as $key => $val) {
                     Permissions::insert(['user_id' => $userId, 'permission_id' => $val['permission_id']]);
                 }
@@ -215,6 +216,13 @@ class AppsController extends Controller
             $response = array();
             $response['flag'] = false;
             $response['message'] = "This Email address is already used.";
+            return response()->json($response);
+        }
+
+        if (Helper::get_user_permissions(7) == 0) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "You do not have permission to add user!";
             return response()->json($response);
         }
 
@@ -273,9 +281,10 @@ class AppsController extends Controller
                     ['permission_id' => 4],
                     ['permission_id' => 5],
                     ['permission_id' => 6],
+                    ['permission_id' => 7],
                 );
 
-                $this->createPermission($adminPermission, $user->id);
+                $this->updatePermission($adminPermission, $user->id);
             }
         }
 
@@ -327,92 +336,112 @@ class AppsController extends Controller
 
     public function update_user(Request $request)
     {
-        $validation = Validator::make($request->all(), [
-            'id' => 'required',
-            'first_name' => 'required',
-            'email' => 'required',
-            'role_id' => 'required',
-        ]);
+        try {
+            $validation = Validator::make($request->all(), [
+                'id' => 'required',
+                'first_name' => 'required',
+                'email' => 'required',
+                'role_id' => 'required',
+            ]);
 
-        if ($validation->fails()) {
-            $error = $validation->errors();
-            return response()->json(['error' => $error]);
-        }
+            if ($validation->fails()) {
+                $error = $validation->errors();
+                return response()->json(['error' => $error]);
+            }
 
-        $validationEmail = Validator::make($request->all(), [
-            'email' => 'nullable|unique:users,email,' . $request->id,
-        ]);
+            $validationEmail = Validator::make($request->all(), [
+                'email' => 'nullable|unique:users,email,' . $request->id,
+            ]);
 
-        if ($validationEmail->fails()) {
-            $user = User::where('id', $request->id)->first();
-            $response = array();
-            $response['flag'] = false;
-            $response['message'] = "This Email address is already used.";
-            $response['data'] = $user;
-            return response()->json($response);
-        }
+            if ($validationEmail->fails()) {
+                $user = User::where('id', $request->id)->first();
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "This Email address is already used.";
+                $response['data'] = $user;
+                return response()->json($response);
+            }
 
-        $id = $request->id;
-        $param = $request->all();
+            $id = $request->id;
+            $param = $request->all();
 
-        $fullName = "";
-        if ($request && $request->first_name) {
-            $fullName = $request->first_name;
-        }
+            $fullName = "";
+            if ($request && $request->first_name) {
+                $fullName = $request->first_name;
+            }
 
-        if ($request && $request->last_name) {
-            $fullName = $fullName ? $fullName . ' ' . $request->last_name : $request->last_name;
-        }
-        $param['name'] = $fullName;
+            if ($request && $request->last_name) {
+                $fullName = $fullName ? $fullName . ' ' . $request->last_name : $request->last_name;
+            }
+            $param['name'] = $fullName;
 
-        if ($request->password) {
-            $key = hex2bin(env('CRYPTO_KEY'));
-            $iv = hex2bin(env('CRYPTO_IV'));
+            if ($request->password) {
+                $key = hex2bin(env('CRYPTO_KEY'));
+                $iv = hex2bin(env('CRYPTO_IV'));
 
-            $decrypted = openssl_decrypt($request->password, 'AES-128-CBC', $key, OPENSSL_ZERO_PADDING, $iv);
-            $request->password = trim($decrypted);
-            $param['password'] = bcrypt($request->password);
-        }
+                $decrypted = openssl_decrypt($request->password, 'AES-128-CBC', $key, OPENSSL_ZERO_PADDING, $iv);
+                $request->password = trim($decrypted);
+                $param['password'] = bcrypt($request->password);
+            }
 
-        if ($request->image) {
-            $img_code = explode(',', $request->image);
-            $filedata = base64_decode($img_code[1]);
-            $filePath = 'public/images';
-            $f = finfo_open();
-            $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
+            if ($request->image) {
+                $img_code = explode(',', $request->image);
+                $filedata = base64_decode($img_code[1]);
+                $filePath = 'public/images';
+                $f = finfo_open();
+                $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
-            @$mime_type = explode('/', $mime_type);
-            @$mime_type = $mime_type[1];
-            if ($mime_type) {
+                @$mime_type = explode('/', $mime_type);
+                @$mime_type = $mime_type[1];
+                if ($mime_type) {
 
-                \Storage::makeDirectory($filePath);
-                $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                if (\Storage::put($filePath . '/' . $filename, $filedata)) {
-                    $img_url = 'storage/images/' . $filename;
-                    unset($param['image']);
-                    $param['profile_photo_path'] = $img_url;
+                    \Storage::makeDirectory($filePath);
+                    $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
+                    if (\Storage::put($filePath . '/' . $filename, $filedata)) {
+                        $img_url = 'storage/images/' . $filename;
+                        unset($param['image']);
+                        $param['profile_photo_path'] = $img_url;
+                    }
                 }
             }
-        }
-        $user = User::where('id', $id)->update($param);
-        $user = User::where('id', $request->id)->first();
-        $role = Role::where('role_id', $user->role_id)->first();
-        $user['role'] = $role;
+            $user = User::where('id', $id)->update($param);
+            $user = User::with('role')->where('id', $request->id)->first();
 
-        if ($user) {
-            $response = array();
-            $response['flag'] = true;
-            $response['message'] = 'User Updated successfully.';
-            $response['data'] = $user;
-            return response()->json($response);
+            if ($user && $user->id) {
+                if ($user->role_id == 10) {
+                    $adminPermission = array(
+                        ['permission_id' => 1],
+                        ['permission_id' => 2],
+                        ['permission_id' => 3],
+                        ['permission_id' => 4],
+                        ['permission_id' => 5],
+                        ['permission_id' => 6],
+                        ['permission_id' => 7],
+                    );
 
-        } else {
+                    $this->updatePermission($adminPermission, $user->id);
+                }
+            }
+
+            if ($user) {
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = 'User Updated successfully.';
+                $response['data'] = $user;
+                return response()->json($response);
+            } else {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = 'User Updated failed.';
+                $response['data'] = null;
+                return response()->json($response);
+            }
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
-            $response['message'] = 'User Updated failed.';
+            $response['message'] = $e->getMessage();
             $response['data'] = null;
             return response()->json($response);
-
         }
     }
 
@@ -430,9 +459,9 @@ class AppsController extends Controller
         } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
-            $response['message'] = 'Failed.';
+            $response['message'] = $e->getMessage();
             $response['data'] = null;
-            return response()->json($response, $e);
+            return response()->json($response);
         }
     }
 
