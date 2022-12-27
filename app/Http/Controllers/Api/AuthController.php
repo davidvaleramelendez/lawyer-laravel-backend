@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LanguageLabel;
+use App\Models\Permissions;
 use App\Models\PersonalAccessToken;
 use App\Models\Role;
 use App\Models\User;
@@ -161,6 +162,7 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         $user['role'] = Role::where('role_id', Auth::user()->role_id)->first();
+        $user['permission'] = Permissions::where('user_id', Auth::user()->id)->get();
         \DB::table('personal_access_tokens')->where('tokenable_id', $user->id)->delete();
         $access_token = $user->createToken('MyApp')->plainTextToken;
         [$id, $token] = explode('|', $access_token, 2);
