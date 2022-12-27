@@ -30,49 +30,47 @@ class CaseController extends Controller
     {
         if (is_numeric($id)) {
             if (!empty(Auth::user()->role_id) && Auth::user()->role_id == 10) {
-
                 if (Helper::get_user_permissions(4) == 1) {
                     $list = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close')->orderBy($sortColumn, $sort);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
                 } else {
-                    $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id)->get();
+                    $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
                 }
-
             } elseif (!empty(Auth::user()->role_id) && Auth::user()->role_id == 11) {
-
                 if (Helper::get_user_permissions(4) == 1) {
                     $list = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close')->orderBy($sortColumn, $sort);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
                 } else {
-                    $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id)->get();
+                    $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
                 }
-
             } elseif (!empty(Auth::user()->role_id) && Auth::user()->role_id == 12) {
-
                 if (Helper::get_user_permissions(4) == 1) {
                     $list = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close')->orderBy($sortColumn, $sort);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
                 } else {
-                    $list = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id)->get();
+                    $list = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id);
                 }
-
             } elseif (!empty(Auth::user()->role_id) && Auth::user()->role_id == 14) {
-
                 if (Helper::get_user_permissions(4) == 1) {
                     $list = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close')->orderBy($sortColumn, $sort);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
                 } else {
-                    $list = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id)->get();
+                    $list = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id);
+                    $totalRecord = Cases::with('user', 'laywer', 'type')->where('LaywerID', Auth::user()->id);
                 }
-
             }
         } else {
-
             if (Helper::get_user_permissions(3) == 1) {
                 $list = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close')->orderBy($sortColumn, $sort);
+                $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
             } else {
-                $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id)->get();
+                $list = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
+                $totalRecord = Cases::with('user', 'laywer', 'type')->where('UserID', Auth::user()->id);
             }
-
         }
-
-        $totalRecord = Cases::with('user', 'laywer', 'type')->where('Status', '!=', 'Close');
 
         if ($status) {
             $list = $list->where('Status', $status);
@@ -101,8 +99,9 @@ class CaseController extends Controller
             });
 
         }
+
         $list = $list->skip($skips)->take($perPage)->get();
-        $totalRecord = $totalRecord->count();
+        $totalRecord = $totalRecord->count() ?? 0;
         return ['data' => $list, 'count' => $totalRecord];
     }
 
@@ -120,7 +119,7 @@ class CaseController extends Controller
             $sort = $request->input(key:'sort') ?? 'DESC';
             $search = $request->input(key:'search') ?? '';
             $status = $request->input(key:'status') ?? '';
-            $UserID = $request->UserID;
+            $UserID = $request->UserID ?? '';
             $id = $request->case_id ?? '';
 
             $cases = $this->getCaseFilter($id, $status, $UserID, $search, $skips, $perPage, $sortColumn, $sort);
@@ -197,6 +196,8 @@ class CaseController extends Controller
 
             $imap_contact = contact::where('ContactID', '=', $case_new->ContactID)->get();
 
+            $authUser = User::with('role', 'permission')->where('id', auth()->user()->id)->first();
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -208,6 +209,7 @@ class CaseController extends Controller
                 'docs' => $DocsList,
                 'caseType' => $type,
                 'laywers' => $laywers,
+                'authUser' => $authUser,
             ];
             return response()->json($response);
         } catch (\Exception$e) {

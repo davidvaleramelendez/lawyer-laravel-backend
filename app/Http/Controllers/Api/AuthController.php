@@ -1,16 +1,15 @@
 <?php
 namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\LanguageLabel;
+use App\Models\PersonalAccessToken;
+use App\Models\Role;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use App\Models\Role;
 use Validator;
-use App\Http\Controllers\Controller;
-use App\Models\PersonalAccessToken;
-use App\Models\LanguageLabel;
-use Carbon\Carbon;
-use Nullix\CryptoJsAes\CryptoJsAes;
-use Illuminate\Support\Facades\Crypt;
 
 class AuthController extends Controller
 {
@@ -19,7 +18,8 @@ class AuthController extends Controller
      *
      * @return void
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth:sanctum', ['except' => ['login', 'register']]);
     }
     /**
@@ -27,20 +27,20 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         try {
-            if($request->password){
-                $key = hex2bin(env('CRYPTO_KEY'));
-                $iv = hex2bin(env('CRYPTO_IV'));
+            $key = hex2bin(env('CRYPTO_KEY'));
+            $iv = hex2bin(env('CRYPTO_IV'));
 
+            $UserArray = $request->all();
+            if ($request->password) {
                 $decrypted = openssl_decrypt($request->password, 'AES-128-CBC', $key, OPENSSL_ZERO_PADDING, $iv);
-
                 $request->password = trim($decrypted);
-
-                $UserArray = $request->all();
 
                 $UserArray['password'] = $request->password;
             }
+
             $validator = Validator::make($UserArray, [
                 'email' => 'required|email',
                 'password' => 'required|string|min:6',
@@ -49,11 +49,11 @@ class AuthController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
-            if (! $token = auth()->attempt($validator->validated())) {
+            if (!$token = auth()->attempt($validator->validated())) {
                 return response()->json(['flag' => false, 'message' => 'Invalid username or password'], 201);
             }
             return $this->createNewToken('token');
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -67,25 +67,26 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|between:2,100',
                 'email' => 'required|string|email|max:100|unique:users',
                 'password' => 'required|string|confirmed|min:6',
             ]);
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return response()->json($validator->errors()->toJson(), 400);
             }
             $user = User::create(array_merge(
-                        $validator->validated(),
-                        ['password' => bcrypt($request->password)]
-                    ));
+                $validator->validated(),
+                ['password' => bcrypt($request->password)]
+            ));
             return response()->json([
                 'message' => 'User successfully registered',
-                'user' => $user
+                'user' => $user,
             ], 201);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -99,19 +100,21 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         // Get user who requested the logout
         $user = Auth::user(); //or Auth::user()
         // Revoke current user token
         $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
-        return response()->json(['flag' => true, 'message' => 'User successfully signed out'],201);
+        return response()->json(['flag' => true, 'message' => 'User successfully signed out'], 201);
     }
     /**
      * Refresh a token.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refresh(Request $request) {
+    public function refresh(Request $request)
+    {
         $bearerToken = $request->header('Authorization');
         $bearerToken = str_replace("Bearer ", "", $bearerToken);
         [$id, $token] = explode('|', $bearerToken, 2);
@@ -132,9 +135,9 @@ class AuthController extends Controller
             $response['flag'] = true;
             $response['message'] = 'Refresh token generated';
             $response['data'] = ['userData' => $user, 'accessToken' => $token, 'tokenType' => 'bearer', 'expiresIn' => 86400 * 7];
-            return response()->json($response,201);
+            return response()->json($response, 201);
         } else {
-            return response()->json(['flag' => false, "message"=> "Unauthenticated."]);
+            return response()->json(['flag' => false, "message" => "Unauthenticated."]);
         }
 
     }
@@ -143,7 +146,8 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function userProfile() {
+    public function userProfile()
+    {
         return response()->json(auth()->user());
     }
     /**
@@ -153,13 +157,14 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function createNewToken($token){
+    protected function createNewToken($token)
+    {
         $user = Auth::user();
         $user['role'] = Role::where('role_id', Auth::user()->role_id)->first();
-        \DB::table('personal_access_tokens')->where('tokenable_id',$user->id)->delete();
-        $access_token=$user->createToken('MyApp')->plainTextToken;
+        \DB::table('personal_access_tokens')->where('tokenable_id', $user->id)->delete();
+        $access_token = $user->createToken('MyApp')->plainTextToken;
         [$id, $token] = explode('|', $access_token, 2);
-        \DB::table('personal_access_tokens')->where('id', $id)->update( array('expires_at'=>Carbon::now()->addDays()));
+        \DB::table('personal_access_tokens')->where('id', $id)->update(array('expires_at' => Carbon::now()->addDays()));
 
         $languageLabels = array();
 

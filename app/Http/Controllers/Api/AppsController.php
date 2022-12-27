@@ -19,14 +19,18 @@ class AppsController extends Controller
     public function getUserCounteByRole()
     {
         try {
-            $roles = Role::get();
             $users = array();
-            foreach ($roles as $key => $role) {
-                if ($role && $role->role_id) {
-                    $userCount = User::where("role_id", $role->role_id)->count();
-                    $user = array("roleId" => $role->role_id, "roleName" => $role->RoleName, "userCount" => $userCount);
-                    $users[$role->role_id] = $user;
+            if (Helper::get_user_permissions(2) == 1) {
+                $roles = Role::get();
+                foreach ($roles as $key => $role) {
+                    if ($role && $role->role_id) {
+                        $userCount = User::where("role_id", $role->role_id)->whereNot('id', auth()->user()->id)->count();
+                        $user = array("roleId" => $role->role_id, "roleName" => $role->RoleName, "userCount" => $userCount);
+                        $users[$role->role_id] = $user;
+                    }
                 }
+            } else {
+                $users = null;
             }
 
             $response = array();
@@ -50,38 +54,60 @@ class AppsController extends Controller
             $list = User::with('role')->whereNot('id', auth()->user()->id)->orderBy($sortColumn, $sort);
             $totalRecord = User::with('role')->whereNot('id', auth()->user()->id)->get();
         } else {
-            $list = User::with('role')
-                ->orderBy($sortColumn, $sort)
-                ->where('id', auth('sanctum'));
-            $totalRecord = User::with('role')->where('id', auth('sanctum'))->get();
+            // $list = User::with('role')
+            //     ->orderBy($sortColumn, $sort)
+            //     ->where('id', auth('sanctum'));
+            $list = null;
+            $totalRecord = 0;
         }
 
         if ($role) {
-            $list = $list->where('role_id', $role);
-            $totalRecord = $totalRecord->where('role_id', $role);
+            if ($list) {
+                $list = $list->where('role_id', $role);
+            }
+
+            if ($totalRecord) {
+                $totalRecord = $totalRecord->where('role_id', $role);
+            }
         }
 
         if ($status) {
-            $list = $list->where('Status', $status);
-            $totalRecord = $totalRecord->where('Status', $status);
+            if ($list) {
+                $list = $list->where('Status', $status);
+            }
+
+            if ($totalRecord) {
+                $totalRecord = $totalRecord->where('Status', $status);
+            }
         }
 
         if ($search) {
-            $list = $list->where(function ($query) use ($search) {
-                $query->Where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('Company', 'LIKE', "%{$search}%");
-            });
-            $totalRecord = $totalRecord->where(function ($query) use ($search) {
-                $query->Where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('Company', 'LIKE', "%{$search}%");
-            });
+            if ($list) {
+                $list = $list->where(function ($query) use ($search) {
+                    $query->Where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('Company', 'LIKE', "%{$search}%");
+                });
+            }
+
+            if ($totalRecord) {
+                $totalRecord = $totalRecord->where(function ($query) use ($search) {
+                    $query->Where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('Company', 'LIKE', "%{$search}%");
+                });
+            }
 
         }
-        $list = $list->skip($skips)->take($perPage)->get();
-        $totalRecord = $totalRecord->count();
-        return ['data' => $list, 'count' => $totalRecord];
+
+        if ($list) {
+            $list = $list->skip($skips)->take($perPage)->get();
+        }
+
+        if ($totalRecord) {
+            $totalRecord = $totalRecord->count();
+        }
+        return ['data' => $list ?? [], 'count' => $totalRecord ?? 0];
     }
 
     public function get_users(Request $request)
