@@ -236,7 +236,7 @@ class EmailController extends Controller
                 $totalRecord = $emailTotalRecord->count();
             }
 
-            $users = User::where('id', '!=', auth()->user()->id)->get();
+            $users = User::whereNot('id', auth()->user()->id)->get();
 
             return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'draftCount' => $draftCount, 'importantCount' => $importantCount, 'spamCount' => $spamCount];
         }
@@ -744,7 +744,6 @@ class EmailController extends Controller
 
     public function showImapEmailDetails(Request $request, $id)
     {
-
         try {
             $validation = Validator::make($request->all(), [
                 'email_group_id' => 'required',
@@ -765,11 +764,13 @@ class EmailController extends Controller
                 $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
             } else {
                 $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
-                DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                $notificationReply = [];
-                $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->orderBy('id')->get();
+                if ($notification && $notification->id) {
+                    DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
+                    $notificationReply = [];
+                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
+                }
             }
-            $users = User::where('id', '!=', auth()->user()->id)->get();
+            $users = User::whereNot('id', auth()->user()->id)->get();
 
             $response = array();
             $response['flag'] = true;
@@ -789,11 +790,42 @@ class EmailController extends Controller
 
     public function emailCron()
     {
-        $users = User::with('imap')->get();
+        try {
+            $users = User::with('imap')->get();
+            foreach ($users as $user) {
+                if ($user->imap) {
+                    $this->insertImapEmails(
+                        $user->imap->id,
+                        $user->imap->imap_host,
+                        $user->imap->imap_port,
+                        $user->imap->imap_ssl,
+                        $user->imap->imap_email,
+                        $user->imap->imap_password
+                    );
+                }
+            }
 
-        foreach ($users as $user) {
-            if ($user->imap) {
-                $this->insertImapEmails(
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = "Success.";
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Failed.";
+            return response()->json($response);
+        }
+    }
+
+    public function emailAuthUserCron()
+    {
+        try {
+            $message = "Please enter i-map details!";
+            $flag = false;
+
+            $user = User::with('imap')->where('id', auth()->user()->id)->first();
+            if ($user && $user->imap) {
+                $result = $this->insertImapEmails(
                     $user->imap->id,
                     $user->imap->imap_host,
                     $user->imap->imap_port,
@@ -801,9 +833,26 @@ class EmailController extends Controller
                     $user->imap->imap_email,
                     $user->imap->imap_password
                 );
+
+                if ($result && $result['flag']) {
+                    $flag = $result['flag'];
+                    $message = "Success!";
+                } else {
+                    $flag = $result['flag'];
+                    $message = $result['message'];
+                }
             }
+
+            $response = array();
+            $response['flag'] = $flag;
+            $response['message'] = $message;
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            return response()->json($response);
         }
-        return response()->json();
     }
 
     public function checkNewEmail()

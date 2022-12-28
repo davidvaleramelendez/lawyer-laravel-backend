@@ -54,9 +54,6 @@ class AppsController extends Controller
             $list = User::with('role')->whereNot('id', auth()->user()->id)->orderBy($sortColumn, $sort);
             $totalRecord = User::with('role')->whereNot('id', auth()->user()->id)->get();
         } else {
-            // $list = User::with('role')
-            //     ->orderBy($sortColumn, $sort)
-            //     ->where('id', auth('sanctum'));
             $list = null;
             $totalRecord = 0;
         }
