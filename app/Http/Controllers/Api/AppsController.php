@@ -173,15 +173,31 @@ class AppsController extends Controller
         }
     }
 
-    public function updatePermission($permissions, $userId)
+    public function updateAdminPermission($userId)
     {
         try {
-            if ($permissions && count($permissions) > 0) {
-                Permissions::where('user_id', $userId)->delete();
-                foreach ($permissions as $key => $val) {
-                    Permissions::insert(['user_id' => $userId, 'permission_id' => $val['permission_id']]);
+            if ($userId) {
+                $user = User::with('role')->where('id', $userId)->first();
+                if ($user && $user->role_id == 10) {
+                    $permissions = array(
+                        ['permission_id' => 1],
+                        ['permission_id' => 2],
+                        ['permission_id' => 3],
+                        ['permission_id' => 4],
+                        ['permission_id' => 5],
+                        ['permission_id' => 6],
+                        ['permission_id' => 7],
+                    );
+
+                    if ($permissions && count($permissions) > 0) {
+                        Permissions::where('user_id', $userId)->delete();
+                        foreach ($permissions as $key => $val) {
+                            Permissions::insert(['user_id' => $userId, 'permission_id' => $val['permission_id']]);
+                        }
+                        return true;
+                    }
                 }
-                return true;
+                return false;
             }
             return false;
         } catch (\Exception$error) {
@@ -274,17 +290,7 @@ class AppsController extends Controller
 
         if ($user && $user->id) {
             if ($user->role_id == 10) {
-                $adminPermission = array(
-                    ['permission_id' => 1],
-                    ['permission_id' => 2],
-                    ['permission_id' => 3],
-                    ['permission_id' => 4],
-                    ['permission_id' => 5],
-                    ['permission_id' => 6],
-                    ['permission_id' => 7],
-                );
-
-                $this->updatePermission($adminPermission, $user->id);
+                $this->updateAdminPermission($user->id);
             }
         }
 
@@ -409,17 +415,7 @@ class AppsController extends Controller
 
             if ($user && $user->id) {
                 if ($user->role_id == 10) {
-                    $adminPermission = array(
-                        ['permission_id' => 1],
-                        ['permission_id' => 2],
-                        ['permission_id' => 3],
-                        ['permission_id' => 4],
-                        ['permission_id' => 5],
-                        ['permission_id' => 6],
-                        ['permission_id' => 7],
-                    );
-
-                    $this->updatePermission($adminPermission, $user->id);
+                    $this->updateAdminPermission($user->id);
                 }
             }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AccountSetting;
 use App\Models\ContactImap;
+use App\Models\Permissions;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -42,6 +43,38 @@ class ProfileController extends Controller
             $response['message'] = 'Failed.';
             $response['data'] = null;
             return response()->json($response, $e);
+        }
+    }
+
+    public function updateAdminPermission($userId)
+    {
+        try {
+            if ($userId) {
+                $user = User::with('role')->where('id', $userId)->first();
+                if ($user && $user->role_id == 10) {
+                    $permissions = array(
+                        ['permission_id' => 1],
+                        ['permission_id' => 2],
+                        ['permission_id' => 3],
+                        ['permission_id' => 4],
+                        ['permission_id' => 5],
+                        ['permission_id' => 6],
+                        ['permission_id' => 7],
+                    );
+
+                    if ($permissions && count($permissions) > 0) {
+                        Permissions::where('user_id', $userId)->delete();
+                        foreach ($permissions as $key => $val) {
+                            Permissions::insert(['user_id' => $userId, 'permission_id' => $val['permission_id']]);
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+            return false;
+        } catch (\Exception$error) {
+            return false;
         }
     }
 
@@ -105,7 +138,13 @@ class ProfileController extends Controller
             }
 
             $is_save = User::where('id', $id)->update($param);
-            $user = User::with('role')->where('id', $id)->first();
+            $user = User::with('role', 'permission')->where('id', $id)->first();
+            if ($user && $user->id) {
+                if ($user->role_id == 10) {
+                    $this->updateAdminPermission($user->id);
+                }
+            }
+
             $account = AccountSetting::find($id);
             $roles = Role::where('IsActive', 1)->get();
             $imap = auth()->user()->imap;
