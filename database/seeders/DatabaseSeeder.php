@@ -115,6 +115,10 @@ class DatabaseSeeder extends Seeder
                 'user_id' => 1,
                 'permission_id' => 6,
             ],
+            [
+                'user_id' => 1,
+                'permission_id' => 7,
+            ],
         ];
 
         \App\Models\Permissions::insert($permissions);
