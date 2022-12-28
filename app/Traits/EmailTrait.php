@@ -271,8 +271,10 @@ trait EmailTrait
                 $from_id = User::where('email', '=', trim($from_email))->first();
 
                 if (isset($to_id->name) && isset($from_id->name)) {
-                    $msg['from_id'] = $to_id->id;
-                    $msg['to_id'] = $from_id->id;
+                    $msg['from_id'] = $from_id->id;
+                    $msg['to_id'] = $to_id->id;
+                    // $msg['from_id'] = $to_id->id;
+                    // $msg['to_id'] = $from_id->id;
                     $email = Email::where('message_id', $msg['message_id'])
                         ->first();
 
@@ -284,11 +286,10 @@ trait EmailTrait
                 }
 
             }
-            return true;
+
+            return ['flag' => true, 'message' => "Success."];
         } catch (\Exception$e) {
-            echo $imap_email . " Catch <pre>";
-            print_r($e);
-            return false;
+            return ['flag' => false, 'message' => "Imap connection failed please check it!"];
         }
     }
 

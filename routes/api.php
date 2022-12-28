@@ -151,7 +151,7 @@ Route::group([
     Route::get('/admin/email/reply/{id}', [EmailController::class, 'getEmailReply'])->name('get-admin-email-reply');
     Route::get('/admin/email/details-imap/{id}', [EmailController::class, 'showImapEmailDetails'])->name('admin-details-imap');
     Route::get('/admin/new/email', [EmailController::class, 'checkNewEmail'])->name('get-admin-new-email');
-    Route::get('/admin/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron'])->name('email-cron');
+    Route::get('/admin/email/email-imap/user/cron', [EmailController::class, 'emailAuthUserCron'])->name('email-user-cron');
 
     Route::post('/admin/attachment/create', [AttachmentController::class, 'uploadAttachment']);
     Route::get('/admin/attachment/delete/{id}', [AttachmentController::class, 'deleteAttachment']);
