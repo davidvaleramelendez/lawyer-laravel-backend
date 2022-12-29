@@ -26,7 +26,6 @@ use App\Http\Controllers\Api\LetterTemplateController;
 use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
-use App\Http\Controllers\Api\TestsController;
 use App\Http\Controllers\Api\TimelineController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TopNotificationController;
@@ -72,7 +71,6 @@ Route::group([
 
     Route::get('/admin/user/get-user-count', [AppsController::class, 'getUserCounteByRole']);
     Route::get('/admin/users', [AppsController::class, 'get_users'])->name('get_users');
-    Route::get('/user/test_get_users', [TestsController::class, 'get_users']);
     Route::get('/get_user_view_case/{id}', [AppsController::class, 'get_user_view_case']);
     Route::get('/admin/roles', [AppsController::class, 'get_roles']);
     Route::post('/admin/user/create', [AppsController::class, 'add_user']);

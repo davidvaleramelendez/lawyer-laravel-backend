@@ -145,6 +145,7 @@ class ProfileController extends Controller
                 }
             }
 
+            $user = User::with('role', 'permission')->where('id', $id)->first();
             $account = AccountSetting::find($id);
             $roles = Role::where('IsActive', 1)->get();
             $imap = auth()->user()->imap;
