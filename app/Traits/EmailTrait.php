@@ -284,7 +284,6 @@ trait EmailTrait
                         Email::Create($msg);
                     }
                 }
-
             }
 
             return ['flag' => true, 'message' => "Success."];

@@ -10,6 +10,9 @@ class ContactImap extends Model
     use HasFactory;
 
     protected $table = 'contact_imap';
+    protected $casts = [
+        'imap_ssl' => 'boolean',
+    ];
 
     public function user()
     {

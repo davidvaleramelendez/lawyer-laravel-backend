@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Validator;
 
 class EmailController extends Controller
 {
-
     use EmailTrait;
 
     public function inbox()
@@ -212,7 +211,6 @@ class EmailController extends Controller
             $draftCount = EmailDraft::where('user_id', auth()->id())->count() ?? 0;
 
             $importantCount = Email::where('important', 1)->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
-            // dd($importantCount);
 
             $spamCount = Email::where('folder', 'spam')->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
 
@@ -303,138 +301,154 @@ class EmailController extends Controller
 
     public function sendReplyEmail(Request $request)
     {
-        $validation = Validator::make($request->all(), [
-            'id' => 'required',
-        ]);
+        try {
+            $validation = Validator::make($request->all(), [
+                'id' => 'required',
+            ]);
 
-        if ($validation->fails()) {
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Id is required";
+                $response['data'] = [];
+                return response()->json($response);
+            }
+
+            $type = $request->type ?? 'email';
+
+            if ($type == 'email') {
+                $cc = [];
+                $bcc = [];
+                $user = null;
+                $email_group_id = "";
+
+                $email = Email::where('id', $request->id)->first();
+
+                if ($email && $email->id) {
+                    $email_group_id = $email->email_group_id;
+
+                    $attachments = [];
+                    $fileNames = [];
+
+                    $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
+
+                    $to_id = User::where('id', '=', $email->to_id)->first();
+                    $from_id = User::where('id', '=', $email->from_id)->first();
+
+                    $old_message = "";
+
+                    $old_message .= "<HR><BR><B>From: </B>" . $to_id->name . ' (' . $to_id->email . ')';
+                    $old_message .= "<BR><B>To: </B>" . $from_id->name . ' (' . $from_id->email . ')';
+                    $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
+                    $old_message .= "<BR><B>Subject:</B> " . $email->subject;
+                    $old_message .= "<BR><B>Last Message:</B> " . $email->body;
+
+                    $last_message = "" . $email->body;
+
+                    $complete_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
+                    $display_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
+
+                    $new_subject = $email->subject;
+                    $new_subject = str_replace("Re:", "", $new_subject);
+                    $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+                    $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
+
+                    $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+
+                    if ($request->attachment_ids && count($request->attachment_ids) > 0) {
+                        foreach ($request->attachment_ids as $key => $attachment_id) {
+                            $attachmentIds = $request->attachment_ids[$key];
+                            $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                            $attachmentUpdate->email_group_id = $email_group_id;
+                            $attachmentUpdate->type = 'notification';
+                            $attachmentUpdate->save();
+                            $attachments[] = $attachmentUpdate->path;
+                            $fileNames[] = $attachmentUpdate->id;
+                        }
+                    }
+
+                    Notification::send($from_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
+
+                    $response = array();
+                    $response['flag'] = true;
+                    $response['message'] = 'Replied successfully!';
+                    $response['data'] = null;
+                    return response()->json($response);
+                } else {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = 'Invalid email id!';
+                    $response['data'] = null;
+                    return response()->json($response);
+                }
+            } else {
+                $cc = [];
+                $bcc = [];
+                $user = null;
+                $email_group_id = "";
+
+                $notification = CustomNotification::where('id', $request->id)->first();
+                $email_group_id = $notification->email_group_id;
+
+                if (auth()->id() == $notification->sender_id) {
+                    $user = $notification->receiver;
+                } else {
+                    $user = $notification->sender;
+                }
+
+                $attachments = [];
+                $fileNames = [];
+
+                $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
+                $old_message = "";
+                $u1 = User::where('id', '=', $t->notifiable_id)->first();
+                $u2 = User::where('id', '=', $t->sender_id)->first();
+                $old_message .= "<HR><BR><B>From: </B>" . $u1->name;
+                $old_message .= "<BR><B>To: </B>" . $u2->name;
+                $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
+                $old_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
+                $old_message .= "<BR><B>Message:</B> " . $t->data['data']['message'] . "";
+
+                $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
+                $last_message = "";
+                $u1 = User::where('id', '=', $t->notifiable_id)->first();
+                $u2 = User::where('id', '=', $t->sender_id)->first();
+                $last_message .= "<HR><BR><B>From: </B>" . $u1->name;
+                $last_message .= "<BR><B>To: </B>" . $u2->name;
+                $last_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
+                $last_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
+                $last_message .= "<HR><B>Last Message:</B><BR> " . $t->data['data']['message'] . "";
+                $complete_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $old_message . "</p></details>";
+                $display_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $last_message . "</p></details>";
+                $new_subject = $request->subject;
+                $new_subject = str_replace("Re:", "", $new_subject);
+                $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
+                $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+                $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+
+                if ($request->attachment_ids && count($request->attachment_ids) > 0) {
+                    foreach ($request->attachment_ids as $key => $attachment_id) {
+                        $attachmentIds = $request->attachment_ids[$key];
+                        $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                        $attachmentUpdate->type = 'notification';
+                        $attachmentUpdate->save();
+                        $attachments[] = $attachmentUpdate->path;
+                        $fileNames[] = $attachmentUpdate->id;
+                    }
+                }
+
+                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
+
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = 'Success.';
+                $response['data'] = null;
+                return response()->json($response);
+            }
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
-            $response['message'] = "Id is required";
-            $response['data'] = [];
-            return response()->json($response);
-        }
-
-        $type = $request->type ?? 'email';
-
-        if ($type == 'email') {
-            $cc = [];
-            $bcc = [];
-            $user = null;
-            $email_group_id = "";
-
-            $email = Email::where('id', $request->id)->first();
-
-            $email_group_id = $email->email_group_id;
-
-            $attachments = [];
-            $fileNames = [];
-
-            $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
-
-            $to_id = User::where('id', '=', $email->to_id)->first();
-            $from_id = User::where('id', '=', $email->from_id)->first();
-
-            $old_message = "";
-
-            $old_message .= "<HR><BR><B>From: </B>" . $to_id->name;
-            $old_message .= "<BR><B>To: </B>" . $from_id->name;
-            $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
-            $old_message .= "<BR><B>Subject:</B> " . $email->subject;
-            $old_message .= "<BR><B>Last Message:</B> " . $email->body;
-
-            $last_message = "" . $email->body;
-
-            $complete_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
-            $display_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
-
-            $new_subject = $email->subject;
-            $new_subject = str_replace("Re:", "", $new_subject);
-            $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
-            $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
-
-            $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-
-            if ($request->attachment_ids && count($request->attachment_ids) > 0) {
-                foreach ($request->attachment_ids as $key => $attachment_id) {
-                    $attachmentIds = $request->attachment_ids[$key];
-                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
-                    $attachmentUpdate->email_group_id = $email_group_id;
-                    $attachmentUpdate->type = 'notification';
-                    $attachmentUpdate->save();
-                    $attachments[] = $attachmentUpdate->path;
-                    $fileNames[] = $attachmentUpdate->id;
-                }
-            }
-
-            Notification::send($to_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
-
-            $response = array();
-            $response['flag'] = true;
-            $response['message'] = 'Replied successfully!';
-            $response['data'] = null;
-            return response()->json($response);
-        } else {
-            $cc = [];
-            $bcc = [];
-            $user = null;
-            $email_group_id = "";
-
-            $notification = CustomNotification::where('id', $request->id)->first();
-            $email_group_id = $notification->email_group_id;
-
-            if (auth()->id() == $notification->sender_id) {
-                $user = $notification->receiver;
-            } else {
-                $user = $notification->sender;
-            }
-
-            $attachments = [];
-            $fileNames = [];
-
-            $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
-            $old_message = "";
-            $u1 = User::where('id', '=', $t->notifiable_id)->first();
-            $u2 = User::where('id', '=', $t->sender_id)->first();
-            $old_message .= "<HR><BR><B>From: </B>" . $u1->name;
-            $old_message .= "<BR><B>To: </B>" . $u2->name;
-            $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
-            $old_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
-            $old_message .= "<BR><B>Message:</B> " . $t->data['data']['message'] . "";
-
-            $t = CustomNotification::where('email_group_id', $email_group_id)->orderBy("created_at", "desc")->first();
-            $last_message = "";
-            $u1 = User::where('id', '=', $t->notifiable_id)->first();
-            $u2 = User::where('id', '=', $t->sender_id)->first();
-            $last_message .= "<HR><BR><B>From: </B>" . $u1->name;
-            $last_message .= "<BR><B>To: </B>" . $u2->name;
-            $last_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
-            $last_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
-            $last_message .= "<HR><B>Last Message:</B><BR> " . $t->data['data']['message'] . "";
-            $complete_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $old_message . "</p></details>";
-            $display_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $last_message . "</p></details>";
-            $new_subject = $request->subject;
-            $new_subject = str_replace("Re:", "", $new_subject);
-            $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
-            $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
-            $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
-
-            if ($request->attachment_ids && count($request->attachment_ids) > 0) {
-                foreach ($request->attachment_ids as $key => $attachment_id) {
-                    $attachmentIds = $request->attachment_ids[$key];
-                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
-                    $attachmentUpdate->type = 'notification';
-                    $attachmentUpdate->save();
-                    $attachments[] = $attachmentUpdate->path;
-                    $fileNames[] = $attachmentUpdate->id;
-                }
-            }
-
-            Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
-
-            $response = array();
-            $response['flag'] = true;
-            $response['message'] = 'Success.';
+            $response['message'] = $e->getMessage();
             $response['data'] = null;
             return response()->json($response);
         }
@@ -760,14 +774,17 @@ class EmailController extends Controller
             $email_group_id = $request->email_group_id;
 
             if ($type == 'notification') {
-                $notificationReply = [];
                 $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+                $notificationReply = [];
+                if ($notification && $notification->id) {
+                    $notificationReply = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('created_at', 'DESC')->get();
+                }
             } else {
                 $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
                 if ($notification && $notification->id) {
                     DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
                     $notificationReply = [];
-                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
+                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('date', 'DESC')->get();
                 }
             }
             $users = User::whereNot('id', auth()->user()->id)->get();
@@ -820,26 +837,31 @@ class EmailController extends Controller
     public function emailAuthUserCron()
     {
         try {
-            $message = "Please enter i-map details!";
+            $message = "Customer not have access to imap emails!";
             $flag = false;
 
-            $user = User::with('imap')->where('id', auth()->user()->id)->first();
-            if ($user && $user->imap) {
-                $result = $this->insertImapEmails(
-                    $user->imap->id,
-                    $user->imap->imap_host,
-                    $user->imap->imap_port,
-                    $user->imap->imap_ssl,
-                    $user->imap->imap_email,
-                    $user->imap->imap_password
-                );
+            $user = User::with('imap')->where('id', auth()->user()->id)->whereNot('role_id', 11)->first();
+            if ($user && $user->id) {
+                if ($user->imap) {
+                    $result = $this->insertImapEmails(
+                        $user->imap->id,
+                        $user->imap->imap_host,
+                        $user->imap->imap_port,
+                        $user->imap->imap_ssl,
+                        $user->imap->imap_email,
+                        $user->imap->imap_password
+                    );
 
-                if ($result && $result['flag']) {
-                    $flag = $result['flag'];
-                    $message = "Success!";
+                    if ($result && $result['flag']) {
+                        $flag = $result['flag'];
+                        $message = "Success!";
+                    } else {
+                        $flag = $result['flag'];
+                        $message = $result['message'];
+                    }
                 } else {
-                    $flag = $result['flag'];
-                    $message = $result['message'];
+                    $message = "Please enter i-map details!";
+                    $flag = false;
                 }
             }
 
