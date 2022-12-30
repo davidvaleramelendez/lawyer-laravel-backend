@@ -178,6 +178,7 @@ trait EmailTrait
                 if ($folder->name != 'INBOX' && $folder->name != 'Spam') {
                     continue;
                 }
+
                 if ($date) {
                     $messages = $folder->messages()->since($date)->get();
                 } else {
@@ -189,6 +190,7 @@ trait EmailTrait
                     $msg['imap_id'] = $imap_id;
                     $msg['folder'] = $message->getFolder()->full_name;
                     $msg['body'] = $message->getHTMLBody();
+                    $msg['body'] = $this->setBetweenCollapseAction($msg['body'], "<blockquote", "</blockquote>");
                     $attr = $message->getAttributes();
                     $msg['from'] = (string) $attr['from'];
                     $msg['to'] = (string) $attr['to'];
@@ -239,7 +241,6 @@ trait EmailTrait
                                 Storage::disk('public')->put('email/attachments/' . $uid . '-' . $attachment->name, $attachment->content);
                             }
                         }
-
                         $msg['attachedFiles'] = json_encode($att);
                     }
 
@@ -254,7 +255,6 @@ trait EmailTrait
                 $msg['body'] = str_replace('</head>', '', $msg['body']);
                 $msg['body'] = str_replace('<body>', '', $msg['body']);
                 $msg['body'] = str_replace('</body>', '', $msg['body']);
-
                 if (stristr($msg['from'], "<")) {
                     $from_email = $this->getBetween($msg['from'], "<", ">");
                 } else {
@@ -267,12 +267,18 @@ trait EmailTrait
                     $to_email = $msg['to'];
                 }
 
+                if (str_contains($from_email, "@outlook")) {
+                    $msg['body'] = $this->setBetweenClearContent($msg['body'], '<style type="text/css">', "</style>");
+                    $msg['body'] = $this->setBetweenCollapseOutlookAction($msg['body'], '<center>', "</center>");
+                }
+
                 $to_id = User::where('email', '=', trim($to_email))->first();
                 $from_id = User::where('email', '=', trim($from_email))->first();
 
                 if (isset($to_id->name) && isset($from_id->name)) {
                     $msg['from_id'] = $from_id->id;
                     $msg['to_id'] = $to_id->id;
+                    $msg['imap_id'] = $imap_id;
                     // $msg['from_id'] = $to_id->id;
                     // $msg['to_id'] = $from_id->id;
                     $email = Email::where('message_id', $msg['message_id'])
@@ -288,7 +294,7 @@ trait EmailTrait
 
             return ['flag' => true, 'message' => "Success."];
         } catch (\Exception$e) {
-            return ['flag' => false, 'message' => "Imap connection failed please check it!"];
+            return ['flag' => false, 'message' => $e->getMessage()];
         }
     }
 
@@ -420,5 +426,83 @@ trait EmailTrait
         } else {
             return '';
         }
+    }
+
+    public function setBetweenCollapseAction($string = "", $start = "", $end = "", $actionName = "")
+    {
+        $subtring_start = strpos($string, $start);
+        if ($subtring_start) {
+            $subtring_start += strlen($start);
+            $size = strpos($string, $end, $subtring_start) - $subtring_start;
+
+            $result = substr($string, $subtring_start, $size);
+            if ($result) {
+                $joining = $start . $result . $end;
+                $addingAction = "<details class='mail-toggle-three-dot'><summary>" . $actionName . "</summary>" . $joining . "</details>";
+                return str_replace($joining, $addingAction, $string);
+            }
+
+            return $string;
+        }
+        return $string;
+    }
+
+    public function setBetweenClearContent($string = "", $start = "", $end = "")
+    {
+        $subtring_start = strpos($string, $start);
+        if ($subtring_start) {
+            $subtring_start += strlen($start);
+            $size = strpos($string, $end, $subtring_start) - $subtring_start;
+
+            $result = substr($string, $subtring_start, $size);
+            if ($result) {
+                $joining = $start . $result . $end;
+                $blank = "";
+                return str_replace($joining, $blank, $string);
+            }
+
+            return $string;
+        }
+        return $string;
+    }
+
+    public function setBetweenCollapseOutlookAction($string = "", $start = "", $end = "", $actionName = "")
+    {
+        $subtring_start = strpos($string, $start);
+        if ($subtring_start) {
+            $subtring_start += strlen($start);
+            $size = strpos($string, $end, $subtring_start) - $subtring_start;
+
+            $result = substr($string, $subtring_start, $size);
+            if ($result) {
+                $string = str_replace("<div>&nbsp;</div>", "", $string);
+                $string = str_replace('<span class="x_har_start"></span>', "", $string);
+
+                $parentContent = "";
+                $parent_start = '<div id="divRplyFwdMsg"';
+                $parent_end = '</div>';
+                $subtring_start_parent = strpos($string, $parent_start);
+                if ($subtring_start_parent) {
+                    $subtring_start_parent += strlen($parent_start);
+                    $parent_size = strpos($string, $parent_end, $subtring_start_parent) - $subtring_start_parent;
+
+                    $parentResult = substr($string, $subtring_start_parent, $parent_size);
+                    $parentContent = $parent_start . $parentResult . $parent_end;
+                    $string = str_replace($parentContent, "", $string);
+                }
+
+                $join = $start . $result . $end;
+                $joinWith = $start . $result . $end;
+                if ($parentContent) {
+                    $joinWith = $parentContent . $join;
+                }
+
+                $addingAction = "<details class='mail-toggle-three-dot'><summary>" . $actionName . "</summary>" . $joinWith . "</details>";
+                return str_replace($join, $addingAction, $string);
+            }
+
+            return $string;
+        }
+        return $string;
     }
 }

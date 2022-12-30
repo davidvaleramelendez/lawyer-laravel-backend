@@ -23,6 +23,7 @@ return new class extends Migration
             $table->longText('File')->comment('DC2Type:json')->nullable();
             $table->string('Type');
             $table->text('attachment_id')->nullable();
+            $table->datetime('CreatedAt')->useCurrent()->nullable();
             $table->unsignedInteger('ToUserID')->nullable();
             $table->integer('IsShare')->default(1);
             $table->string('start_time')->nullable();

@@ -81,7 +81,7 @@ class EmailController extends Controller
             ->where('imap_id', auth()->user()->imap->id)
             ->where('is_delete', 0)
             ->take($perPage)
-            ->orderBy('id', 'DESC');
+            ->orderBy('date', 'DESC');
 
         $notification = CustomNotification::with('receiver', 'sender', 'attachment')
             ->select('*', DB::raw('count(*) as count2'))
@@ -238,6 +238,8 @@ class EmailController extends Controller
 
             return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'draftCount' => $draftCount, 'importantCount' => $importantCount, 'spamCount' => $spamCount];
         }
+
+        return ['data' => [], 'count' => 0, 'users' => [], 'inboxCount' => 0, 'draftCount' => 0, 'importantCount' => 0, 'spamCount' => 0];
     }
 
     public function getEmail($id)
@@ -774,17 +776,24 @@ class EmailController extends Controller
             $email_group_id = $request->email_group_id;
 
             if ($type == 'notification') {
-                $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+                $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('created_at', 'DESC')->first();
+                if (!$notification || !$notification->id) {
+                    $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+                }
                 $notificationReply = [];
                 if ($notification && $notification->id) {
                     $notificationReply = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('created_at', 'DESC')->get();
                 }
             } else {
-                $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+                $notification = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('date', 'DESC')->first();
+                if (!$notification || !$notification->id) {
+                    $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+                }
+
+                $notificationReply = [];
                 if ($notification && $notification->id) {
                     DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                    $notificationReply = [];
-                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('date', 'DESC')->get();
+                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('date')->get();
                 }
             }
             $users = User::whereNot('id', auth()->user()->id)->get();
