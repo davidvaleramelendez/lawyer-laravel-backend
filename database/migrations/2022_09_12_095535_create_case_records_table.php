@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('case_records', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('RecordID');
             $table->unsignedInteger('CaseID');
             $table->unsignedInteger('UserID');
             $table->string('Email')->nullable();
@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('Content')->nullable();
             $table->longText('File')->comment('DC2Type:json')->nullable();
             $table->string('Type');
+            $table->text('attachment_id')->nullable();
             $table->unsignedInteger('ToUserID')->nullable();
             $table->integer('IsShare')->default(1);
             $table->string('start_time')->nullable();
