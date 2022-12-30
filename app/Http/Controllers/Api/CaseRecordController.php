@@ -173,7 +173,7 @@ class CaseRecordController extends Controller
         $case_record->Subject = $request->Subject;
         $case_record->Content = $request->Content;
         $case_record->Type = $type;
-        $case_record->created_at = Carbon::now();
+        $case_record->CreatedAt = Carbon::now();
         $case_record->ToUserID = $request->ToUserID;
         $case_record->IsShare = $request->IsShare;
         $case_record->start_time = $request->start_time;

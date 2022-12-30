@@ -83,6 +83,7 @@ class DatabaseSeeder extends Seeder
                 'last_name' => 'Valera',
                 'email' => 'test@valera-melendez.de',
                 'password' => Hash::make('1234567890'),
+                'Contact' => "0000000000",
             ],
         ];
 
