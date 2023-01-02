@@ -36,10 +36,10 @@ return new class extends Migration
             $table->string('hasAttachment')->nullable();
             $table->longText('attachedFiles')->nullable();
             $table->text('attachment_id')->nullable();
-            $table->integer('is_read')->default(0);
-            $table->integer('is_delete')->default(0);
-            $table->integer('is_trash')->default(0);
-            $table->integer('important')->default(0);
+            $table->boolean('is_read')->default(0);
+            $table->boolean('is_delete')->default(0);
+            $table->boolean('is_trash')->default(0);
+            $table->boolean('important')->default(0);
             $table->string('label')->default('important');
             $table->timestamps();
         });

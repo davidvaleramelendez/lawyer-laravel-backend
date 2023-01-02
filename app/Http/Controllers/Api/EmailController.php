@@ -101,6 +101,11 @@ class EmailController extends Controller
             ->where('sender_id', auth()->id())
             ->where('is_delete', 0);
 
+        if ($folder == 'inbox') {
+            $emails = $emails->orWhere('sent', 1);
+            $emailTotalRecord = $emailTotalRecord->orWhere('sent', 1)->where('is_trash', 0)->where('important', 1);
+        }
+
         if ($folder == 'important') {
             $emails = $emails->where('is_trash', 0)->where('important', 1);
             $emailTotalRecord = $emailTotalRecord->where('is_trash', 0)->where('important', 1);
@@ -347,8 +352,8 @@ class EmailController extends Controller
 
                     $last_message = "" . $email->body;
 
-                    $complete_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
-                    $display_message = $request->message . "<BR><details><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
+                    $complete_message = $request->message . "<BR><details class='mail-toggle-three-dot'><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
+                    $display_message = $request->message . "<BR><details class='mail-toggle-three-dot'><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
 
                     $new_subject = $email->subject;
                     $new_subject = str_replace("Re:", "", $new_subject);

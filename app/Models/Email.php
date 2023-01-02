@@ -12,10 +12,10 @@ class Email extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'is_read' => 'integer',
-        'is_delete' => 'integer',
-        'is_trash' => 'integer',
-        'important' => 'integer',
+        'is_read' => 'boolean',
+        'is_delete' => 'boolean',
+        'is_trash' => 'boolean',
+        'important' => 'boolean',
     ];
 
     public function sender()

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('PhoneNo');
             $table->integer('IsCase')->default(0);
             $table->unsignedInteger('message_id');
+            $table->datetime('CreatedAt')->useCurrent()->nullable();
             $table->integer('deleted')->default(0);
             $table->biginteger('read_at')->nullable();
             $table->timestamps();

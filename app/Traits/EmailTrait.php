@@ -272,6 +272,19 @@ trait EmailTrait
                     $msg['body'] = $this->setBetweenCollapseOutlookAction($msg['body'], '<center>', "</center>");
                 }
 
+                if (str_contains($from_email, "@gmail")) {
+                    $msg['body'] = str_replace('class="gmail_signature"', 'class="gmail_signature" id="gmail_signature"', $msg['body']);
+                    $dochtml = new \DOMDocument();
+                    @$dochtml->loadHTML($msg['body']);
+                    $signature = $dochtml->getElementById("gmail_signature");
+                    $signatureHtml = $this->getDocContentHtml($signature);
+                    if ($signatureHtml) {
+                        $msg['body'] = str_replace(trim($signatureHtml), "", trim($msg['body']));
+                        dd($msg['body']);
+                    }
+                    dd($signatureHtml);
+                }
+
                 $to_id = User::where('email', '=', trim($to_email))->first();
                 $from_id = User::where('email', '=', trim($from_email))->first();
 
@@ -504,5 +517,16 @@ trait EmailTrait
             return $string;
         }
         return $string;
+    }
+
+    public function getDocContentHtml(\DOMNode$element)
+    {
+        $innerHTML = "";
+        $children = $element->childNodes;
+
+        foreach ($children as $child) {
+            $innerHTML .= $element->ownerDocument->saveHTML($child);
+        }
+        return $innerHTML;
     }
 }
