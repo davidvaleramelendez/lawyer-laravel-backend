@@ -32,4 +32,9 @@ class Email extends Model
     {
         return $this->hasMany('App\Models\Attachment', 'reference_id', 'id');
     }
+
+    public function emailGroup()
+    {
+        return $this->hasMany(Email::class, 'email_group_id', 'email_group_id');
+    }
 }

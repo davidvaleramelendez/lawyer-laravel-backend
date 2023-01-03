@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->biginteger('imap_id');
             $table->string('folder');
+            $table->boolean('sent')->default(0);
             $table->integer('from_id');
             $table->integer('to_id');
             $table->string('from')->nullable();
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->string('message_id')->nullable();
             $table->string('uid');
             $table->string('email_group_id');
-            $table->string('date')->nullable();
+            $table->datetime('date')->nullable();
             $table->string('toaddress')->nullable();
             $table->string('fromaddress')->nullable();
             $table->string('reply_toaddress')->nullable();
@@ -41,6 +42,7 @@ return new class extends Migration
             $table->boolean('is_trash')->default(0);
             $table->boolean('important')->default(0);
             $table->string('label')->default('important');
+            $table->integer('status')->default(0)->comment('0 = Not Readed , 1 = Readed , 2 = To Resolve , 3 = Resolved');
             $table->timestamps();
         });
     }

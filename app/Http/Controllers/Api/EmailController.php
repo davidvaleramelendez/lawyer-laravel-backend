@@ -20,6 +20,8 @@ class EmailController extends Controller
 {
     use EmailTrait;
 
+    public $detailsTagClassName = "mail-toggle-three-dot";
+
     public function inbox()
     {
         try {
@@ -75,44 +77,77 @@ class EmailController extends Controller
 
         $totalRecord = 0;
 
-        $emails = Email::with('sender', 'receiver', 'attachment')
+        $emails = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
-            ->where('imap_id', auth()->user()->imap->id)
-            ->where('is_delete', 0)
-            ->take($perPage)
-            ->orderBy('date', 'DESC');
-
-        $notification = CustomNotification::with('receiver', 'sender', 'attachment')
-            ->select('*', DB::raw('count(*) as count2'))
-            ->groupBy('email_group_id')
-            ->where('sender_id', auth()->id())
-            ->where('is_delete', 0)
+            ->where(function ($query) {
+                $query->where('imap_id', auth()->user()->imap->id)
+                    ->where('is_delete', 0);
+            })
             ->take($perPage)
             ->orderBy('id', 'DESC');
 
-        $emailTotalRecord = Email::with('sender', 'receiver', 'attachment')
+        $notification = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
+            ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
-            ->where('imap_id', auth()->user()->imap->id)
-            ->where('is_delete', 0);
+            ->whereIn('folder', array('sent'))
+            ->where(function ($query) {
+                $query->where('imap_id', auth()->user()->imap->id)
+                    ->where('sent', 1)
+                    ->where('is_delete', 0);
+            })
+            ->take($perPage)
+            ->orderBy('id', 'DESC');
 
-        $notificationTotalRecord = CustomNotification::with('receiver', 'sender', 'attachment')
+        $emailTotalRecord = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->groupBy('email_group_id')
-            ->where('sender_id', auth()->id())
-            ->where('is_delete', 0);
+            ->where(function ($query) {
+                $query->where('imap_id', auth()->user()->imap->id)
+                    ->where('is_delete', 0);
+            });
 
-        if ($folder == 'inbox') {
-            $emails = $emails->orWhere('sent', 1);
-            $emailTotalRecord = $emailTotalRecord->orWhere('sent', 1)->where('is_trash', 0)->where('important', 1);
-        }
+        $notificationTotalRecord = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
+            ->select('*', DB::raw('count(*) as count2'))
+            ->groupBy('email_group_id')
+            ->whereIn('folder', array('sent'))
+            ->where(function ($query) {
+                $query->where('imap_id', auth()->user()->imap->id)
+                    ->where('is_delete', 0);
+            });
 
         if ($folder == 'important') {
             $emails = $emails->where('is_trash', 0)->where('important', 1);
             $emailTotalRecord = $emailTotalRecord->where('is_trash', 0)->where('important', 1);
-        } else if ($folder !== 'trash') {
-            $emails = $emails->where('folder', $folder)->where('is_trash', 0)->where('important', 0);
+        } else if ($folder == 'spam') {
+            $folders = array($folder);
+
+            $emails = $emails->whereIn('folder', $folders)->where(function ($query) {
+                $query->where('is_trash', 0)
+                    ->where('important', 0);
+            });
+
+            $emailTotalRecord = $emailTotalRecord->whereIn('folder', $folders)->where(function ($query) {
+                $query->where('is_trash', 0)
+                    ->where('important', 0);
+            });
+
             $notification = $notification->where('is_trash', 0);
-            $emailTotalRecord = $emailTotalRecord->where('folder', $folder)->where('is_trash', 0)->where('important', 0);
+            $notificationTotalRecord = $notificationTotalRecord->where('is_trash', 0);
+        } else if ($folder != 'trash') {
+            $folders = array($folder);
+            // array_push($folders, 'sent');
+
+            $emails = $emails->whereIn('folder', $folders)->where(function ($query) {
+                $query->where('is_trash', 0)
+                    ->where('important', 0);
+            });
+
+            $emailTotalRecord = $emailTotalRecord->whereIn('folder', $folders)->where(function ($query) {
+                $query->where('is_trash', 0)
+                    ->where('important', 0);
+            });
+
+            $notification = $notification->where('is_trash', 0);
             $notificationTotalRecord = $notificationTotalRecord->where('is_trash', 0);
         } else {
             $emails = $emails->where('is_trash', 1);
@@ -225,11 +260,10 @@ class EmailController extends Controller
             $emailTotalRecord = $emailTotalRecord->get();
             $notificationTotalRecord = $notificationTotalRecord->get();
             if ($folder == 'trash') {
-                $messages = array_merge($emails->toArray(), $notification->toArray());
+                $messages = $emails;
 
-                $notificationTotalRecord = $notificationTotalRecord->count();
                 $emailTotalRecord = $emailTotalRecord->count();
-                $totalRecord = $emailTotalRecord + $notificationTotalRecord;
+                $totalRecord = $emailTotalRecord;
             } else if ($folder == 'sent') {
                 $messages = $notification;
                 $totalRecord = $notificationTotalRecord->count();
@@ -352,8 +386,8 @@ class EmailController extends Controller
 
                     $last_message = "" . $email->body;
 
-                    $complete_message = $request->message . "<BR><details class='mail-toggle-three-dot'><summary>Original nachricht...</summary><p>" . $old_message . "</p></details>";
-                    $display_message = $request->message . "<BR><details class='mail-toggle-three-dot'><summary>Original nachricht...</summary><p>" . $last_message . "</p></details>";
+                    $complete_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $old_message . '</p></details>';
+                    $display_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $last_message . '</p></details>';
 
                     $new_subject = $email->subject;
                     $new_subject = str_replace("Re:", "", $new_subject);
@@ -425,8 +459,8 @@ class EmailController extends Controller
                 $last_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($t->created_at));
                 $last_message .= "<BR><B>Subject:</B> " . $t->data['data']['subject'];
                 $last_message .= "<HR><B>Last Message:</B><BR> " . $t->data['data']['message'] . "";
-                $complete_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $old_message . "</p></details>";
-                $display_message = $request->message . "<BR><details><summary>Original Nachricht...</summary><p>" . $last_message . "</p></details>";
+                $complete_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $old_message . '</p></details>';
+                $display_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $last_message . '</p></details>';
                 $new_subject = $request->subject;
                 $new_subject = str_replace("Re:", "", $new_subject);
                 $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
@@ -790,7 +824,7 @@ class EmailController extends Controller
                     $notificationReply = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('created_at', 'DESC')->get();
                 }
             } else {
-                $notification = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('date', 'DESC')->first();
+                $notification = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('id', 'DESC')->first();
                 if (!$notification || !$notification->id) {
                     $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
                 }
@@ -798,7 +832,7 @@ class EmailController extends Controller
                 $notificationReply = [];
                 if ($notification && $notification->id) {
                     DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('date')->get();
+                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
                 }
             }
             $users = User::whereNot('id', auth()->user()->id)->get();
@@ -1097,18 +1131,10 @@ class EmailController extends Controller
         $type = $request->type ?? 'email';
         $id = $request->id;
 
-        if ($type == 'email') {
-            $data = Email::where('id', $id)->first();
-        } else {
-            $data = CustomNotification::where('id', $id)->first();
-        }
-
-        $important = $data->important === 1 ? 0 : 1;
-
-        if ($type == 'email') {
-            Email::where('id', $id)->update(['important' => $important]);
-        } else {
-            CustomNotification::where('id', $id)->update(['important' => $important]);
+        $data = Email::where('id', $id)->first();
+        if ($data && $data->id) {
+            $important = $data->important == 1 ? 0 : 1;
+            Email::where('email_group_id', $data->email_group_id)->update(['important' => $important]);
         }
 
         $response = array();
