@@ -135,7 +135,7 @@ class EmailController extends Controller
             $notificationTotalRecord = $notificationTotalRecord->where('is_trash', 0);
         } else if ($folder != 'trash') {
             $folders = array($folder);
-            // array_push($folders, 'sent');
+            array_push($folders, 'sent');
 
             $emails = $emails->whereIn('folder', $folders)->where(function ($query) {
                 $query->where('is_trash', 0)
