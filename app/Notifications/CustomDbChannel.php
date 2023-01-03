@@ -18,8 +18,9 @@ class CustomDbChannel
         $emailData = [
             'folder' => 'sent',
             'sent' => 1,
+            'is_read' => 1,
             'date' => Carbon::now(),
-            // 'case_id' => request()->has('case_id') ? request()->case_id : null,
+            'case_id' => request()->has('case_id') ? request()->case_id : null,
         ];
 
         if ($user && $user->imap && $user->imap->id) {
@@ -56,17 +57,6 @@ class CustomDbChannel
 
         Email::Create($emailData);
 
-        return $notifiable->routeNotificationFor('database')->create([
-            'id' => rand(1000, 9999),
-            'sender_id' => auth()->user() ? Auth::user()->id : $data['data']['sender_id'],
-            'notifiable_type' => 'App\Models\User',
-            'type' => get_class($notification),
-            'data' => $data['data'],
-            'email_group_id' => $data['data']["email_group_id"],
-            'read_at' => null,
-            'reply_id' => $data['data']['notification_id'],
-            'case_id' => request()->has('case_id') ? request()->case_id : null,
-            'attachment_id' => $data['attachment_ids'],
-        ]);
+        return $notifiable->routeNotificationFor('database');
     }
 }

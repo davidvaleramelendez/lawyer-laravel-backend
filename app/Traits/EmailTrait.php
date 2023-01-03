@@ -14,6 +14,8 @@ use Webklex\IMAP\Facades\Client;
 
 trait EmailTrait
 {
+    public $detailsTagClassName = "mail-toggle-three-dot";
+
     // For working with notifications table
     public function insertEmails($user_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
     {
@@ -197,6 +199,7 @@ trait EmailTrait
                     $msg['message_id'] = (string) $attr['message_id'];
                     $msg['uid'] = (string) $attr['uid'];
                     $msg['date'] = (string) $attr['date'];
+                    $msg['date'] = new Carbon($msg['date']);
                     $msg['toaddress'] = (string) $attr['toaddress'];
                     $msg['fromaddress'] = (string) $attr['fromaddress'];
                     $email_group_id = $this->get_imap_email_group((string) $attr['subject']);
@@ -219,7 +222,7 @@ trait EmailTrait
 
                     if ($p1 != 0) {
                         $b1 = substr($body, 0, ($p1 + 12));
-                        $b2 = "<BR><details><summary>Show more...</summary><p>";
+                        $b2 = '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>';
                         $b3 = substr($body, $p1 + 12);
                         $b4 = "</details>";
                         $new_body = $b1 . $b2 . $b3 . $b4;
@@ -272,17 +275,30 @@ trait EmailTrait
                     $msg['body'] = $this->setBetweenCollapseOutlookAction($msg['body'], '<center>', "</center>");
                 }
 
+                if (str_contains($from_email, "@yahoo")) {
+                    $msg['body'] = $this->setBetweenClearContent($msg['body'], '<style type="text/css">', "</style>");
+                }
+
                 if (str_contains($from_email, "@gmail")) {
                     $msg['body'] = str_replace('class="gmail_signature"', 'class="gmail_signature" id="gmail_signature"', $msg['body']);
+                    $msg['body'] = str_replace('class="gmail_attr"', 'class="gmail_attr" id="gmail_attr"', $msg['body']);
                     $dochtml = new \DOMDocument();
                     @$dochtml->loadHTML($msg['body']);
                     $signature = $dochtml->getElementById("gmail_signature");
+                    $gmailAttr = $dochtml->getElementById("gmail_attr");
+                    $gmailAttrHtml = $this->getDocContentHtml($gmailAttr);
+                    if ($gmailAttrHtml) {
+                        $gmailAttrHtml = '<div dir="ltr" class="gmail_attr">' . $gmailAttrHtml . "</div>";
+                        $msg['body'] = $this->setAfterStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $gmailAttrHtml);
+                    }
+
                     $signatureHtml = $this->getDocContentHtml($signature);
                     if ($signatureHtml) {
-                        $msg['body'] = str_replace(trim($signatureHtml), "", trim($msg['body']));
-                        dd($msg['body']);
+                        $msg['body'] = str_replace('<br clear="all"><br>-- <br>', "", $msg['body']);
+                        $msg['body'] = str_replace('<br clear="all"><br>--', "", $msg['body']);
+                        $signatureHtml = '<div dir="ltr" class="gmail_signature">' . $signatureHtml . "</div>";
+                        $msg['body'] = $this->setStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $signatureHtml);
                     }
-                    dd($signatureHtml);
                 }
 
                 $to_id = User::where('email', '=', trim($to_email))->first();
@@ -451,7 +467,7 @@ trait EmailTrait
             $result = substr($string, $subtring_start, $size);
             if ($result) {
                 $joining = $start . $result . $end;
-                $addingAction = "<details class='mail-toggle-three-dot'><summary>" . $actionName . "</summary>" . $joining . "</details>";
+                $addingAction = '<details class="' . $this->detailsTagClassName . '"><summary>' . $actionName . "</summary>" . $joining . "</details>";
                 return str_replace($joining, $addingAction, $string);
             }
 
@@ -510,7 +526,7 @@ trait EmailTrait
                     $joinWith = $parentContent . $join;
                 }
 
-                $addingAction = "<details class='mail-toggle-three-dot'><summary>" . $actionName . "</summary>" . $joinWith . "</details>";
+                $addingAction = '<details class="' . $this->detailsTagClassName . '"><summary>' . $actionName . "</summary>" . $joinWith . "</details>";
                 return str_replace($join, $addingAction, $string);
             }
 
@@ -528,5 +544,43 @@ trait EmailTrait
             $innerHTML .= $element->ownerDocument->saveHTML($child);
         }
         return $innerHTML;
+    }
+
+    public function setStartPositionContent($string = "", $start = "", $end = "", $content = "")
+    {
+        $subtring_start = strpos($string, $start);
+        if ($subtring_start) {
+            $subtring_start += strlen($start);
+            $size = strpos($string, $end, $subtring_start) - $subtring_start;
+
+            $result = substr($string, $subtring_start, $size);
+            if ($result) {
+                $joining = $start . $result . $end;
+                $final = $content . $joining;
+                return str_replace($joining, $final, $string);
+            }
+
+            return $string;
+        }
+        return $string;
+    }
+
+    public function setAfterStartPositionContent($string = "", $start = "", $end = "", $content = "")
+    {
+        $subtring_start = strpos($string, $start);
+        if ($subtring_start) {
+            $subtring_start += strlen($start);
+            $size = strpos($string, $end, $subtring_start) - $subtring_start;
+
+            $result = substr($string, $subtring_start, $size);
+            if ($result) {
+                $joining = $start . $result . $end;
+                $final = $start . $content . $result . $end;
+                return str_replace($joining, $final, $string);
+            }
+
+            return $string;
+        }
+        return $string;
     }
 }
