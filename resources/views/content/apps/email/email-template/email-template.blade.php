@@ -3,8 +3,8 @@
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-   
-   
+
+
       <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
       <meta content="width=device-width" name="viewport"/>
       <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
@@ -18,8 +18,8 @@
         table{
             border-collapse:collapse;
         }
-       
-      
+
+
         body,#bodyTable,#bodyCell{
             height:100%;
             margin:0;
@@ -32,7 +32,7 @@
         #outlook a{
             padding:0;
         }
-       
+
         table{
             mso-table-lspace:0pt;
             mso-table-rspace:0pt;
@@ -78,7 +78,7 @@
         .mcnTextContent{
             word-break:break-word;
         }
-       
+
         .mcnDividerBlock{
             table-layout:fixed !important;
         }
@@ -87,7 +87,7 @@
 //section Heading 1
 	@style heading 1
 	*/
-   
+
         /*
         @tab Page
 //section Heading 2
@@ -103,7 +103,7 @@
 //section Header Container Style
 	*/
         #templateHeader{
-          
+
             /*@editable*/background-image:none;
             /*@editable*/background-repeat:no-repeat;
             /*@editable*/background-position:center;
@@ -353,21 +353,21 @@
 //section Heading 2
 	@tip Make the second-level headings larger in size for better readability on small screens.
 	*/
-           
+
         }	@media only screen and (max-width: 480px){
             /*
             @tab Mobile Styles
 //section Heading 3
 	@tip Make the third-level headings larger in size for better readability on small screens.
 	*/
-           
+
         }	@media only screen and (max-width: 480px){
             /*
             @tab Mobile Styles
 //section Heading 4
 	@tip Make the fourth-level headings larger in size for better readability on small screens.
 	*/
-           
+
 
         }	@media only screen and (max-width: 480px){
             /*
@@ -414,16 +414,16 @@
             }
 
         }
-		
-        
-        
+
+
+
         </style>
 	</head>
 <body>
-	
-	
-									
-	<span class="har_start"></span>	 
+
+
+
+	<span class="har_start"></span>
 <center>
 
     <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
@@ -431,7 +431,7 @@
             <td align="center" valign="top" id="bodyCell">
                 <!-- BEGIN TEMPLATE // -->
                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                  
+
                     <tr>
                         <td align="center" valign="top" id="templateBody" data-template-container>
                             <!--[if (gte mso 9)|(IE)]>
@@ -454,8 +454,8 @@
                                                     <!--[if mso]>
                                                     <td valign="top" width="600" style="width:600px;">
                                                     <![endif]-->
-													
-	                                                  
+
+
                                                     <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
                                                         <tbody><tr>
 
@@ -463,17 +463,17 @@
 
                                                                 <p style="text-align: left;"><strong><span style="font-size:24px"></span></strong>
 																	<br>
-                                                               
-                                               
+
+
                                                                   {!! $email_message !!}
-                                                               
+
 
                                                             </td>
                                                         </tr>
                                                         </tbody>
 		                                                 </table>
-													
-		
+
+
                                                     <!--[if mso]>
                                                     </td>
                                                     <![endif]-->
@@ -496,7 +496,7 @@
                             <![endif]-->
                         </td>
                     </tr>
-                   
+
                 </table>
                 <!-- // END TEMPLATE -->
             </td>
