@@ -396,7 +396,8 @@ class EmailController extends Controller
                             $attachmentIds = $request->attachment_ids[$key];
                             $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                             $attachmentUpdate->email_group_id = $email_group_id;
-                            $attachmentUpdate->type = 'notification';
+                            $attachmentUpdate->reference_id = $email->id ?? null;
+                            $attachmentUpdate->type = 'email';
                             $attachmentUpdate->save();
                             $attachments[] = $attachmentUpdate->path;
                             $fileNames[] = $attachmentUpdate->id;
@@ -827,7 +828,7 @@ class EmailController extends Controller
                 $notificationReply = [];
                 if ($notification && $notification->id) {
                     DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
+                    $notificationReply = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
                 }
             }
             $users = User::whereNot('id', auth()->user()->id)->get();
