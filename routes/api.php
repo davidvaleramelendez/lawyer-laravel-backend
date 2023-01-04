@@ -153,6 +153,7 @@ Route::group([
 
     Route::post('/admin/attachment/create', [AttachmentController::class, 'uploadAttachment']);
     Route::get('/admin/attachment/delete/{id}', [AttachmentController::class, 'deleteAttachment']);
+    Route::post('/admin/attachment/multiple/delete', [AttachmentController::class, 'deleteMultipleAttachment']);
 
     Route::any('/admin/email/inbox_count', [EmailController::class, 'inbox_count']);
     Route::any('/admin/email/important_count', [EmailController::class, 'important_count']);
