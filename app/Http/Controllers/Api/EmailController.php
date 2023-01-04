@@ -396,7 +396,6 @@ class EmailController extends Controller
                             $attachmentIds = $request->attachment_ids[$key];
                             $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                             $attachmentUpdate->email_group_id = $email_group_id;
-                            $attachmentUpdate->reference_id = $email->id ?? null;
                             $attachmentUpdate->type = 'email';
                             $attachmentUpdate->save();
                             $attachments[] = $attachmentUpdate->path;
