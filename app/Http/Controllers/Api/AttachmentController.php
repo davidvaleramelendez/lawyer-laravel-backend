@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Models\Attachment;
+use Illuminate\Http\Request;
 
 class AttachmentController extends Controller
 {
@@ -14,8 +13,8 @@ class AttachmentController extends Controller
         try {
             $attachments = [];
             if ($request->attachment) {
-                if($request->ids && count($request->ids) > 0) {
-                    $attachments =  Attachment::whereIn('id',$request->ids)->get()->toArray();
+                if ($request->ids && count($request->ids) > 0) {
+                    $attachments = Attachment::whereIn('id', $request->ids)->get()->toArray();
                 }
 
                 foreach ($request->attachment as $key => $file) {
@@ -23,17 +22,17 @@ class AttachmentController extends Controller
                     $extension = $file['extension'];
                     $img_code = explode(',', $attachment);
                     $filedata = base64_decode($img_code[1]);
-                    $filePath = 'public/'.$request->type.'/attachments';
+                    $filePath = 'public/' . $request->type . '/attachments';
                     $f = finfo_open();
                     $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
-                
+
                     @$mime_type = explode('/', $mime_type);
                     @$mime_type = $extension ?? $mime_type[1];
                     if ($mime_type) {
                         \Storage::makeDirectory($filePath);
                         $name = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                        if (\Storage::put($filePath.'/'.$name, $filedata)) {
-                            $img_url = 'storage/'.$request->type.'/'.'attachments/'.$name;
+                        if (\Storage::put($filePath . '/' . $name, $filedata)) {
+                            $img_url = 'storage/' . $request->type . '/' . 'attachments/' . $name;
                         }
                     }
 
@@ -46,8 +45,8 @@ class AttachmentController extends Controller
                     $data->name = $name;
                     $data->path = $img_url;
                     $data->save();
-                    
-                    $attachmentData =  Attachment::where('id',$data->id)->first();
+
+                    $attachmentData = Attachment::where('id', $data->id)->first();
                     array_push($attachments, $attachmentData);
                 }
             }
@@ -56,7 +55,7 @@ class AttachmentController extends Controller
             $response['message'] = 'Attachment uploaded successfully.';
             $response['data'] = $attachments;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -69,20 +68,20 @@ class AttachmentController extends Controller
     {
         try {
             $id = $request->id;
-            $attachment = Attachment::where('id',$id)->first();
+            $attachment = Attachment::where('id', $id)->first();
             $image_path = $attachment->path;
             $file_exists = file_exists($image_path);
             if ($file_exists) {
                 unlink($image_path);
             }
             $attachment->delete();
-            
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Attachment deleted successfully.';
             $response['data'] = null;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();

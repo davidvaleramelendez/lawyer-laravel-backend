@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Mail\OnlineAnfrage;
+use App\Models\Attachment;
 use App\Models\Email;
 use App\Models\User;
 use Carbon\Carbon;
@@ -296,7 +297,10 @@ trait EmailTrait
                     if ($signatureHtml) {
                         $msg['body'] = str_replace('<br clear="all"><br>-- <br>', "", $msg['body']);
                         $msg['body'] = str_replace('<br clear="all"><br>--', "", $msg['body']);
-                        $signatureHtml = '<div dir="ltr" class="gmail_signature">' . $signatureHtml . "</div>";
+                        $msg['body'] = str_replace('&quot;', '"', $msg['body']);
+                        $signatureHtml = '<div dir="ltr" class="gmail_signature" id="gmail_signature">' . $signatureHtml . "</div>";
+                        $signatureHtml = str_replace("'", '"', $signatureHtml);
+                        $msg['body'] = str_replace($signatureHtml, "", $msg['body']);
                         $msg['body'] = $this->setStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $signatureHtml);
                     }
                 }
@@ -304,19 +308,45 @@ trait EmailTrait
                 $to_id = User::where('email', '=', trim($to_email))->first();
                 $from_id = User::where('email', '=', trim($from_email))->first();
 
-                if (isset($to_id->name) && isset($from_id->name)) {
+                if (isset($to_id->id) && isset($from_id->id)) {
                     $msg['from_id'] = $from_id->id;
                     $msg['to_id'] = $to_id->id;
                     $msg['imap_id'] = $imap_id;
-                    // $msg['from_id'] = $to_id->id;
-                    // $msg['to_id'] = $from_id->id;
+
                     $email = Email::where('message_id', $msg['message_id'])
                         ->first();
 
                     if (isset($email->id)) {
                         $ttt = 0;
                     } else {
-                        Email::Create($msg);
+                        $created = Email::Create($msg);
+                        if ($created && $created->attachedFiles) {
+                            $attachmentFiles = json_decode($created->attachedFiles);
+                            $path = "storage/email/attachments";
+                            if ($attachmentFiles && count($attachmentFiles) > 0) {
+                                $attchIds = array();
+                                foreach ($attachmentFiles as $key => $file) {
+                                    $final_path = $path . "/" . $file;
+
+                                    $attachment = new Attachment();
+                                    $attachment->reference_id = $created->id ?? null;
+                                    $attachment->email_group_id = $created->email_group_id ?? null;
+                                    $attachment->user_id = $from_id->id ?? null;
+                                    $attachment->sender_id = $from_id->id ?? null;
+                                    $attachment->type = "email";
+                                    $attachment->name = $file ?? null;
+                                    $attachment->path = $final_path ?? null;
+                                    $attachment->save();
+
+                                    if ($attachment && $attachment->id) {
+                                        array_push($attchIds, $attachment->id);
+                                    }
+                                }
+
+                                $email = Email::where('id', $created->id)
+                                    ->update(['attachment_id' => implode(",", $attchIds)]);
+                            }
+                        }
                     }
                 }
             }

@@ -90,7 +90,7 @@ class EmailController extends Controller
         $notification = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
-            ->whereIn('folder', array('sent'))
+            ->where('folder', 'sent')
             ->where(function ($query) {
                 $query->where('imap_id', auth()->user()->imap->id)
                     ->where('sent', 1)
@@ -109,7 +109,7 @@ class EmailController extends Controller
         $notificationTotalRecord = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
-            ->whereIn('folder', array('sent'))
+            ->where('folder', 'sent')
             ->where(function ($query) {
                 $query->where('imap_id', auth()->user()->imap->id)
                     ->where('is_delete', 0);
@@ -119,14 +119,12 @@ class EmailController extends Controller
             $emails = $emails->where('is_trash', 0)->where('important', 1);
             $emailTotalRecord = $emailTotalRecord->where('is_trash', 0)->where('important', 1);
         } else if ($folder == 'spam') {
-            $folders = array($folder);
-
-            $emails = $emails->whereIn('folder', $folders)->where(function ($query) {
+            $emails = $emails->where('folder', $folder)->where(function ($query) {
                 $query->where('is_trash', 0)
                     ->where('important', 0);
             });
 
-            $emailTotalRecord = $emailTotalRecord->whereIn('folder', $folders)->where(function ($query) {
+            $emailTotalRecord = $emailTotalRecord->where('folder', $folder)->where(function ($query) {
                 $query->where('is_trash', 0)
                     ->where('important', 0);
             });
@@ -134,15 +132,12 @@ class EmailController extends Controller
             $notification = $notification->where('is_trash', 0);
             $notificationTotalRecord = $notificationTotalRecord->where('is_trash', 0);
         } else if ($folder != 'trash') {
-            $folders = array($folder);
-            array_push($folders, 'sent');
-
-            $emails = $emails->whereIn('folder', $folders)->where(function ($query) {
+            $emails = $emails->where('folder', $folder)->where(function ($query) {
                 $query->where('is_trash', 0)
                     ->where('important', 0);
             });
 
-            $emailTotalRecord = $emailTotalRecord->whereIn('folder', $folders)->where(function ($query) {
+            $emailTotalRecord = $emailTotalRecord->where('folder', $folder)->where(function ($query) {
                 $query->where('is_trash', 0)
                     ->where('important', 0);
             });
@@ -401,7 +396,8 @@ class EmailController extends Controller
                             $attachmentIds = $request->attachment_ids[$key];
                             $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                             $attachmentUpdate->email_group_id = $email_group_id;
-                            $attachmentUpdate->type = 'notification';
+                            $attachmentUpdate->reference_id = $email->id ?? null;
+                            $attachmentUpdate->type = 'email';
                             $attachmentUpdate->save();
                             $attachments[] = $attachmentUpdate->path;
                             $fileNames[] = $attachmentUpdate->id;
@@ -832,7 +828,7 @@ class EmailController extends Controller
                 $notificationReply = [];
                 if ($notification && $notification->id) {
                     DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                    $notificationReply = Email::with('sender', 'receiver')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
+                    $notificationReply = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
                 }
             }
             $users = User::whereNot('id', auth()->user()->id)->get();
