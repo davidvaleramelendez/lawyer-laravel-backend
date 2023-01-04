@@ -19,7 +19,7 @@ return new class extends Migration
             $table->biginteger('email_group_id')->nullable();
             $table->biginteger('user_id')->nullable();
             $table->biginteger('sender_id')->nullable();
-            $table->enum('type', ['email', 'notification'])->default('notification');
+            $table->enum('type', ['email', 'notification'])->default('email');
             $table->text('name')->nullable();
             $table->text('path')->nullable();
             $table->timestamps();

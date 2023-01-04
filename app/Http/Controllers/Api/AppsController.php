@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Cases;
+use App\Models\ContactImap;
 use App\Models\Invoice;
 use App\Models\Permissions;
 use App\Models\Role;
@@ -442,6 +443,7 @@ class AppsController extends Controller
     {
         try {
             User::where('id', $id)->delete();
+            ContactImap::where('user_id', $id)->delete();
             Permissions::where('user_id', $id)->delete();
 
             $response = array();
