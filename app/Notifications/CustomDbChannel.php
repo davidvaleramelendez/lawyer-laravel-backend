@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Attachment;
 use App\Models\Email;
 use App\Models\User;
 use Carbon\Carbon;
@@ -55,7 +56,11 @@ class CustomDbChannel
             $emailData['attachment_id'] = $data['attachment_ids'];
         }
 
-        Email::Create($emailData);
+        $created = Email::Create($emailData);
+        if ($created && $created->attachment_id) {
+            $attchId = explode(",", $created->attachment_id);
+            Attachment::whereIn('id', $attchId)->update(['reference_id' => $created->id]);
+        }
 
         return $notifiable->routeNotificationFor('database');
     }
