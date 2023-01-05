@@ -185,7 +185,6 @@ class Helper
 
     public static function getSettings($name = 'nav_bar')
     {
-
         $siteSetting = SiteSettings::where('name', 'nav_bar')
             ->where('user_id', auth()->id())
             ->first();
@@ -197,7 +196,6 @@ class Helper
         }
 
         return $siteSetting;
-
     }
 
     public static function get_user_permissions($id = "0")
@@ -234,7 +232,6 @@ class Helper
 
     public static function get_contacts()
     {
-
         if (self::get_user_permissions(3) == 1) {
             return Contact::where('IsCase', 0)
                 ->orderBy('ContactID', 'DESC')
@@ -246,4 +243,17 @@ class Helper
         }
     }
 
+    public static function getUserPermissions($userId = "", $permissionId = 0)
+    {
+        if ($userId) {
+            $permission = Permissions::where(['user_id' => $userId, 'permission_id' => $permissionId])->first();
+
+            if ($permission && $permission->id) {
+                return 1;
+            }
+            return 0;
+        }
+
+        return 0;
+    }
 }

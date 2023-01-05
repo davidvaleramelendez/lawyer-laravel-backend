@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use App\Models\CustomNotification;
@@ -67,7 +68,7 @@ class EmailController extends Controller
         }
     }
 
-    public function emailFilter($type, $lable, $folder, $search, $perPage)
+    public function emailFilter($imapId, $userId, $type, $lable, $folder, $search, $perPage)
     {
         $messages = array();
         $inboxCount = 0;
@@ -80,8 +81,8 @@ class EmailController extends Controller
         $emails = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
-            ->where(function ($query) {
-                $query->where('imap_id', auth()->user()->imap->id)
+            ->where(function ($query) use ($imapId) {
+                $query->where('imap_id', $imapId)
                     ->where('is_delete', 0);
             })
             ->take($perPage)
@@ -91,8 +92,8 @@ class EmailController extends Controller
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
             ->where('folder', 'sent')
-            ->where(function ($query) {
-                $query->where('imap_id', auth()->user()->imap->id)
+            ->where(function ($query) use ($imapId) {
+                $query->where('imap_id', $imapId)
                     ->where('sent', 1)
                     ->where('is_delete', 0);
             })
@@ -101,8 +102,8 @@ class EmailController extends Controller
 
         $emailTotalRecord = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
             ->groupBy('email_group_id')
-            ->where(function ($query) {
-                $query->where('imap_id', auth()->user()->imap->id)
+            ->where(function ($query) use ($imapId) {
+                $query->where('imap_id', $imapId)
                     ->where('is_delete', 0);
             });
 
@@ -110,8 +111,8 @@ class EmailController extends Controller
             ->select('*', DB::raw('count(*) as count2'))
             ->groupBy('email_group_id')
             ->where('folder', 'sent')
-            ->where(function ($query) {
-                $query->where('imap_id', auth()->user()->imap->id)
+            ->where(function ($query) use ($imapId) {
+                $query->where('imap_id', $imapId)
                     ->where('is_delete', 0);
             });
 
@@ -153,7 +154,7 @@ class EmailController extends Controller
         }
 
         if (isset(auth()->user()->id)) {
-            $meta = Email::where('is_read', '==', 0)->where('imap_id', auth()->user()->imap->id);
+            $meta = Email::where('is_read', '==', 0)->where('imap_id', $imapId);
 
             if ($folder == 'sent') {
                 if ($search) {
@@ -243,11 +244,11 @@ class EmailController extends Controller
             }
             $inboxCount = $meta->where('folder', 'inbox')->where('important', 0)->count();
 
-            $draftCount = EmailDraft::where('user_id', auth()->id())->count() ?? 0;
+            $draftCount = EmailDraft::where('user_id', $userId)->count() ?? 0;
 
-            $importantCount = Email::where('important', 1)->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
+            $importantCount = Email::where('important', 1)->where('imap_id', $imapId)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
 
-            $spamCount = Email::where('folder', 'spam')->where('imap_id', auth()->user()->imap->id)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
+            $spamCount = Email::where('folder', 'spam')->where('imap_id', $imapId)->where('is_trash', 0)->where('is_delete', 0)->count() ?? 0;
 
             $emails = $emails->get();
             $notification = $notification->get();
@@ -268,9 +269,9 @@ class EmailController extends Controller
                 $totalRecord = $emailTotalRecord->count();
             }
 
-            $users = User::whereNot('id', auth()->user()->id)->get();
+            $users = User::whereNot('id', $userId)->get();
 
-            return ['data' => $messages, 'count' => $totalRecord, 'users' => $users, 'inboxCount' => $inboxCount, 'draftCount' => $draftCount, 'importantCount' => $importantCount, 'spamCount' => $spamCount];
+            return ['data' => $messages, 'count' => $totalRecord, 'inboxCount' => $inboxCount, 'draftCount' => $draftCount, 'importantCount' => $importantCount, 'spamCount' => $spamCount, 'users' => $users ?? []];
         }
 
         return ['data' => [], 'count' => 0, 'users' => [], 'inboxCount' => 0, 'draftCount' => 0, 'importantCount' => 0, 'spamCount' => 0];
@@ -305,8 +306,28 @@ class EmailController extends Controller
 
             $search = $request->input(key:'search') ?? '';
             $perPage = $request->input(key:'perPage') ?? 100;
+            $userId = $request->input(key:'user_id') ?? auth()->user()->id;
+            $imapId = auth()->user()->imap->id ?? "";
 
-            if (empty(auth()->user()->imap->id)) {
+            if ($userId) {
+                $imapId = "";
+                $userData = User::with('imap')->where('id', $userId)->first();
+                if (!Helper::get_user_permissions(8)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+
+                if ($userData && $userData->id) {
+                    if ($userData->imap && $userData->imap->id) {
+                        $imapId = $userData->imap->id;
+                    }
+                }
+            }
+
+            if (empty($imapId)) {
                 $response = array();
                 $response['flag'] = false;
                 $response['message'] = "Please enter i-map details.";
@@ -314,7 +335,7 @@ class EmailController extends Controller
                 return response()->json($response);
             }
 
-            $data = $this->emailFilter($type, $lable, $folder, $search, $perPage);
+            $data = $this->emailFilter($imapId, $userId, $type, $lable, $folder, $search, $perPage);
 
             $response = array();
             $response['flag'] = true;
@@ -350,6 +371,7 @@ class EmailController extends Controller
                 return response()->json($response);
             }
 
+            $userId = $request->user_id ?? auth()->user()->id;
             $type = $request->type ?? 'email';
 
             if ($type == 'email') {
@@ -403,7 +425,7 @@ class EmailController extends Controller
                         }
                     }
 
-                    Notification::send($from_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
+                    Notification::send($from_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId, $request->id));
 
                     $response = array();
                     $response['flag'] = true;
@@ -473,7 +495,7 @@ class EmailController extends Controller
                     }
                 }
 
-                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $request->id));
+                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId, $request->id));
 
                 $response = array();
                 $response['flag'] = true;
@@ -504,6 +526,7 @@ class EmailController extends Controller
         try {
             $cc = [];
             $bcc = [];
+            $userId = $request->user_id ?? auth()->user()->id;
             $userSchema = User::whereIn('id', $request->email_to)->get();
 
             if ($request->has('email_cc')) {
@@ -538,17 +561,7 @@ class EmailController extends Controller
             }
 
             foreach ($userSchema as $user) {
-                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $request->message, $request->message, $attachments, $fileNames, $email_group_id));
-            }
-            $list = CustomNotification::where('email_group_id', $email_group_id)->first();
-
-            if ($request->attachment_ids) {
-                foreach ($request->attachment_ids as $key => $attachment_id) {
-                    $attachmentIds = $request->attachment_ids[$key];
-                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
-                    $attachmentUpdate->reference_id = $list->id;
-                    $attachmentUpdate->save();
-                }
+                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $request->message, $request->message, $attachments, $fileNames, $email_group_id, $userId));
             }
 
             $notificationData = CustomNotification::with('attachment')->where('email_group_id', $email_group_id)->first();
@@ -806,7 +819,9 @@ class EmailController extends Controller
                 $response['data'] = null;
                 return response()->json($response);
             }
-            $type = $request->type ?? 'inbox';
+
+            $userId = $request->user_id ?? auth()->user()->id;
+            $type = $request->type ?? 'email';
             $email_group_id = $request->email_group_id;
 
             if ($type == 'notification') {
@@ -830,7 +845,8 @@ class EmailController extends Controller
                     $notificationReply = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
                 }
             }
-            $users = User::whereNot('id', auth()->user()->id)->get();
+
+            $users = User::whereNot('id', $userId)->get();
 
             $response = array();
             $response['flag'] = true;
@@ -877,13 +893,14 @@ class EmailController extends Controller
         }
     }
 
-    public function emailAuthUserCron()
+    public function emailAuthUserCron(Request $request)
     {
         try {
+            $userId = $request->user_id ?? auth()->user()->id;
             $message = "Customer not have access to imap emails!";
             $flag = false;
 
-            $user = User::with('imap')->where('id', auth()->user()->id)->whereNot('role_id', 11)->first();
+            $user = User::with('imap')->where('id', $userId)->whereNot('role_id', 11)->first();
             if ($user && $user->id) {
                 if ($user->imap) {
                     $result = $this->insertImapEmails(
@@ -1150,14 +1167,13 @@ class EmailController extends Controller
         $response['data'] = [];
 
         try {
-            $user_id = auth()->user()->id;
+            $user_id = $request->user_id ?? auth()->user()->id;
             $perPage = $request->get('perPage', 10);
             $draftList = EmailDraft::where('user_id', $user_id)->get();
 
             $response['flag'] = true;
             $response['message'] = "Success.";
             $response['data'] = $draftList;
-
         } catch (Exception $e) {
             $response['message'] = $e->getMessage();
         }
@@ -1235,7 +1251,7 @@ class EmailController extends Controller
         $response['data'] = null;
 
         try {
-            $user_id = auth()->user()->id;
+            $user_id = $request->user_id ?? auth()->user()->id;
             $id = $request->id ?? 0;
             $to_ids = $request->to_ids ?? '';
             $cc_ids = $request->cc_ids ?? '';

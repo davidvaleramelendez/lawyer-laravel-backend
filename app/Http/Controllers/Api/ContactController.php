@@ -9,7 +9,9 @@ use App\Models\Cases;
 use App\Models\CasesType;
 use App\Models\Contact;
 use App\Models\ContactNotes;
+use App\Models\Email;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -230,7 +232,8 @@ class ContactController extends Controller
                 $status = 'Open';
             }
 
-            $CaseID = Cases::insertGetId([
+            $CaseID = 0;
+            $createdCase = Cases::create([
                 'CaseID' => $CaseID = date('Ymd') . rand(1, 100),
                 'UserID' => $userID,
                 'Name' => $param['name'],
@@ -242,33 +245,51 @@ class ContactController extends Controller
                 'CreatedBy' => 1,
             ]);
 
-            $sender_id = User::where('email', $param['email'])->first();
+            if ($createdCase && $createdCase->CaseID) {
+                $CaseID = $createdCase->CaseID;
+            }
+
+            $sender_id = User::with('imap')->where('email', $param['email'])->first();
 
             $email_group_id = $id;
             $contact_info = Contact::where('ContactID', $id)->first();
 
-            $notify_data = array('data' => array(
-                'subject' => '[Ticket#:' . $email_group_id . ']',
-                'message' => $contact_info->Subject,
-                'complete_message' => $contact_info->Subject,
-                'display_message' => $contact_info->Subject,
-                'attachments' => array()),
-            );
+            // $notification_data= array(
+            //     'type'     => 'App\Notifications\EmailSentNotification',
+            //     'notifiable_type'       => 'App\Models\User',
+            //     'notifiable_id'   =>Auth::user()->id,
+            //     'sender_id' => $sender_id->id,
+            //     'important'  => '0',
+            //     'case_id'  => $CaseID,
+            //     'data' => json_encode($notify_data),
+            //     'created_at' => date("Y/m/d H:i:s"),
+            //     'updated_at' => date("Y/m/d H:i:s"),
+            //     'email_group_id'       => $email_group_id
+            // );
+
+            // DB::table('notifications')->insert($notification_data);
 
             $notification_data = array(
-                'type' => 'App\Notifications\EmailSentNotification',
-                'notifiable_type' => 'App\Models\User',
-                'notifiable_id' => Auth::user()->id,
-                'sender_id' => $sender_id->id,
-                'important' => '0',
+                'folder' => 'sent',
                 'case_id' => $CaseID,
-                'data' => json_encode($notify_data),
+                'imap_id' => $sender_id && $sender_id->imap && $sender_id->imap->id ? $sender_id->imap->id : null,
+                'sent' => 1,
+                'from_id' => Auth::user()->id,
+                'to_id' => $sender_id->id,
+                'from' => "<" . Auth::user()->email . ">",
+                'to' => "<" . $sender_id->email . ">",
+                'subject' => '[Ticket#:' . $email_group_id . ']',
+                'email_group_id' => $email_group_id,
+                'date' => Carbon::now(),
+                'toaddress' => "<" . $sender_id->email . ">",
+                'fromaddress' => "<" . Auth::user()->email . ">",
+                'body' => $contact_info->Subject,
+                'important' => 0,
                 'created_at' => date("Y/m/d H:i:s"),
                 'updated_at' => date("Y/m/d H:i:s"),
-                'email_group_id' => $email_group_id,
             );
 
-            DB::table('notifications')->insert($notification_data);
+            Email::insert($notification_data);
             $userDetail = User::where('id', $userID)->first();
             $contactDetail = Contact::with('case')->where('ContactID', $id)->first();
             $laywerDetail = User::where('id', $laywerId)->first();
@@ -286,12 +307,12 @@ class ContactController extends Controller
                 $response['flag'] = true;
                 $response['message'] = 'User added Successfully.';
                 $response['data'] = ['caseDetail' => $caseDetail];
-                return response()->json($response, 201);
+                return response()->json($response);
             } else {
                 $response = array();
                 $response['flag'] = false;
                 $response['message'] = 'User added failed.';
-                return response()->json($response, 401);
+                return response()->json($response);
             }
         } catch (\Exception$e) {
             $response = array();

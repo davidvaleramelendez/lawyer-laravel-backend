@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -25,8 +26,9 @@ class EmailSentNotification extends Notification
     public $email_group_id;
     public $notification_id = null;
     public $reciever = null;
+    public $userId = null;
 
-    public function __construct($user, $cc, $bcc, $subject, $message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $notification_id = null, $reciever = null)
+    public function __construct($user, $cc, $bcc, $subject, $message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId = null, $notification_id = null, $reciever = null)
     {
         $this->user = $user;
         $this->cc = $cc;
@@ -40,6 +42,7 @@ class EmailSentNotification extends Notification
         $this->notification_id = $notification_id;
         $this->reciever = $reciever;
         $this->email_group_id = $email_group_id;
+        $this->userId = $userId ?? auth()->user()->id;
     }
 
     /**
@@ -61,10 +64,12 @@ class EmailSentNotification extends Notification
      */
     public function toMail($notifiable)
     {
+        $userData = User::where('id', $this->userId ?? auth()->user()->id)->first();
+
         $email = (new MailMessage())
             ->subject($this->subject);
-        if (auth()->user()) {
-            $email = $email->from(auth()->user()->email, auth()->user()->name);
+        if ($userData) {
+            $email = $email->from($userData->email, $userData->name);
         } else {
             $email = $email->from($this->reciever->email, $this->reciever->name);
         }
@@ -97,6 +102,7 @@ class EmailSentNotification extends Notification
                 'notification_id' => $this->notification_id,
             ],
             'attachment_ids' => implode(",", $this->fileNames),
+            'user_id' => $this->userId,
         ];
         if (!empty($this->reciever)) {
             $data['data']['sender_id'] = $this->reciever->id;
