@@ -12,6 +12,7 @@ class AttachmentController extends Controller
     public function uploadAttachment(Request $request)
     {
         try {
+            $userId = $request->user_id ?? auth()->user()->id;
             $attachments = [];
             if ($request->attachment) {
                 if ($request->ids && count($request->ids) > 0) {
@@ -40,8 +41,8 @@ class AttachmentController extends Controller
                     $data = new Attachment();
                     $data->reference_id = $request->reference_id;
                     $data->email_group_id = $request->email_group_id ?? null;
-                    $data->user_id = auth()->user()->id;
-                    $data->sender_id = auth()->user()->id;
+                    $data->user_id = $userId;
+                    $data->sender_id = $userId;
                     $data->type = $request->type;
                     $data->name = $name;
                     $data->path = $img_url;

@@ -14,8 +14,8 @@ class CustomDbChannel
     public function send($notifiable, Notification $notification)
     {
         $data = $notification->toDatabase($notifiable);
-
-        $user = User::with('role', 'imap')->where('id', auth()->user() ? Auth::user()->id : $data['data']['sender_id'])->first();
+        $userId = $data['user_id'] ?? auth()->user()->id;
+        $user = User::with('role', 'imap')->where('id', $userId)->first();
         $emailData = [
             'folder' => 'sent',
             'sent' => 1,
