@@ -312,12 +312,14 @@ class EmailController extends Controller
             if ($userId) {
                 $imapId = "";
                 $userData = User::with('imap')->where('id', $userId)->first();
-                if (!Helper::get_user_permissions(8)) {
-                    $response = array();
-                    $response['flag'] = false;
-                    $response['message'] = "You do not have permission.";
-                    $response['data'] = [];
-                    return response()->json($response);
+                if ($userId != auth()->user()->id) {
+                    if (!Helper::get_user_permissions(8)) {
+                        $response = array();
+                        $response['flag'] = false;
+                        $response['message'] = "You do not have permission.";
+                        $response['data'] = [];
+                        return response()->json($response);
+                    }
                 }
 
                 if ($userData && $userData->id) {
