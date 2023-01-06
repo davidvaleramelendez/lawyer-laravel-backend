@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
 use App\Models\User;
@@ -26,15 +27,15 @@ class ChatController extends Controller
                 return response()->json($response);
             }
             $id = $request->id;
-            $authId = auth()->user()->id;
+            $userId = $request->user_id ?? auth()->user()->id;
 
-            $totalRecord = Chat::where(function ($query) use ($id, $authId) {
+            $totalRecord = Chat::where(function ($query) use ($id, $userId) {
                 $query->where('sender_id', $id)
-                    ->orWhere('sender_id', $authId);
+                    ->orWhere('sender_id', $userId);
             })
-                ->where(function ($query) use ($id, $authId) {
+                ->where(function ($query) use ($id, $userId) {
                     $query->where('receiver_id', $id)
-                        ->orWhere('receiver_id', $authId);
+                        ->orWhere('receiver_id', $userId);
                 })->get();
 
             $count = $request->chatCount && $request->chatCount != 0 ? (int) $request->chatCount : 5;
@@ -46,13 +47,13 @@ class ChatController extends Controller
 
             $user = User::with('role')->where('id', $id)->first();
 
-            $chats = Chat::where(function ($query) use ($id, $authId) {
+            $chats = Chat::where(function ($query) use ($id, $userId) {
                 $query->where('sender_id', $id)
-                    ->orWhere('sender_id', $authId);
+                    ->orWhere('sender_id', $userId);
             })
-                ->where(function ($query) use ($id, $authId) {
+                ->where(function ($query) use ($id, $userId) {
                     $query->where('receiver_id', $id)
-                        ->orWhere('receiver_id', $authId);
+                        ->orWhere('receiver_id', $userId);
                 })
 
                 ->orderBy('created_at', 'ASC')
@@ -60,9 +61,9 @@ class ChatController extends Controller
                 ->take($count)
                 ->get();
 
-            $chatRead = Chat::where('receiver_id', $authId)->where('sender_id', $id)->get();
+            $chatRead = Chat::where('receiver_id', $userId)->where('sender_id', $id)->get();
             foreach ($chats as $chat) {
-                Chat::where('receiver_id', $authId)->where('sender_id', $id)->update(['read_at' => 1]);
+                Chat::where('receiver_id', $userId)->where('sender_id', $id)->update(['read_at' => 1]);
             }
             $count = $chats->count();
 
@@ -83,19 +84,30 @@ class ChatController extends Controller
     public function get_users(Request $request)
     {
         try {
-
             $search = $request->input(key:'search') ?? '';
-            $authId = auth()->id();
+            $userId = $request->user_id ?? auth()->user()->id;
 
-            $user = User::with('role')->where('id', auth()->user()->id)->first();
+            $user = User::with('role')->where('id', $userId)->first();
 
-            $users = User::with('role')->whereNotIn('role_id', ['11', '12'])
-                ->where('id', '!=', auth()->id());
+            if ($userId) {
+                if ($userId != auth()->user()->id) {
+                    if (!Helper::get_user_permissions(10)) {
+                        $response = array();
+                        $response['flag'] = false;
+                        $response['message'] = "You do not have permission.";
+                        $response['data'] = ['userData' => $user];
+                        return response()->json($response);
+                    }
+                }
+            }
+
+            $users = User::with('role')->whereNotIn('role_id', ['11'])
+                ->whereNot('id', $userId);
 
             $chats = Chat::with('sender', 'receiver')
-                ->where(function ($query) use ($authId) {
-                    $query->where('sender_id', $authId)
-                        ->orWhere('receiver_id', $authId);
+                ->where(function ($query) use ($userId) {
+                    $query->where('sender_id', $userId)
+                        ->orWhere('receiver_id', $userId);
                 });
 
             if ($search) {
@@ -121,8 +133,8 @@ class ChatController extends Controller
             $myChats = [];
             if ($chats && count($chats) > 0) {
                 foreach ($chats as $chat) {
-                    if (auth()->id() == $chat->sender_id) {
-                        $chatCount = Chat::where('receiver_id', auth()->user()->id)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
+                    if ($userId == $chat->sender_id) {
+                        $chatCount = Chat::where('receiver_id', $userId)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
                         $myChats[$chat->receiver_id] = [
                             'id' => $chat->id,
                             'user_id' => $chat->receiver_id,
@@ -135,8 +147,8 @@ class ChatController extends Controller
                         ];
                     }
 
-                    if (auth()->id() == $chat->receiver_id) {
-                        $chatCount = Chat::where('receiver_id', auth()->user()->id)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
+                    if ($userId == $chat->receiver_id) {
+                        $chatCount = Chat::where('receiver_id', $userId)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
                         $myChats[$chat->sender_id] =
                             [
                             'id' => $chat->id,
@@ -172,7 +184,7 @@ class ChatController extends Controller
         try {
             $validation = Validator::make($request->all(), [
                 'message' => 'required',
-                'user_id' => 'required',
+                'receiver_id' => 'required',
             ]);
 
             if ($validation->fails()) {
@@ -183,12 +195,14 @@ class ChatController extends Controller
                 return response()->json($response);
             }
 
+            $userId = $request->user_id ?? auth()->user()->id;
+
             DB::beginTransaction();
             try {
                 $chat = Chat::create([
                     'message' => $request->message,
-                    'sender_id' => auth()->id(),
-                    'receiver_id' => $request->user_id,
+                    'sender_id' => $userId,
+                    'receiver_id' => $request->receiver_id,
                 ]);
 
                 DB::commit();
@@ -196,7 +210,7 @@ class ChatController extends Controller
                     'flag' => true,
                     'message' => 'Chat Added',
                 ]);
-            } catch (Exception $ex) {
+            } catch (\Exception$ex) {
                 DB::rollBack();
                 return response()->json([
                     'flag' => false,
@@ -216,15 +230,15 @@ class ChatController extends Controller
     {
         try {
             $count = (int) $request->chatCount ?? 0;
-            $authId = auth()->id();
+            $userId = $request->user_id ?? auth()->user()->id;
 
-            $totalRecord = Chat::where(function ($query) use ($id, $authId) {
+            $totalRecord = Chat::where(function ($query) use ($id, $userId) {
                 $query->where('sender_id', $id)
-                    ->orWhere('sender_id', $authId);
+                    ->orWhere('sender_id', $userId);
             })
-                ->where(function ($query) use ($id, $authId) {
+                ->where(function ($query) use ($id, $userId) {
                     $query->where('receiver_id', $id)
-                        ->orWhere('receiver_id', $authId);
+                        ->orWhere('receiver_id', $userId);
                 })->get();
 
             $totalRecord = $totalRecord->count();
@@ -233,13 +247,13 @@ class ChatController extends Controller
                 $skip = $totalRecord - $count - 5;
             }
 
-            $chats = Chat::with('sender', 'receiver')->where(function ($query) use ($id, $authId) {
+            $chats = Chat::with('sender', 'receiver')->where(function ($query) use ($id, $userId) {
                 $query->where('sender_id', $id)
-                    ->orWhere('sender_id', $authId);
+                    ->orWhere('sender_id', $userId);
             })
-                ->where(function ($query) use ($id, $authId) {
+                ->where(function ($query) use ($id, $userId) {
                     $query->where('receiver_id', $id)
-                        ->orWhere('receiver_id', $authId);
+                        ->orWhere('receiver_id', $userId);
                 })
                 ->orderBy('created_at', 'ASC');
 

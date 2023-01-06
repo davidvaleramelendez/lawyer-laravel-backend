@@ -18,11 +18,12 @@ class CreateAddEventsTable extends Migration
             $table->string('google_id');
             $table->string('title')->nullable();
             $table->string('business')->nullable();
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
+            $table->datetime('start_date')->nullable();
+            $table->datetime('end_date')->nullable();
             $table->string('allDay')->nullable();
             $table->string('event_url')->nullable();
-            $table->string('guest')->nullable();
+            $table->unsignedInteger('user_id')->nullable();
+            $table->text('guest')->nullable()->comment("(DC2Type:json)");
             $table->string('location')->nullable();
             $table->string('description')->nullable();
             $table->timestamps();

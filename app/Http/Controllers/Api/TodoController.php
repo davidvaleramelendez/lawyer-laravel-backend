@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Todo;
 use App\Models\User;
@@ -13,9 +14,21 @@ use Illuminate\Support\Facades\Validator;
 class TodoController extends Controller
 {
 
-    public function get_users()
+    public function get_users(Request $request)
     {
         try {
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(12)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+            }
+
             $users = DB::table('users')->get();
 
             $response = array();
@@ -32,16 +45,25 @@ class TodoController extends Controller
         }
     }
 
-    public function todoFilter($type, $tag, $search, $sortBy, $date, $perPage)
+    public function todoFilter($userId, $type, $tag, $search, $sortBy, $date, $perPage)
     {
         $importantCount = 0;
         $totalRecord = 0;
 
-        $userId = auth()->user()->id;
-        $importantCount = Todo::where('is_important', 1)->where('Assign', $userId)->where('is_deleted', 0)->count() ?? 0;
+        $importantCount = Todo::where('is_important', 1)->where(function ($query) use ($userId) {
+            $query->where('UserId', $userId)
+                ->orWhere('Assign', $userId);
+        })->where('is_deleted', 0)->count() ?? 0;
 
-        $list = Todo::with('user', 'assign')->where('Assign', $userId);
-        $totalRecord = Todo::where('Assign', $userId);
+        $list = Todo::with('user', 'assign')->where(function ($query) use ($userId) {
+            $query->where('UserId', $userId)
+                ->orWhere('Assign', $userId);
+        });
+
+        $totalRecord = Todo::where(function ($query) use ($userId) {
+            $query->where('UserId', $userId)
+                ->orWhere('Assign', $userId);
+        });
         if ($type == 'important') {
             $list = $list->where('is_important', 1)->where('is_deleted', 0);
             $totalRecord = $totalRecord->where('is_important', 1)->where('is_deleted', 0);
@@ -98,8 +120,19 @@ class TodoController extends Controller
             $sortBy = $request->input(key:'sortBy') ?? '';
             $date = $request->input(key:'date') ?? '';
             $perPage = $request->input(key:'perPage') ?? 100;
+            $userId = $request->user_id ?? auth()->user()->id;
 
-            $todos = $this->todoFilter($type, $tag, $search, $sortBy, $date, $perPage);
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(12)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+            }
+
+            $todos = $this->todoFilter($userId, $type, $tag, $search, $sortBy, $date, $perPage);
 
             $response = array();
             $response['flag'] = true;
@@ -139,7 +172,6 @@ class TodoController extends Controller
     public function create_todo(Request $request)
     {
         try {
-
             $validation = Validator::make($request->all(), [
                 'title' => 'required',
                 'Assign' => 'required',
@@ -154,20 +186,26 @@ class TodoController extends Controller
                 $response['error'] = $validation->errors();
                 return response()->json($response);
             }
+
+            $userId = $request->user_id ?? auth()->user()->id;
+
             $todoCreate = [
-                'UserId' => Auth::user()->id,
+                'UserId' => $userId,
                 'title' => $request->title,
                 'Assign' => $request->Assign,
                 'due_date' => $request->due_date,
                 'tag' => $request->tag,
             ];
+
             if (isset($request->description)) {
                 $todoCreate['description'] = $request->description;
             }
+
             $data = Todo::updateOrCreate(
                 ['id' => $request->id],
                 $todoCreate
             );
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\AddEvent;
 use App\Models\User;
@@ -12,11 +13,23 @@ use Illuminate\Support\Facades\DB;
 
 class AddEventController extends Controller
 {
-    public function getUsers()
+    public function getUsers(Request $request)
     {
         try {
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(14)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+            }
+
             $users = User::whereNotIn('role_id', [12])
-                ->where('id', '!=', auth()->id())
+                ->whereNot('id', $userId)
                 ->get();
 
             $response = array();
@@ -37,6 +50,17 @@ class AddEventController extends Controller
     {
         try {
             $filter = $request->filter ?? '';
+            $userId = $request->user_id ? (int) $request->user_id : auth()->user()->id;
+
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(14)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+            }
 
             $events = AddEvent::select(
                 [
@@ -54,8 +78,11 @@ class AddEventController extends Controller
             );
 
             // if (auth()->user()->role_id != 10) {
-            $userId = auth()->user()->id;
-            $events = $events->whereJsonContains('guest', [$userId]);
+            // $events = $events->whereJsonContains('guest', [$userId]);
+            $events = $events->where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhereJsonContains('guest', [$userId]);
+            });
             // }
 
             if ($filter) {
@@ -116,7 +143,6 @@ class AddEventController extends Controller
 
         DB::beginTransaction();
         try {
-
             $validation = \Validator::make($request->all(), [
                 'title' => 'required',
                 'business' => 'required',
@@ -142,6 +168,7 @@ class AddEventController extends Controller
                 'end_date' => $request->enddate,
                 'allDay' => $request->allDay,
                 'event_url' => $request->event_url,
+                'user_id' => $request->user_id ?? auth()->user()->id,
                 'guest' => json_encode($request->guest),
                 'location' => $request->location,
                 'description' => $request->description,
@@ -208,8 +235,8 @@ class AddEventController extends Controller
                 $calendarId = $google_account->calendars->first()->google_id;
                 $event = $service->events->insert($calendarId, $event);
                 $myEvent->google_id = $event->id;
+                $myEvent->save();
             }
-            $myEvent->save();
 
             DB::commit();
 
@@ -256,6 +283,7 @@ class AddEventController extends Controller
                 'business' => $request->business,
                 'start_date' => $request->startdate,
                 'end_date' => $request->enddate,
+                'user_id' => $request->user_id ?? auth()->user()->id,
                 'guest' => json_encode($request->guest),
             ];
 
@@ -339,9 +367,9 @@ class AddEventController extends Controller
                 $calendarId = $google_account->calendars->first()->google_id;
                 $event = $service->events->update($calendarId, $myEvent->google_id, $event);
                 $myEvent->google_id = $event->id;
+                $myEvent->save();
             }
 
-            $myEvent->save();
             DB::commit();
 
             $response = array();
