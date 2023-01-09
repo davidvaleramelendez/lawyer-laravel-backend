@@ -285,23 +285,27 @@ trait EmailTrait
                     $msg['body'] = str_replace('class="gmail_attr"', 'class="gmail_attr" id="gmail_attr"', $msg['body']);
                     $dochtml = new \DOMDocument();
                     @$dochtml->loadHTML($msg['body']);
-                    $signature = $dochtml->getElementById("gmail_signature");
                     $gmailAttr = $dochtml->getElementById("gmail_attr");
-                    $gmailAttrHtml = $this->getDocContentHtml($gmailAttr);
-                    if ($gmailAttrHtml) {
-                        $gmailAttrHtml = '<div dir="ltr" class="gmail_attr">' . $gmailAttrHtml . "</div>";
-                        $msg['body'] = $this->setAfterStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $gmailAttrHtml);
+                    if ($gmailAttr) {
+                        $gmailAttrHtml = $this->getDocContentHtml($gmailAttr);
+                        if ($gmailAttrHtml) {
+                            $gmailAttrHtml = '<div dir="ltr" class="gmail_attr">' . $gmailAttrHtml . "</div>";
+                            $msg['body'] = $this->setAfterStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $gmailAttrHtml);
+                        }
                     }
 
-                    $signatureHtml = $this->getDocContentHtml($signature);
-                    if ($signatureHtml) {
-                        $msg['body'] = str_replace('<br clear="all"><br>-- <br>', "", $msg['body']);
-                        $msg['body'] = str_replace('<br clear="all"><br>--', "", $msg['body']);
-                        $msg['body'] = str_replace('&quot;', '"', $msg['body']);
-                        $signatureHtml = '<div dir="ltr" class="gmail_signature" id="gmail_signature">' . $signatureHtml . "</div>";
-                        $signatureHtml = str_replace("'", '"', $signatureHtml);
-                        $msg['body'] = str_replace($signatureHtml, "", $msg['body']);
-                        $msg['body'] = $this->setStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $signatureHtml);
+                    $signature = $dochtml->getElementById("gmail_signature");
+                    if ($signature) {
+                        $signatureHtml = $this->getDocContentHtml($signature);
+                        if ($signatureHtml) {
+                            $msg['body'] = str_replace('<br clear="all"><br>-- <br>', "", $msg['body']);
+                            $msg['body'] = str_replace('<br clear="all"><br>--', "", $msg['body']);
+                            $msg['body'] = str_replace('&quot;', '"', $msg['body']);
+                            $signatureHtml = '<div dir="ltr" class="gmail_signature" id="gmail_signature">' . $signatureHtml . "</div>";
+                            $signatureHtml = str_replace("'", '"', $signatureHtml);
+                            $msg['body'] = str_replace($signatureHtml, "", $msg['body']);
+                            $msg['body'] = $this->setStartPositionContent($msg['body'], '<details class="' . $this->detailsTagClassName . '">', "</details>", $signatureHtml);
+                        }
                     }
                 }
 
