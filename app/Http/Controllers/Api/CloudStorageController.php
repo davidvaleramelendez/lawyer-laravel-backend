@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\CloudStorage;
 use Carbon\Carbon;
@@ -14,12 +15,26 @@ class CloudStorageController extends Controller
 {
     public $breadcrumbs = array();
 
-    public function treeStructure()
+    public function treeStructure(Request $request)
     {
         try {
-            $children = CloudStorage::with('children')->select('*', 'id as value', 'name as label')->where('user_id', auth()->user()->id)->where('parent_id', null)->where('type', 'folder')->where('deleted_at', null)->get();
+            $userId = $request->user_id ?? auth()->user()->id;
 
-            $data = array(['id' => 0, 'name' => 'My Drive', 'slug' => 'default', 'parent_id' => null, 'user_id' => auth()->user()->id, 'roll_id' => '', 'type' => 'folder', 'file_name' => null, 'extension' => null, 'path' => 'storage/cloudstorage/' . auth()->user()->id, 'important_at' => null, 'created_at' => null, 'updated_at' => null, 'deleted_at' => null, 'value' => 0, 'label' => 'My Drive', 'children' => $children]);
+            $data = array(['id' => 0, 'name' => 'My Drive', 'slug' => 'default', 'parent_id' => null, 'user_id' => $userId, 'roll_id' => '', 'type' => 'folder', 'file_name' => null, 'extension' => null, 'path' => 'storage/cloudstorage/' . $userId, 'important_at' => null, 'created_at' => null, 'updated_at' => null, 'deleted_at' => null, 'value' => 0, 'label' => 'My Drive']);
+
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(16)) {
+                    $response = array();
+                    $response['flag'] = true;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = $data;
+                    return response()->json($response);
+                }
+            }
+
+            $children = CloudStorage::with('children')->select('*', 'id as value', 'name as label')->where('user_id', $userId)->where('parent_id', null)->where('type', 'folder')->where('deleted_at', null)->get();
+
+            $data[0]['children'] = $children;
 
             $response = array();
             $response['flag'] = true;
@@ -35,29 +50,30 @@ class CloudStorageController extends Controller
         }
     }
 
-    public function checkFolderParent($id, $breadcrumbs)
+    public function checkFolderParent($id, $breadcrumbs, $userId = "")
     {
         $this->breadcrumbs = $breadcrumbs;
+        $userId = $userId ?? auth()->user()->id;
         if ($id) {
-            $parent = CloudStorage::where('id', $id)->where('user_id', auth()->user()->id)->where('deleted_at', null)->first();
+            $parent = CloudStorage::where('id', $id)->where('user_id', $userId)->where('deleted_at', null)->first();
             if ($parent && $parent->id) {
                 array_push($this->breadcrumbs, $parent);
             }
             if ($parent && $parent->parent_id) {
-                $this->checkFolderParent($parent->parent_id, $this->breadcrumbs);
+                $this->checkFolderParent($parent->parent_id, $this->breadcrumbs, $userId);
             }
         }
     }
 
-    public function cloudFilter($parentId, $search, $sortBy, $slug)
+    public function cloudFilter($userId, $parentId, $search, $sortBy, $slug)
     {
         $folders = CloudStorage::where('type', 'folder')
-            ->where('user_id', auth()->user()->id);
+            ->where('user_id', $userId);
 
         $files = CloudStorage::with('parent')
             ->select('*')
             ->where('type', 'file')
-            ->where('user_id', auth()->user()->id);
+            ->where('user_id', $userId);
 
         if ($search) {
             $folders = $folders->where(function ($query) use ($search) {
@@ -77,14 +93,14 @@ class CloudStorageController extends Controller
         } else if ($slug == 'trash') {
             $folders = DB::table('cloud_storage as main')->select('main.*')
                 ->leftjoin('cloud_storage as parent', 'parent.id', '=', 'main.parent_id')
-                ->where('main.user_id', auth()->user()->id)
+                ->where('main.user_id', $userId)
                 ->where('main.type', 'folder')
                 ->where('parent.deleted_at', null)
                 ->where('main.deleted_at', '!=', null);
 
             $files = DB::table('cloud_storage as main')->select('main.*')
                 ->leftjoin('cloud_storage as parent', 'parent.id', '=', 'main.parent_id')
-                ->where('main.user_id', auth()->user()->id)
+                ->where('main.user_id', $userId)
                 ->where('main.type', 'file')
                 ->where('parent.deleted_at', null)
                 ->where('main.deleted_at', '!=', null);
@@ -119,18 +135,29 @@ class CloudStorageController extends Controller
             $search = $request->input(key:'search') ?? '';
             $sortBy = $request->input(key:'sortBy') ?? 'name-asc';
             $slug = $request->input(key:'slug') ?? '';
+            $userId = $request->user_id ?? auth()->user()->id;
             $parentId = null;
             $this->breadcrumbs = array();
 
-            if ($slug && ($slug != 'important' || $slug != 'recent' || $slug != 'trash')) {
-                $parentData = CloudStorage::where('slug', $slug)->where('user_id', auth()->user()->id)->where('deleted_at', null)->first();
-                if ($parentData && $parentData->id) {
-                    $parentId = $parentData->id;
-                    $this->checkFolderParent($parentId, $this->breadcrumbs);
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(16)) {
+                    $response = array();
+                    $response['flag'] = true;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = ['breadcrumbs' => [], 'files' => [], 'folders' => []];
+                    return response()->json($response);
                 }
             }
 
-            $data = $this->cloudFilter($parentId, $search, $sortBy, $slug);
+            if ($slug && ($slug != 'important' || $slug != 'recent' || $slug != 'trash')) {
+                $parentData = CloudStorage::where('slug', $slug)->where('user_id', $userId)->where('deleted_at', null)->first();
+                if ($parentData && $parentData->id) {
+                    $parentId = $parentData->id;
+                    $this->checkFolderParent($parentId, $this->breadcrumbs, $userId);
+                }
+            }
+
+            $data = $this->cloudFilter($userId, $parentId, $search, $sortBy, $slug);
 
             $folders = $data['folders'];
             $files = $data['files'];
@@ -149,10 +176,12 @@ class CloudStorageController extends Controller
         }
     }
 
-    public function get_folder($id)
+    public function get_folder(Request $request, $id)
     {
         try {
-            $folder = CloudStorage::where('id', $id)->where('type', 'folder')->where('user_id', auth()->user()->id)->where('deleted_at', null)->first();
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            $folder = CloudStorage::where('id', $id)->where('type', 'folder')->where('user_id', $userId)->where('deleted_at', null)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -188,6 +217,8 @@ class CloudStorageController extends Controller
                 $response['error'] = $validation->errors();
                 return response()->json($response);
             }
+
+            $userId = $request->user_id ?? auth()->user()->id;
             $parent_id = null;
             if ($request->parent_slug) {
                 $parent = CloudStorage::where('slug', $request->parent_slug)->first();
@@ -195,18 +226,18 @@ class CloudStorageController extends Controller
                     $parent_id = $parent->id;
                 }
             }
-            if (!is_dir('storage/cloudstorage/' . auth()->user()->id)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . auth()->user()->id));
+            if (!is_dir('storage/cloudstorage/' . $userId)) {
+                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
             }
 
             $data = new CloudStorage();
             $data->name = $request->name;
             $slug = \Str::slug($request->name, "-");
-            $slug = $slug . '-' . auth()->user()->id;
+            $slug = $slug . '-' . $userId;
             if ($parent_id != null) {
                 $slug = $slug . '-' . $parent_id;
             }
-            $checkSlug = CloudStorage::where('user_id', auth()->user()->id)->where('slug', $slug)->first();
+            $checkSlug = CloudStorage::where('user_id', $userId)->where('slug', $slug)->first();
             if ($checkSlug && $checkSlug->id) {
                 $slug = $slug . '-' . rand(0, 9) . '-' . rand(0, 99);
             }
@@ -214,23 +245,23 @@ class CloudStorageController extends Controller
             if ($parent_id != null) {
                 $data->parent_id = $parent_id;
             }
-            $data->user_id = auth()->user()->id;
+            $data->user_id = $userId;
             if ($parent_id != null) {
                 $parent_path = CloudStorage::where('id', $parent_id)->first();
                 $data->path = $parent_path->path . '/' . $slug;
             } else {
-                $data->path = 'storage/cloudstorage/' . auth()->user()->id . '/' . $slug;
+                $data->path = 'storage/cloudstorage/' . $userId . '/' . $slug;
             }
             $data->type = $request->type;
 
             if ($parent_id) {
-                $parentPath = CloudStorage::where('id', $parent_id)->where('user_id', auth()->user()->id)->first();
+                $parentPath = CloudStorage::where('id', $parent_id)->where('user_id', $userId)->first();
                 if (!is_dir($parentPath->path . '/' . $slug)) {
                     File::makeDirectory(public_path($parentPath->path . '/' . $slug));
                 }
-            } else if (!is_dir('storage/cloudstorage/' . auth()->user()->id) . '/' . $slug) {
-                if (!is_dir('storage/cloudstorage/' . auth()->user()->id . '/' . $slug)) {
-                    File::makeDirectory(public_path('storage/cloudstorage/' . auth()->user()->id . '/' . $slug));
+            } else if (!is_dir('storage/cloudstorage/' . $userId) . '/' . $slug) {
+                if (!is_dir('storage/cloudstorage/' . $userId . '/' . $slug)) {
+                    File::makeDirectory(public_path('storage/cloudstorage/' . $userId . '/' . $slug));
                 }
             }
             $data->save();
@@ -270,7 +301,9 @@ class CloudStorageController extends Controller
                 $response['error'] = $validation->errors();
                 return response()->json($response);
             }
+
             $id = $request->id;
+            $userId = $request->user_id ?? auth()->user()->id;
             $parent_id = null;
             if ($request->parent_id) {
                 $parent = CloudStorage::where('id', $request->parent_id)->first();
@@ -300,18 +333,18 @@ class CloudStorageController extends Controller
                 }
             } else if ($request->root == true) {
                 $data->parent_id = null;
-                if (!is_dir('storage/cloudstorage/' . auth()->user()->id . '/' . $data->slug)) {
+                if (!is_dir('storage/cloudstorage/' . $userId . '/' . $data->slug)) {
                     $files = CloudStorage::where('parent_id', $data->id)->where('type', 'file')->get();
 
                     $source = public_path($data->path);
-                    $destination = public_path('storage/cloudstorage/' . auth()->user()->id);
+                    $destination = public_path('storage/cloudstorage/' . $userId);
                     shell_exec('mv ' . $source . ' ' . $destination . ' ');
                     if ($files && count($files) > 0) {
                         foreach ($files as $file) {
                             CloudStorage::where('id', $file->id)->update(['path' => $destination . '/' . $file->file_name]);
                         }
                     }
-                    $data->path = 'storage/cloudstorage/' . auth()->user()->id . '/' . $data->slug;
+                    $data->path = 'storage/cloudstorage/' . $userId . '/' . $data->slug;
                 }
             }
             $data->type = $request->type;
@@ -422,10 +455,12 @@ class CloudStorageController extends Controller
         }
     }
 
-    public function get_files()
+    public function get_files(Request $request)
     {
         try {
-            $files = CloudStorage::where('type', 'file')->where('user_id', auth()->user()->id)->get();
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            $files = CloudStorage::where('type', 'file')->where('user_id', $userId)->get();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -440,10 +475,12 @@ class CloudStorageController extends Controller
         }
     }
 
-    public function get_file($id)
+    public function get_file(Request $request, $id)
     {
         try {
-            $file = CloudStorage::where('id', $id)->where('type', 'file')->where('user_id', auth()->user()->id)->first();
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            $file = CloudStorage::where('id', $id)->where('type', 'file')->where('user_id', $userId)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'success';
@@ -479,6 +516,7 @@ class CloudStorageController extends Controller
                 return response()->json($response);
             }
 
+            $userId = $request->user_id ?? auth()->user()->id;
             $parent_id = null;
             if ($request->parent_slug) {
                 $parent = CloudStorage::where('slug', $request->parent_slug)->first();
@@ -487,14 +525,14 @@ class CloudStorageController extends Controller
                 }
             }
 
-            if (!is_dir('storage/cloudstorage/' . auth()->user()->id)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . auth()->user()->id));
+            if (!is_dir('storage/cloudstorage/' . $userId)) {
+                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
             }
 
             $files = [];
             if ($request->attachments) {
                 foreach ($request->attachments as $key => $file) {
-                    $filePath = 'storage/cloudstorage/' . auth()->user()->id;
+                    $filePath = 'storage/cloudstorage/' . $userId;
                     $attachment = $file['file'];
                     $extension = $file['extension'];
                     $img_code = explode(',', $attachment);
@@ -517,7 +555,7 @@ class CloudStorageController extends Controller
 
                     $data = new CloudStorage;
                     $data->name = $file['name'];
-                    $data->user_id = auth()->user()->id;
+                    $data->user_id = $userId;
                     $data->parent_id = $parent_id;
                     $data->roll_id = '';
                     $data->file_name = $name;
@@ -568,12 +606,12 @@ class CloudStorageController extends Controller
             }
 
             $id = $request->id;
-
-            if (!is_dir('storage/cloudstorage/' . auth()->user()->id)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . auth()->user()->id));
+            $userId = $request->user_id ?? auth()->user()->id;
+            $parent_id = null;
+            if (!is_dir('storage/cloudstorage/' . $userId)) {
+                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
             }
 
-            $parent_id = null;
             if ($request->parent_id) {
                 $parent = CloudStorage::where('id', $request->parent_id)->first();
                 if ($parent && $parent->id) {
@@ -593,9 +631,9 @@ class CloudStorageController extends Controller
                     $data->path = $parent_path->path . '/' . $data->file_name;
                 } else if ($request->root == true) {
                     $data->parent_id = null;
-                    $parent_path = public_path('storage/cloudstorage/' . auth()->user()->id . '/' . $data->file_name);
+                    $parent_path = public_path('storage/cloudstorage/' . $userId . '/' . $data->file_name);
                     File::move(public_path($data->path), $parent_path);
-                    $data->path = 'storage/cloudstorage/' . auth()->user()->id . '/' . $data->file_name;
+                    $data->path = 'storage/cloudstorage/' . $userId . '/' . $data->file_name;
                 }
             }
 
