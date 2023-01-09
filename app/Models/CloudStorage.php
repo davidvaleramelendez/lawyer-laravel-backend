@@ -11,6 +11,9 @@ class CloudStorage extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'cloud_storage';
+    protected $casts = [
+        'user_id' => 'integer',
+    ];
 
     public function parent()
     {

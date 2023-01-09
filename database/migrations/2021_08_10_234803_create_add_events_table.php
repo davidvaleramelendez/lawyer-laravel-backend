@@ -15,7 +15,7 @@ class CreateAddEventsTable extends Migration
     {
         Schema::create('add_events', function (Blueprint $table) {
             $table->id();
-            $table->string('google_id');
+            $table->string('google_id')->nullable();
             $table->string('title')->nullable();
             $table->string('business')->nullable();
             $table->datetime('start_date')->nullable();
@@ -23,7 +23,7 @@ class CreateAddEventsTable extends Migration
             $table->string('allDay')->nullable();
             $table->string('event_url')->nullable();
             $table->unsignedInteger('user_id')->nullable();
-            $table->text('guest')->nullable()->comment("(DC2Type:json)");
+            $table->longtext('guest')->nullable()->comment("(DC2Type:json)");
             $table->string('location')->nullable();
             $table->string('description')->nullable();
             $table->timestamps();

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->integer('is_archived')->default(0);
             $table->integer('is_print')->default(0);
             $table->date('frist_date')->nullable();
+            $table->integer('isErledigt')->default(0);
             $table->timestamps();
         });
     }

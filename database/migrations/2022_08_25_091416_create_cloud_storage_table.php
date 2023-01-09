@@ -15,10 +15,10 @@ return new class extends Migration
     {
         Schema::create('cloud_storage', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->integer('slug')->nullable();
+            $table->string('name')->nullable();
+            $table->string('slug')->nullable();
             $table->integer('parent_id')->nullable();
-            $table->integer('user_id');
+            $table->integer('user_id')->nullable();
             $table->string('roll_id')->nullable();
             $table->string('file_name')->nullable();
             $table->string('extension')->nullable();

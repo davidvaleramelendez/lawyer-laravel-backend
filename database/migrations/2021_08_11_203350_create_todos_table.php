@@ -15,7 +15,7 @@ class CreateTodosTable extends Migration
     {
         Schema::create('todos', function (Blueprint $table) {
             $table->id();
-            $table->integer('UserId');
+            $table->integer('UserId')->nullable();
             $table->string('title')->nullable();
             $table->string('Assign')->nullable();
             $table->date('due_date')->nullable();

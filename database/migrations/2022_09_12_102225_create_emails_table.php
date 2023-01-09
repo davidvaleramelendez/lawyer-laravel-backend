@@ -15,19 +15,20 @@ return new class extends Migration
     {
         Schema::create('emails', function (Blueprint $table) {
             $table->id();
+            $table->unsignedInteger('case_id');
             $table->biginteger('imap_id');
             $table->string('folder');
             $table->boolean('sent')->default(0);
-            $table->integer('from_id');
-            $table->integer('to_id');
+            $table->integer('from_id')->nullable();
+            $table->integer('to_id')->nullable();
             $table->string('from')->nullable();
             $table->string('to')->nullable();
             $table->string('reply_to')->nullable();
             $table->string('sender')->nullable();
             $table->text('subject')->nullable();
             $table->string('message_id')->nullable();
-            $table->string('uid');
-            $table->string('email_group_id');
+            $table->string('uid')->nullable();
+            $table->string('email_group_id')->nullable();
             $table->datetime('date')->nullable();
             $table->string('toaddress')->nullable();
             $table->string('fromaddress')->nullable();
