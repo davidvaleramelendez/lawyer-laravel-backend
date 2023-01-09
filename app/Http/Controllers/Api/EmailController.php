@@ -153,7 +153,7 @@ class EmailController extends Controller
             $notificationTotalRecord = $notificationTotalRecord->where('is_trash', 1);
         }
 
-        if (isset(auth()->user()->id)) {
+        if (isset($userId)) {
             $meta = Email::where('is_read', '==', 0)->where('imap_id', $imapId);
 
             if ($folder == 'sent') {
@@ -242,6 +242,7 @@ class EmailController extends Controller
                         });
                 }
             }
+
             $inboxCount = $meta->where('folder', 'inbox')->where('important', 0)->count();
 
             $draftCount = EmailDraft::where('user_id', $userId)->count() ?? 0;

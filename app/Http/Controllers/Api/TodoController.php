@@ -29,7 +29,7 @@ class TodoController extends Controller
                 }
             }
 
-            $users = DB::table('users')->get();
+            $users = DB::table('users')->whereNot('id', $userId)->get();
 
             $response = array();
             $response['flag'] = true;
@@ -64,6 +64,7 @@ class TodoController extends Controller
             $query->where('UserId', $userId)
                 ->orWhere('Assign', $userId);
         });
+
         if ($type == 'important') {
             $list = $list->where('is_important', 1)->where('is_deleted', 0);
             $totalRecord = $totalRecord->where('is_important', 1)->where('is_deleted', 0);
@@ -119,7 +120,7 @@ class TodoController extends Controller
             $search = $request->input(key:'search') ?? '';
             $sortBy = $request->input(key:'sortBy') ?? '';
             $date = $request->input(key:'date') ?? '';
-            $perPage = $request->input(key:'perPage') ?? 100;
+            $perPage = $request->input(key:'perPage') ?? 1000;
             $userId = $request->user_id ?? auth()->user()->id;
 
             if ($userId != auth()->user()->id) {
