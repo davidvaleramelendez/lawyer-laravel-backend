@@ -16,10 +16,11 @@ class AddEvent extends Model
         'end_date',
         'allDay',
         'event_url',
+        'user_id',
         'guest',
         'location',
         'description',
-        'google_id'
+        'google_id',
     ];
-        
+
 }
