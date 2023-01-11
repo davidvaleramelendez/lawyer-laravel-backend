@@ -167,7 +167,7 @@ trait EmailTrait
             try {
                 $oClient->connect();
             } catch (\Exception$e) {
-                return ['flag' => false, 'message' => "Imap connection failed please check it!"];
+                return ['flag' => false, 'message' => "Email imap connection failed please check it!"];
             }
 
             $date = @Email::orderBy('date', 'desc')
@@ -383,7 +383,7 @@ trait EmailTrait
             try {
                 $oClient->connect();
             } catch (\Exception$e) {
-                return ['flag' => false, 'message' => "Imap connection failed please check it!"];
+                return ['flag' => false, 'message' => "Contact imap connection failed please check it!"];
             }
 
             $folder = $oClient->getFolder('INBOX');
