@@ -121,7 +121,8 @@ class ContactController extends Controller
                 'Name' => $request->name,
                 'Email' => $request->email,
                 'PhoneNo' => $request->phone,
-                'Subject' => $request->message,
+                'Subject' => $request->subject ?? "",
+                'message' => $request->message,
                 'IsCase' => 0,
                 'deleted' => 0,
             ]);
@@ -390,8 +391,12 @@ class ContactController extends Controller
                 'PhoneNo' => $request->phone,
             ];
 
+            if (isset($request->subject)) {
+                $updateData['Subject'] = $request->subject ?? "";
+            }
+
             if (isset($request->message)) {
-                $updateData['Subject'] = $request->message;
+                $updateData['message'] = $request->message;
             }
             $id->update($updateData);
 
