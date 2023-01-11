@@ -13,9 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('contact_imap', function (Blueprint $table) {
+        Schema::create('inquiry_imaps', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('user_id');
             $table->string('imap_host')->nullable();
             $table->string('imap_email')->nullable();
             $table->string('imap_password')->nullable();
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('contact_imap');
+        Schema::dropIfExists('inquiry_imaps');
     }
 };

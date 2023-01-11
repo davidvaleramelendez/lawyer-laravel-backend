@@ -23,12 +23,12 @@ class Contact extends Model
      */
     protected $primaryKey = 'ContactID';
     protected $guarded = [];
-    public $timestamps = false;
     protected $fillable = [
         'ContactID',
         'Name',
         'Email',
         'Subject',
+        'message',
         'PhoneNo',
         'IsCase',
         'CreatedAt',

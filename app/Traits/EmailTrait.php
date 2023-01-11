@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Mail\OnlineAnfrage;
 use App\Models\Attachment;
+use App\Models\Contact;
 use App\Models\Email;
 use App\Models\User;
 use Carbon\Carbon;
@@ -162,7 +163,12 @@ trait EmailTrait
                 'password' => $imap_password,
                 'protocol' => 'imap',
             ]);
-            $oClient->connect();
+
+            try {
+                $oClient->connect();
+            } catch (\Exception$e) {
+                return ['flag' => false, 'message' => "Imap connection failed please check it!"];
+            }
 
             $date = @Email::orderBy('date', 'desc')
                 ->first()->date;
@@ -361,106 +367,129 @@ trait EmailTrait
         }
     }
 
-    public function insertImapContacts()
+    public function insertImapContacts($imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
     {
-        $oClient = Client::make([
+        try {
+            $oClient = Client::make([
+                'host' => $imap_host,
+                'port' => $imap_port,
+                'encryption' => $imap_ssl ? 'ssl' : '',
+                'validate_cert' => false,
+                'username' => $imap_email,
+                'password' => $imap_password,
+                'protocol' => 'imap',
+            ]);
 
-            'host' => 'imap.ionos.de',
-            'port' => '993',
-            'encryption' => 'ssl',
-            'validate_cert' => false,
-            'username' => 'contact@valera-melendez.com',
-            'password' => 'D44378472v.',
-            'protocol' => 'imap',
-
-        ]);
-
-        $oClient->connect();
-        $folder = $oClient->getFolder('INBOX');
-        $data = [];
-        $messages = $folder->messages()->all()->get();
-
-        foreach ($messages as $key => $message) {
-
-            $attr = $message->getAttributes();
-            $from = (string) $attr['from'];
-
-            if (Str::contains($from, 'Moving Day')) {
-                if ($message->hasHTMLBody()) {
-                    $data[$key]['message_id'] = (string) $attr['message_id'];
-                    $data[$key]['body'] = $message->getHTMLBody();
-                } elseif ($message->hasTextBody()) {
-                    $data[$key]['message_id'] = (string) $attr['message_id'];
-                    $data[$key]['body'] = $message->getTextBody();
-                }
-            } else {
-                if ($message->hasHTMLBody()) {
-                    $data[$key]['body'] = $message->getHTMLBody();
-                } elseif ($message->hasTextBody()) {
-                    $data[$key]['body'] = $message->getTextBody();
-                }
-                $data[$key]['sender'] = (string) $attr['sender'];
-                $data[$key]['message_id'] = (string) $attr['message_id'];
+            try {
+                $oClient->connect();
+            } catch (\Exception$e) {
+                return ['flag' => false, 'message' => "Imap connection failed please check it!"];
             }
-        }
 
-        $data = array_values($data);
+            $folder = $oClient->getFolder('INBOX');
+            $data = [];
+            $messages = $folder->messages()->all()->get();
 
-        foreach ($data as $msg) {
-            $contact = [];
+            foreach ($messages as $key => $message) {
+                $attr = $message->getAttributes();
+                $from = (string) $attr['from'];
+                $senderSubject = (string) $attr['subject'];
 
-            if (!is_null(@$msg['sender'])) {
-                $body = strip_tags($msg['body']);
-                $senderArr = explode(' ', $msg['sender']);
-                $from = '';
-
-                foreach ($senderArr as $sndr) {
-                    if (strpos($sndr, '@')) {
-                        $email = $sndr;
-                    } else {
-                        $from .= $sndr . ' ';
+                if (Str::contains($from, 'Moving Day')) {
+                    if ($message->hasHTMLBody()) {
+                        $data[$key]['message_id'] = (string) $attr['message_id'];
+                        $data[$key]['body'] = $message->getHTMLBody();
+                    } elseif ($message->hasTextBody()) {
+                        $data[$key]['message_id'] = (string) $attr['message_id'];
+                        $data[$key]['body'] = $message->getTextBody();
                     }
+                } else {
+                    if ($message->hasHTMLBody()) {
+                        $data[$key]['body'] = $message->getHTMLBody();
+                    } elseif ($message->hasTextBody()) {
+                        $data[$key]['body'] = $message->getTextBody();
+                    }
+                    $data[$key]['message_id'] = (string) $attr['message_id'];
                 }
 
-                $email = trim($email, '<>');
-                $contact['from'] = $from;
-                $contact['email'] = $email;
-                $contact['message'] = $body;
-            } else {
-                $msg['body'] = strip_tags($msg['body']);
-                $contact['from'] = $this->getBetween($msg['body'], 'Name:', 'Email:');
-                $contact['email'] = trim($this->getBetween($msg['body'], 'Email:', 'Telephone:'));
-                $contact['telephone'] = $this->getBetween($msg['body'], 'Telephone:', 'Message:');
-                $contact['message'] = $this->getBetween($msg['body'], 'Message:', '</body>');
+                $data[$key]['sender'] = false;
+                $nameAttr = trim($this->getBetween($data[$key]['body'], 'Name:', 'Email:'));
+                $emailAttr = trim($this->getBetween($data[$key]['body'], 'Email:', 'Telephone:'));
+                if (!$nameAttr && !$emailAttr) {
+                    $data[$key]['sender'] = $from;
+                    $data[$key]['sender_subject'] = $senderSubject;
+                }
             }
+            $data = array_values($data);
 
-            $contactID = @DB::table('contact')->select('ContactID')->orderBy('ContactID', 'desc')->first()->ContactID;
+            foreach ($data as $msg) {
+                $contact = [];
+                if (@$msg['sender']) {
+                    $body = strip_tags($msg['body']);
+                    $subject = $msg['sender_subject'];
+                    $senderArr = explode(' ', $msg['sender']);
+                    $from = "";
+                    $email = "";
 
-            if (!is_null($contactID) && strlen($contactID) > 6) {
-                $id = substr($contactID, 6);
-            } else {
-                $id = $contactID;
-            }
+                    foreach ($senderArr as $sndr) {
+                        if (strpos($sndr, '@')) {
+                            $email = $sndr;
+                        } else {
+                            $from .= $sndr . ' ';
+                        }
+                    }
 
-            $contact['id'] = date('Ym') . ($id + 1);
+                    $email = trim($email, '<>');
+                    if (!$from && $email) {
+                        $fromArr = explode("@", $email);
+                        $from = $fromArr[0] ?? "";
+                    }
 
-            if (DB::table('contact')
-                ->where('message_id', $msg['message_id'])->doesntExist()) {
-                DB::table('contact')
-                    ->insert([
+                    $contact['from'] = $from;
+                    $contact['email'] = $email;
+                    $contact['subject'] = $subject;
+                    $contact['telephone'] = "";
+                    $contact['message'] = $body;
+                } else {
+                    $msg['body'] = strip_tags($msg['body']);
+                    $contact['from'] = trim($this->getBetween($msg['body'], 'Name:', 'Email:'));
+                    $contact['email'] = trim($this->getBetween($msg['body'], 'Email:', 'Telephone:'));
+                    $contact['telephone'] = trim($this->getBetween($msg['body'], 'Telephone:', 'Subject:'));
+                    $contact['subject'] = trim($this->getBetween($msg['body'], 'Subject:', 'Message:'));
+                    $contact['message'] = $this->getBetween($msg['body'], 'Message:', '</body>');
+                }
 
+                $contactID = @DB::table('contact')->select('ContactID')->orderBy('ContactID', 'DESC')->first()->ContactID;
+                if (!is_null($contactID) && strlen($contactID) > 6) {
+                    $id = substr($contactID, 6);
+                } else {
+                    $contactID = date('Ymd') . rand(1, 100);
+                    $id = substr($contactID, 6);
+                }
+
+                $id = date('Ym') . sprintf("%04s", $id + 1);
+                $contact['id'] = $id;
+
+                if (Contact::where('message_id', $msg['message_id'])->doesntExist()) {
+                    Contact::insert([
                         'ContactID' => $contact['id'],
                         'Name' => $contact['from'],
                         'Email' => $contact['email'],
-                        'PhoneNo' => @$contact['telephone'] ?? '',
-                        'Subject' => $contact['message'],
+                        'PhoneNo' => $contact['telephone'] ?? '',
+                        'Subject' => $contact['subject'] ?? '',
+                        'message' => $contact['message'],
                         'message_id' => $msg['message_id'],
                         'CreatedAt' => Carbon::now(),
 
                     ]);
 
-                Mail::to($contact['email'])->send(new OnlineAnfrage($contact['id'], $contact['from']));
+                    Mail::to($contact['email'])->send(new OnlineAnfrage($contact['id'], $contact['from']));
+                }
             }
+
+            return ['flag' => true, 'message' => "Success."];
+        } catch (\Exception$e) {
+            return ['flag' => false, 'message' => $e->getMessage()];
         }
     }
 
@@ -476,7 +505,7 @@ trait EmailTrait
 
     public function getBetween($string, $start = "", $end = "")
     {
-        if (strpos($string, $start)) {
+        if (strpos($string, $start) || strpos($string, $start) == 0) {
             $startCharCount = strpos($string, $start) + strlen($start);
             $firstSubStr = substr($string, $startCharCount, strlen($string));
             $endCharCount = strpos($firstSubStr, $end);

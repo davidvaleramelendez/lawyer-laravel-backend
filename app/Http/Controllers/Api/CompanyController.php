@@ -15,7 +15,7 @@ class CompanyController extends Controller
             $flag = false;
             $data = null;
 
-            $company = Company::first();
+            $company = Company::orderBy('id', 'DESC')->first();
             if ($company) {
                 $flag = true;
                 $data = $company;
@@ -80,9 +80,8 @@ class CompanyController extends Controller
                 $updateData['zip_code'] = $data['zip_code'];
             }
 
-            $company = Company::first();
+            $company = Company::orderBy('id', 'DESC')->first();
             if ($company) {
-                $flag = true;
                 $company->update($updateData);
             } else {
                 $company = Company::create($updateData);

@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
@@ -23,7 +22,7 @@ class OnlineAnfrage extends Mailable
      */
     public function __construct($ticket, $name)
     {
-        $this->ticket  = $ticket;
+        $this->ticket = $ticket;
         $this->name = $name;
     }
 

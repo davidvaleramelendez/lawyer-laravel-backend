@@ -10,7 +10,9 @@ use App\Models\CasesType;
 use App\Models\Contact;
 use App\Models\ContactNotes;
 use App\Models\Email;
+use App\Models\InquiryImap;
 use App\Models\User;
+use App\Traits\EmailTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +22,8 @@ use Validator;
 
 class ContactController extends Controller
 {
+    use EmailTrait;
+
     public function getContactFilter($search, $skips, $perPage, $sortColumn, $sort)
     {
         if (Helper::get_user_permissions(3) == 1) {
@@ -118,8 +122,8 @@ class ContactController extends Controller
                 'Email' => $request->email,
                 'PhoneNo' => $request->phone,
                 'Subject' => $request->message,
-                'IsCase' => '0',
-                'deleted' => '0',
+                'IsCase' => 0,
+                'deleted' => 0,
             ]);
             $response = array();
             $response['flag'] = true;
@@ -480,6 +484,43 @@ class ContactController extends Controller
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
             $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function contactImapCron()
+    {
+        try {
+            $flag = false;
+            $message = "Please enter contact i-map details!";
+
+            $inquiryImap = InquiryImap::orderBy('id', 'DESC')->first();
+            if ($inquiryImap && $inquiryImap->id) {
+                $result = $this->insertImapContacts(
+                    $inquiryImap->imap_host ?? "",
+                    $inquiryImap->imap_port ?? "",
+                    $inquiryImap->imap_ssl ?? "",
+                    $inquiryImap->imap_email ?? "",
+                    $inquiryImap->imap_password ?? ""
+                );
+
+                if ($result && $result['flag']) {
+                    $flag = $result['flag'];
+                    $message = "Success!";
+                } else {
+                    $flag = $result['flag'];
+                    $message = $result['message'];
+                }
+            }
+
+            $response = array();
+            $response['flag'] = $flag;
+            $response['message'] = $message;
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
             return response()->json($response);
         }
     }
