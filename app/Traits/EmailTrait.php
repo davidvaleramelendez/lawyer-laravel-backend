@@ -413,8 +413,8 @@ trait EmailTrait
                 }
 
                 $data[$key]['sender'] = false;
-                $nameAttr = trim($this->getBetween($data[$key]['body'], 'Name:', 'Email:'));
-                $emailAttr = trim($this->getBetween($data[$key]['body'], 'Email:', 'Telephone:'));
+                $nameAttr = str_contains(strip_tags($data[$key]['body']), "Name:");
+                $emailAttr = str_contains(strip_tags($data[$key]['body']), "Email:");
                 if (!$nameAttr && !$emailAttr) {
                     $data[$key]['sender'] = $from;
                     $data[$key]['sender_subject'] = $senderSubject;
@@ -425,7 +425,7 @@ trait EmailTrait
             foreach ($data as $msg) {
                 $contact = [];
                 if (@$msg['sender']) {
-                    $body = strip_tags($msg['body']);
+                    $body = $msg['body'];
                     $subject = $msg['sender_subject'];
                     $senderArr = explode(' ', $msg['sender']);
                     $from = "";
@@ -645,5 +645,13 @@ trait EmailTrait
             return $string;
         }
         return $string;
+    }
+
+    public function getSpacebleHtmlString($string = "")
+    {
+        $spaceString = str_replace('</', ' </', $string);
+        $doubleSpace = strip_tags($spaceString);
+        $singleSpace = str_replace('  ', ' ', $doubleSpace);
+        return $singleSpace;
     }
 }
