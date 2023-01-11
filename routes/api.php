@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\EmailTemplateAttachmentController;
 use App\Http\Controllers\Api\EmailTemplateController;
 use App\Http\Controllers\Api\GoogleController;
+use App\Http\Controllers\Api\InquiryImapController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LanguageController;
 use App\Http\Controllers\Api\LetterController;
@@ -59,7 +60,10 @@ Route::group([
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
 
+/* Cron job */
 Route::get('/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron'])->name('email-cron');
+Route::get('/contact/contact-imap/cron', [ContactController::class, 'contactImapCron'])->name('contact-imap-cron');
+/* /Cron job */
 
 Route::group([
     'middleware' => 'auth:sanctum',
@@ -305,5 +309,11 @@ Route::group([
     Route::post('/admin/letter-template/update', [LetterTemplateController::class, 'letterTemplateUpdate']);
     Route::get('/admin/letter-template/delete/{id}', [LetterTemplateController::class, 'letterTemplateDelete']);
     /* /Letter Templates */
+
+    /* InquiryImap */
+    Route::post('/admin/inquiry-imap/create_update', [InquiryImapController::class, 'createOrUpdate']);
+    Route::get('/admin/inquiry-imap/detail', [InquiryImapController::class, 'getInquiryImapDetail']);
+    Route::get('/admin/inquiry-imap/delete/{id}', [InquiryImapController::class, 'deleteInquiryImap']);
+    /* /InquiryImap */
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
