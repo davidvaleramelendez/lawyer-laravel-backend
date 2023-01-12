@@ -69,7 +69,6 @@ Route::get('/contact/contact-imap/cron', [ContactController::class, 'contactImap
 Route::group([
     'middleware' => 'auth:sanctum',
 ], function ($router) {
-
     Route::get('/dashboard', [DashboardController::class, 'getData']);
     Route::get('/admin/global-search', [DashboardController::class, 'globalSearch']);
     Route::post('/admin/update-bookmark', [DashboardController::class, 'updateBookmark']);

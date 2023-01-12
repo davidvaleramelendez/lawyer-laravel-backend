@@ -62,7 +62,6 @@ class AuthController extends Controller
             $response['data'] = null;
             return response()->json($response);
         }
-
     }
     /**
      * Register a User.
