@@ -100,12 +100,10 @@ Route::group([
     Route::get('/admin/permissions/get/{userID}', [AppsController::class, 'user_permissions_get'])->name('user_permissions_update');
 
     Route::get('/admin/get_case_list', [CaseController::class, 'get_list'])->name('admin-get_case_list');
-
     Route::get('/admin/case/get/{id}', [CaseController::class, 'get_detail'])->name('admin-get_case_detail');
     Route::post('/admin/case/update_case', [CaseController::class, 'update_case'])->name('admin_update_case');
     Route::get('/admin/case/close_case/{id}', [CaseController::class, 'close_case'])->name('admin_close_case');
     Route::get('/admin/case/share_case/{id}', [CaseController::class, 'share_case'])->name('admin_share_case');
-
     Route::get('case/delete/{id}', [AppsController::class, 'delete_case'])->name('delete_case');
 
     Route::post('/admin/case/add_letter', [CaseController::class, 'letter_add'])->name('admin-case_letter_add');

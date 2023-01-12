@@ -140,7 +140,6 @@ class AuthController extends Controller
         } else {
             return response()->json(['flag' => false, "message" => "Unauthenticated."]);
         }
-
     }
     /**
      * Get the authenticated User.
