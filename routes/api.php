@@ -58,6 +58,7 @@ Route::group([
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
+    Route::post('/user/change-password', [AuthController::class, 'changeAuthUserPassword']);
 });
 
 /* Cron job */
@@ -68,6 +69,7 @@ Route::get('/contact/contact-imap/cron', [ContactController::class, 'contactImap
 Route::group([
     'middleware' => 'auth:sanctum',
 ], function ($router) {
+
     Route::get('/dashboard', [DashboardController::class, 'getData']);
     Route::get('/admin/global-search', [DashboardController::class, 'globalSearch']);
     Route::post('/admin/update-bookmark', [DashboardController::class, 'updateBookmark']);
