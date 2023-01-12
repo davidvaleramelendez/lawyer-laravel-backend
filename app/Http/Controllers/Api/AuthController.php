@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Validator;
 
 class AuthController extends Controller
@@ -19,9 +20,14 @@ class AuthController extends Controller
      *
      * @return void
      */
+    public $CRYPTO_KEY = "";
+    public $CRYPTO_IV = "";
+
     public function __construct()
     {
         $this->middleware('auth:sanctum', ['except' => ['login', 'register']]);
+        $this->CRYPTO_KEY = hex2bin(env('CRYPTO_KEY'));
+        $this->CRYPTO_IV = hex2bin(env('CRYPTO_IV'));
     }
     /**
      * Get a JWT via given credentials.
@@ -31,21 +37,16 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $key = hex2bin(env('CRYPTO_KEY'));
-            $iv = hex2bin(env('CRYPTO_IV'));
-
             $UserArray = $request->all();
             if ($request->password) {
-                $decrypted = openssl_decrypt($request->password, 'AES-128-CBC', $key, OPENSSL_ZERO_PADDING, $iv);
-                $request->password = trim($decrypted);
-
-                $UserArray['password'] = $request->password;
+                $UserArray['password'] = $this->decryptData($request->password);
             }
 
             $validator = Validator::make($UserArray, [
                 'email' => 'required|email',
                 'password' => 'required|string|min:6',
             ]);
+
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
@@ -61,7 +62,6 @@ class AuthController extends Controller
             $response['data'] = null;
             return response()->json($response);
         }
-
     }
     /**
      * Register a User.
@@ -140,7 +140,6 @@ class AuthController extends Controller
         } else {
             return response()->json(['flag' => false, "message" => "Unauthenticated."]);
         }
-
     }
     /**
      * Get the authenticated User.
@@ -180,5 +179,69 @@ class AuthController extends Controller
         $response['message'] = 'User logged successfully';
         $response['data'] = ['userData' => $user, 'accessToken' => $access_token, 'tokenType' => 'bearer', 'languageLabels' => $languageLabels, 'expiresIn' => 86400];
         return response()->json($response);
+    }
+
+    public function changeAuthUserPassword(Request $request)
+    {
+        try {
+            $validation = Validator::make($request->all(), [
+                'password' => 'required|string|min:6',
+                'newPassword' => 'required|string|min:6',
+            ]);
+
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Failed!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
+            }
+
+            $id = auth()->user()->id;
+            $user = User::where('id', $id)->first();
+
+            $passwordData = $request->all();
+            if ($request->password) {
+                $passwordData['password'] = $this->decryptData($request->password);
+            }
+
+            if ($request->newPassword) {
+                $passwordData['newPassword'] = $this->decryptData($request->newPassword);
+            }
+
+            if (!Hash::check($passwordData['password'], $user->password)) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = 'Current password not matched!';
+                $response['data'] = null;
+                return response()->json($response);
+            }
+
+            $newPassword = Hash::make($passwordData['newPassword']);
+            $user->update(['password' => $newPassword]);
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Password updated successfully!';
+            $response['data'] = [];
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function decryptData($string = "")
+    {
+        try {
+            $decrypted = openssl_decrypt($string, 'AES-128-CBC', $this->CRYPTO_KEY, OPENSSL_ZERO_PADDING, $this->CRYPTO_IV);
+            return trim($decrypted);
+        } catch (\Exception$e) {
+            return $string;
+        }
     }
 }
