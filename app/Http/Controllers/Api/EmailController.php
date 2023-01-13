@@ -556,7 +556,7 @@ class EmailController extends Controller
                     $attachmentIds = $request->attachment_ids[$key];
                     $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
                     $attachmentUpdate->email_group_id = $email_group_id;
-                    $attachmentUpdate->type = 'notification';
+                    $attachmentUpdate->type = 'email';
                     $attachmentUpdate->save();
                     $attachments[] = $attachmentUpdate->path;
                     $fileNames[] = $attachmentUpdate->id;
@@ -574,7 +574,6 @@ class EmailController extends Controller
             $response['message'] = 'Mail send successfully.';
             $response['data'] = $notificationData;
             return response()->json($response);
-
         } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;

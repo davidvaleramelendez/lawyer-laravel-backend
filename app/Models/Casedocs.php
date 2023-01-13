@@ -9,8 +9,7 @@ class Casedocs extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -24,17 +23,10 @@ class Casedocs extends Model
      */
     protected $primaryKey = 'id';
     protected $guarded = [];
-    public $timestamps = false;
-     protected $hidden = [
-        'CreatedAt'
-    ];
-
 
     public function cases()
     {
         return $this->hasOne('App\Models\Cases', 'id', 'CaseID');
     }
-   
- 
 
 }
