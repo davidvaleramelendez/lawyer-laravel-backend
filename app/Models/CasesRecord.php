@@ -9,8 +9,7 @@ class CasesRecord extends Model
 {
     use HasFactory;
 
-
-       /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -24,7 +23,6 @@ class CasesRecord extends Model
      */
     protected $primaryKey = 'RecordID';
     protected $guarded = [];
-    public $timestamps = false;
 
     public function attachment()
     {

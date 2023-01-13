@@ -15,14 +15,14 @@ return new class extends Migration
     {
         Schema::create('cases', function (Blueprint $table) {
             $table->integer('CaseID')->unique();
-            $table->unsignedInteger('UserID');
-            $table->unsignedInteger('ContactID');
-            $table->unsignedInteger('LaywerID');
-            $table->unsignedInteger('CaseTypeID');
-            $table->string('Name');
-            $table->timestamp('Date');
+            $table->unsignedInteger('UserID')->nullable();
+            $table->unsignedInteger('ContactID')->nullable();
+            $table->unsignedInteger('LaywerID')->nullable();
+            $table->unsignedInteger('CaseTypeID')->nullable();
+            $table->string('Name')->nullable();
+            $table->timestamp('Date')->nullable();
             $table->enum('Status', ['Open', 'Close', 'Hold'])->default('Open');
-            $table->unsignedInteger('CreatedBy');
+            $table->unsignedInteger('CreatedBy')->nullable();
             $table->timestamps();
         });
     }

@@ -15,13 +15,13 @@ return new class extends Migration
     {
         Schema::create('case_records', function (Blueprint $table) {
             $table->bigIncrements('RecordID');
-            $table->unsignedInteger('CaseID');
-            $table->unsignedInteger('UserID');
+            $table->unsignedInteger('CaseID')->nullable();
+            $table->unsignedInteger('UserID')->nullable();
             $table->string('Email')->nullable();
             $table->string('Subject')->nullable();
             $table->text('Content')->nullable();
             $table->longText('File')->comment('DC2Type:json')->nullable();
-            $table->string('Type');
+            $table->string('Type')->nullable();
             $table->text('attachment_id')->nullable();
             $table->datetime('CreatedAt')->useCurrent()->nullable();
             $table->unsignedInteger('ToUserID')->nullable();
