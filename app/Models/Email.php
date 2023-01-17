@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Email extends Model
 {
     use HasFactory;
-    public $timestamps = false;
     protected $guarded = [];
 
     protected $casts = [
@@ -35,6 +34,6 @@ class Email extends Model
 
     public function emailGroup()
     {
-        return $this->hasMany(Email::class, 'email_group_id', 'email_group_id');
+        return $this->hasMany(Email::class, 'email_group_id', 'email_group_id')->with('sender', 'receiver', 'attachment');
     }
 }

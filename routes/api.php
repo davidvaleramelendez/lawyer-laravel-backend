@@ -118,6 +118,12 @@ Route::group([
 
     Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class, 'case_letter_erledigt'])->name('admin-case_letter_erledigt');
 
+    /* Case Email */
+    Route::get('/admin/case/emails', [CaseController::class, 'getCaseEmails'])->name('admin-case-emails');
+    Route::post('/admin/case/email/send', [CaseController::class, 'sendCaseMail'])->name('admin-case-send-email');
+    Route::post('/admin/case/email/reply', [CaseController::class, 'sendCaseReplyEmail'])->name('admin-case-reply-email');
+    /* Case Email */
+
     Route::post('/admin/case/case_records/email', [CaseRecordController::class, 'case_send_email'])->name('send-email');
     Route::get('/admin/case/case_records/{id}', [CaseRecordController::class, 'get_case_records'])->name('get_case_record');
     Route::post('/admin/case/case_record/delete', [CaseRecordController::class, 'delete_case_record'])->name('delete_case_record');
