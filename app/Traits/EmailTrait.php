@@ -329,6 +329,13 @@ trait EmailTrait
                     if (isset($email->id)) {
                         $ttt = 0;
                     } else {
+                        if ($msg["email_group_id"]) {
+                            $caseOldEmail = Email::where('email_group_id', $msg["email_group_id"])->first();
+                            if ($caseOldEmail && $caseOldEmail->case_id) {
+                                $msg["case_id"] = $caseOldEmail->case_id;
+                            }
+                        }
+
                         $created = Email::Create($msg);
                         if ($created && $created->attachedFiles) {
                             $attachmentFiles = json_decode($created->attachedFiles);

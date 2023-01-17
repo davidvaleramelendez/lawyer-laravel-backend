@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
+use App\Models\Attachment;
 use App\Models\Casedocs;
 use App\Models\Cases;
 use App\Models\CasesRecord;
@@ -14,17 +15,21 @@ use App\Models\Email;
 use App\Models\fighter_info;
 use App\Models\Letters;
 use App\Models\User;
+use App\Notifications\EmailSentNotification;
 use App\Traits\CronTrait;
+use App\Traits\EmailTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class CaseController extends Controller
 {
     use CronTrait;
+    use EmailTrait;
 
     public function getCaseFilter($id, $status, $UserID, $search, $skips, $perPage, $sortColumn, $sort)
     {
@@ -639,5 +644,199 @@ class CaseController extends Controller
             return response()->json($response);
         }
 
+    }
+
+    public function getCaseEmails(Request $request)
+    {
+        try {
+            $validation = Validator::make($request->all(), [
+                'case_id' => 'required',
+            ]);
+
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Case id is required!";
+                $response['data'] = [];
+                return response()->json($response);
+            }
+
+            $caseId = $request->case_id ?? '';
+            $emails = Email::with('sender', 'receiver', 'attachment', 'emailGroup')
+                ->select('*', DB::raw('count(*) as count2'))
+                ->groupBy('email_group_id')
+                ->where(function ($query) use ($caseId) {
+                    $query->where('case_id', $caseId)
+                        ->where('is_delete', 0);
+                })
+                ->orderBy('id', 'DESC');
+
+            $emails = $emails->get();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = "Success!";
+            $response['data'] = ["emails" => $emails];
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function sendCaseMail(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'email_to' => 'required',
+        ]);
+
+        if ($validation->fails()) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = 'To email is required!.';
+            $response['data'] = [];
+            $response['error'] = $validation->errors();
+            return response()->json($response);
+        }
+
+        try {
+            $cc = [];
+            $bcc = [];
+            $userId = $request->user_id ?? auth()->user()->id;
+            $userSchema = User::whereIn('id', $request->email_to)->get();
+
+            $attachments = [];
+            $fileNames = [];
+
+            $email_group_id = date("Y") . date("m") . date("d") . rand(1111, 9999);
+            $new_subject = $request->subject;
+            $new_subject = str_replace("Re:", "", $new_subject);
+            $new_subject = str_replace("[Tgicket#:" . $email_group_id . "] ", "", $new_subject);
+            $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+            $new_subject = "[Ticket#:" . $email_group_id . "] " . $new_subject;
+
+            if ($request->attachment_ids) {
+                foreach ($request->attachment_ids as $key => $attachment_id) {
+                    $attachmentIds = $request->attachment_ids[$key];
+                    $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                    $attachmentUpdate->email_group_id = $email_group_id;
+                    $attachmentUpdate->type = 'email';
+                    $attachmentUpdate->save();
+                    $attachments[] = $attachmentUpdate->path;
+                    $fileNames[] = $attachmentUpdate->id;
+                }
+            }
+
+            foreach ($userSchema as $user) {
+                Notification::send($user, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $request->message, $request->message, $attachments, $fileNames, $email_group_id, $userId));
+            }
+
+            $emailData = Email::with('sender', 'receiver', 'attachment', 'emailGroup')->where('email_group_id', $email_group_id)->first();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Mail send successfully.';
+            $response['data'] = $emailData;
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function sendCaseReplyEmail(Request $request)
+    {
+        try {
+            $validation = Validator::make($request->all(), [
+                'id' => 'required',
+            ]);
+
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Id is required";
+                $response['data'] = [];
+                return response()->json($response);
+            }
+
+            $userId = $request->user_id ?? auth()->user()->id;
+
+            $cc = [];
+            $bcc = [];
+            $user = null;
+            $email_group_id = "";
+
+            $email = Email::where('id', $request->id)->first();
+
+            if ($email && $email->id) {
+                $email_group_id = $email->email_group_id;
+
+                $attachments = [];
+                $fileNames = [];
+
+                $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
+
+                $to_id = User::where('id', '=', $email->to_id)->first();
+                $from_id = User::where('id', '=', $email->from_id)->first();
+
+                $old_message = "";
+
+                $old_message .= "<HR><BR><B>From: </B>" . $to_id->name . ' (' . $to_id->email . ')';
+                $old_message .= "<BR><B>To: </B>" . $from_id->name . ' (' . $from_id->email . ')';
+                $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
+                $old_message .= "<BR><B>Subject:</B> " . $email->subject;
+                $old_message .= "<BR><B>Last Message:</B> " . $email->body;
+
+                $last_message = "" . $email->body;
+
+                $complete_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $old_message . '</p></details>';
+                $display_message = $request->message . '<BR><details class="' . $this->detailsTagClassName . '"><summary></summary><p>' . $last_message . '</p></details>';
+
+                $new_subject = $email->subject;
+                $new_subject = str_replace("Re:", "", $new_subject);
+                $new_subject = str_replace("[Ticket#:" . $email_group_id . "]", "", $new_subject);
+                $new_subject = str_replace("[Ticket#:" . $email_group_id . "] ", "", $new_subject);
+
+                $new_subject = "Re: [Ticket#:" . $email_group_id . "] " . $new_subject;
+
+                if ($request->attachment_ids && count($request->attachment_ids) > 0) {
+                    foreach ($request->attachment_ids as $key => $attachment_id) {
+                        $attachmentIds = $request->attachment_ids[$key];
+                        $attachmentUpdate = Attachment::where('id', $attachmentIds)->first();
+                        $attachmentUpdate->email_group_id = $email_group_id;
+                        $attachmentUpdate->type = 'email';
+                        $attachmentUpdate->save();
+                        $attachments[] = $attachmentUpdate->path;
+                        $fileNames[] = $attachmentUpdate->id;
+                    }
+                }
+
+                Notification::send($from_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId, $request->id));
+
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = 'Replied successfully!';
+                $response['data'] = null;
+                return response()->json($response);
+            } else {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = 'Invalid email id!';
+                $response['data'] = null;
+                return response()->json($response);
+            }
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
     }
 }
