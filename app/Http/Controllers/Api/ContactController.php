@@ -254,7 +254,7 @@ class ContactController extends Controller
                 $CaseID = $createdCase->CaseID;
             }
 
-            $sender_id = User::with('imap')->where('email', $param['email'])->first();
+            $sender_id = User::with('imap')->where('email', auth()->user()->email)->first();
 
             $email_group_id = $id;
             $contact_info = Contact::where('ContactID', $id)->first();
@@ -274,27 +274,30 @@ class ContactController extends Controller
 
             // DB::table('notifications')->insert($notification_data);
 
-            $notification_data = array(
-                'folder' => 'sent',
-                'case_id' => $CaseID,
-                'imap_id' => $sender_id && $sender_id->imap && $sender_id->imap->id ? $sender_id->imap->id : null,
-                'sent' => 1,
-                'from_id' => Auth::user()->id,
-                'to_id' => $sender_id->id,
-                'from' => "<" . Auth::user()->email . ">",
-                'to' => "<" . $sender_id->email . ">",
-                'subject' => '[Ticket#:' . $email_group_id . ']',
-                'email_group_id' => $email_group_id,
-                'date' => Carbon::now(),
-                'toaddress' => "<" . $sender_id->email . ">",
-                'fromaddress' => "<" . Auth::user()->email . ">",
-                'body' => $contact_info->Subject,
-                'important' => 0,
-                'created_at' => date("Y/m/d H:i:s"),
-                'updated_at' => date("Y/m/d H:i:s"),
-            );
+            if ($sender_id && $sender_id->id) {
+                $notification_data = array(
+                    'folder' => 'sent',
+                    'case_id' => $CaseID,
+                    'imap_id' => $sender_id->imap && $sender_id->imap->id ? $sender_id->imap->id : null,
+                    'sent' => 1,
+                    'from_id' => Auth::user()->id,
+                    'to_id' => $sender_id->id,
+                    'from' => "<" . Auth::user()->email . ">",
+                    'to' => "<" . $sender_id->email . ">",
+                    'subject' => '[Ticket#:' . $email_group_id . ']',
+                    'email_group_id' => $email_group_id,
+                    'date' => Carbon::now(),
+                    'toaddress' => "<" . $sender_id->email . ">",
+                    'fromaddress' => "<" . Auth::user()->email . ">",
+                    'body' => $contact_info->Subject,
+                    'important' => 0,
+                    'created_at' => date("Y/m/d H:i:s"),
+                    'updated_at' => date("Y/m/d H:i:s"),
+                );
 
-            Email::insert($notification_data);
+                Email::insert($notification_data);
+            }
+
             $userDetail = User::where('id', $userID)->first();
             $contactDetail = Contact::with('case')->where('ContactID', $id)->first();
             $laywerDetail = User::where('id', $laywerId)->first();
