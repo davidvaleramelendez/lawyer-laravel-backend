@@ -10,15 +10,20 @@ use Illuminate\Http\Request;
 
 class LetterController extends Controller
 {
-    public function getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort)
+    public function getLetterFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort)
     {
         $userId = auth()->user()->id;
         if (Helper::get_user_permissions(6) == 1) {
             $list = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
-            $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->get();
+            $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0);
         } else {
             $list = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
-            $totalRecord = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0)->get();
+            $totalRecord = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0);
+        }
+
+        if ($caseId) {
+            $list = $list->where('case_id', $caseId);
+            $totalRecord = $totalRecord->where('case_id', $caseId);
         }
 
         if ($search) {
@@ -37,7 +42,7 @@ class LetterController extends Controller
         }
 
         $list = $list->skip($skips)->take($perPage)->get();
-        $totalRecord = $totalRecord->count();
+        $totalRecord = $totalRecord->get()->count();
         return ['data' => $list, 'count' => $totalRecord];
     }
 
@@ -54,9 +59,9 @@ class LetterController extends Controller
             $skips = $perPage * ($page - 1) ?? 1;
             $sort = $request->input(key:'sort') ?? 'DESC';
             $search = $request->input(key:'search') ?? '';
-            $id = $request->case_id ?? '';
+            $caseId = $request->case_id ?? '';
 
-            $letters = $this->getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort);
+            $letters = $this->getLetterFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort);
 
             $list = $letters['data'];
             $totalRecord = $letters['count'];
@@ -65,7 +70,7 @@ class LetterController extends Controller
                 if ($page > 0) {
                     $page = 1;
                     $skips = $perPage * ($page - 1) ?? 1;
-                    $letters = $this->getLetterFilter($id, $search, $skips, $perPage, $sortColumn, $sort);
+                    $letters = $this->getLetterFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort);
                     $list = $letters['data'];
                     $totalRecord = $letters['count'];
                 }
