@@ -754,13 +754,13 @@ class CaseController extends Controller
     {
         try {
             $validation = Validator::make($request->all(), [
-                'id' => 'required',
+                'email_to' => 'required',
             ]);
 
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Id is required";
+                $response['message'] = "To email is required";
                 $response['data'] = [];
                 return response()->json($response);
             }
@@ -782,11 +782,10 @@ class CaseController extends Controller
 
                 $email = Email::where('email_group_id', $email_group_id)->orderBy("date", "desc")->first();
 
-                $to_id = User::where('id', '=', $email->to_id)->first();
-                $from_id = User::where('id', '=', $email->from_id)->first();
+                $to_id = User::where('id', $request->email_to)->first();
+                $from_id = User::where('id', $userId)->first();
 
                 $old_message = "";
-
                 $old_message .= "<HR><BR><B>From: </B>" . $to_id->name . ' (' . $to_id->email . ')';
                 $old_message .= "<BR><B>To: </B>" . $from_id->name . ' (' . $from_id->email . ')';
                 $old_message .= "<BR><B>DateTime: </B>" . date("d/M/Y H:i:s", strtotime($email->date));
@@ -817,7 +816,7 @@ class CaseController extends Controller
                     }
                 }
 
-                Notification::send($from_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId, $request->id));
+                Notification::send($to_id, new EmailSentNotification($user, $cc, $bcc, $new_subject, $request->message, $display_message, $complete_message, $attachments, $fileNames, $email_group_id, $userId, $request->id));
 
                 $response = array();
                 $response['flag'] = true;
