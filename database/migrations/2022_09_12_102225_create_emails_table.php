@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('emails', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('case_id');
-            $table->biginteger('imap_id');
-            $table->string('folder');
+            $table->unsignedInteger('case_id')->nullable();
+            $table->biginteger('imap_id')->nullable();
+            $table->string('folder')->nullable();
             $table->boolean('sent')->default(0);
             $table->integer('from_id')->nullable();
             $table->integer('to_id')->nullable();
