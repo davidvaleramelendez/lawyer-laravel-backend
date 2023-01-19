@@ -221,14 +221,15 @@ class InvoiceController extends Controller
 
             DB::beginTransaction();
 
-            $userInfomation = AccountSetting::where('UserId', auth()->id())->first();
-            if (empty($userInfomation)) {
-                $response = array();
-                $response['flag'] = false;
-                $response['message'] = 'You need to update your account profile first.';
-                $response['data'] = null;
-                return response()->json($response);
-            }
+            // $userInfomation = AccountSetting::where('UserId', auth()->id())->first();
+            // if (empty($userInfomation)) {
+            //     $response = array();
+            //     $response['flag'] = false;
+            //     $response['message'] = 'You need to update your account profile first.';
+            //     $response['data'] = null;
+            //     return response()->json($response);
+            // }
+
             $case = Cases::where('CaseID', $request->CaseID)->first();
             $caseTypeId = $case->CaseTypeID;
             $caseType = CasesType::where('CaseTypeID', $caseTypeId)->first();
@@ -239,7 +240,8 @@ class InvoiceController extends Controller
                 'invoice_date' => Carbon::parse($request->invoice_date)->format('Y-m-d'),
                 'invoice_due_date' => Carbon::parse($request->invoice_due_date)->format('Y-m-d'),
                 'note' => $request->note,
-                'payment_details' => $userInfomation->bank_information,
+                // 'payment_details' => $userInfomation->bank_information,
+                'payment_details' => "",
                 'status' => $request->status,
                 'method' => $request->method,
                 'CaseID' => $request->CaseID,
