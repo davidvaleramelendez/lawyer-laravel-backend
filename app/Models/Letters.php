@@ -23,9 +23,6 @@ class Letters extends Model
      */
     protected $primaryKey = 'id';
     protected $guarded = [];
-    protected $hidden = [
-        'CreatedAt',
-    ];
 
     protected $casts = [
         'is_print' => 'integer',
