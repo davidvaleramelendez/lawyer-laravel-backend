@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('message');
             $table->string('best_regards')->nullable();
             $table->date('frist_date')->nullable();
+            $table->datetime('created_date')->useCurrent();
             $table->datetime('last_date')->useCurrent();
             $table->integer('is_print')->default(0);
             $table->integer('deleted')->default(0);

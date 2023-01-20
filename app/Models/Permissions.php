@@ -23,10 +23,6 @@ class Permissions extends Model
      */
     protected $primaryKey = 'id';
     protected $guarded = [];
-    public $timestamps = false;
-    protected $hidden = [
-        'CreatedAt',
-    ];
 
     protected $casts = [
         'permission_id' => 'integer',

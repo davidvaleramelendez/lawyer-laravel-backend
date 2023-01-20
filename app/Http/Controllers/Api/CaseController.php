@@ -416,7 +416,7 @@ class CaseController extends Controller
 
             $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-            $letterId = Letters::insertGetId([
+            $letterData = [
                 'case_id' => $case_id,
                 'user_id' => Auth::user()->id,
                 'letter_template_id' => $request->letter_template_id ?? null,
@@ -426,10 +426,16 @@ class CaseController extends Controller
                 'word_file' => $attachment,
                 'word_path' => $path,
                 'frist_date' => Carbon::parse($request->frist_date)->format('Y-m-d'),
-                'isErledigt' => "0",
+                'isErledigt' => 0,
                 'pdf_file' => "",
                 'pdf_path' => "",
-            ]);
+            ];
+
+            if ($request && $request->created_date) {
+                $letterData['created_date'] = Carbon::parse($request->created_date)->format('Y-m-d');
+            }
+
+            $letterId = Letters::insertGetId($letterData);
 
             $this->cron_trait_letter_to_pdf($attachment);
 
@@ -472,7 +478,6 @@ class CaseController extends Controller
     public function letter_update(Request $request)
     {
         try {
-
             $validation = Validator::make($request->all(), [
                 'id' => 'required',
                 'case_id' => 'required',
@@ -497,7 +502,7 @@ class CaseController extends Controller
 
             $id = $request->id;
             $case_id = $request->case_id;
-
+            $letter = Letters::where('id', $id)->first();
             $case_data = DB::table("cases")->where("CaseID", $case_id)->first();
             $user_data = DB::table("users")->where("id", $case_data->UserID)->first();
             $fighter_data = DB::table("fighter_infos")->where("CaseID", $case_id)->first();
@@ -530,11 +535,15 @@ class CaseController extends Controller
 
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
             $path = 'storage/documents/' . $attachment;
+            if ($letter && $letter->word_path) {
+                $attachment = $letter->word_file;
+                $path = $letter->word_path;
+            }
 
             $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-            $letter = Letters::where('id', $id)->update([
-                'case_id' => $request->case_id,
+            $letterData = [
+                'case_id' => $case_id,
                 'user_id' => Auth::user()->id,
                 'letter_template_id' => $request->letter_template_id ?? null,
                 'subject' => $request->subject,
@@ -542,9 +551,20 @@ class CaseController extends Controller
                 'best_regards' => $request->best_regards,
                 'word_file' => $attachment,
                 'word_path' => $path,
+                'isErledigt' => 0,
                 'pdf_file' => "",
                 'pdf_path' => "",
-            ]);
+            ];
+
+            if ($request && $request->frist_date) {
+                $letterData['frist_date'] = Carbon::parse($request->frist_date)->format('Y-m-d');
+            }
+
+            if ($request && $request->created_date) {
+                $letterData['created_date'] = Carbon::parse($request->created_date)->format('Y-m-d');
+            }
+
+            $letter = Letters::where('id', $id)->update($letterData);
 
             $this->cron_trait_letter_to_pdf($attachment);
 
