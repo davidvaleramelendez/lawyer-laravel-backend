@@ -2,13 +2,16 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
         "barryvdh/laravel-dompdf": "^2.0",
         "brainfoolong/cryptojs-aes-php": "^2.1",
-        "cloudconvert/cloudconvert-laravel": "^1.1",
+        "cloudconvert/cloudconvert-php": "^3.3",
         "google/apiclient": "^2.12",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.19",
@@ -35,9 +38,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-
         }
-
     },
     "autoload-dev": {
         "psr-4": {

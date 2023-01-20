@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\LanguageController;
 use App\Http\Controllers\Api\LetterController;
 use App\Http\Controllers\Api\LetterTemplateController;
 use App\Http\Controllers\Api\MusterDocumentController;
+use App\Http\Controllers\Api\PdfApiController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TimelineController;
@@ -320,5 +321,11 @@ Route::group([
     Route::get('/admin/inquiry-imap/detail', [InquiryImapController::class, 'getInquiryImapDetail']);
     Route::get('/admin/inquiry-imap/delete/{id}', [InquiryImapController::class, 'deleteInquiryImap']);
     /* /InquiryImap */
+
+    /* PdfApi */
+    Route::post('/admin/pdf-api/create_update', [PdfApiController::class, 'createOrUpdate']);
+    Route::get('/admin/pdf-api/detail', [PdfApiController::class, 'getPdfApiDetail']);
+    Route::get('/admin/pdf-api/delete/{id}', [PdfApiController::class, 'deletePdfApi']);
+    /* /PdfApi */
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
