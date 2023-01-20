@@ -87,7 +87,7 @@ trait CronTrait
                         ->set('input', ["import-2"])
                         ->set('optimize_print', true)
                         ->set('pdf_a', false)
-                        // ->set('engine_version', '2019')
+                        ->set('engine_version', '2021')
                         ->set('filename', str_replace(".docx", ".pdf", $letter_docs->word_file))
                 )
                 ->addTask(
@@ -101,7 +101,6 @@ trait CronTrait
             $cloudconvert->jobs()->wait($job); // Wait for job completion
 
             foreach ($job->getExportUrls() as $file) {
-
                 $source = $cloudconvert->getHttpTransport()->download($file->url)->detach();
                 Storage::disk('public')->put('documents/' . $file->filename, $source);
                 $path = 'storage/documents/' . $file->filename;
