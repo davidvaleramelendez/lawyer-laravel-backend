@@ -39,7 +39,7 @@ trait CronTrait
                     ->set('input', ["import-2"])
                     ->set('optimize_print', true)
                     ->set('pdf_a', false)
-                    // ->set('engine_version', '2019')
+                    ->set('engine_version', '2019')
                     ->set('filename', str_replace(".docx", ".pdf", $case_docs->attachment))
             )
             ->addTask(
@@ -87,7 +87,7 @@ trait CronTrait
                         ->set('input', ["import-2"])
                         ->set('optimize_print', true)
                         ->set('pdf_a', false)
-                        ->set('engine_version', '2021')
+                        ->set('engine_version', '2019')
                         ->set('filename', str_replace(".docx", ".pdf", $letter_docs->word_file))
                 )
                 ->addTask(

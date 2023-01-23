@@ -238,8 +238,12 @@ class CaseController extends Controller
             ]);
 
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Validation failed!";
+                $response['data'] = [];
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             $user_update = array();
@@ -364,8 +368,8 @@ class CaseController extends Controller
                 $response['flag'] = false;
                 $response['message'] = "Failed";
                 $response['data'] = [];
-                $error = $validation->errors();
-                return response()->json([$response, 'error' => $error]);
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             if ($request->subject == "") {
@@ -488,8 +492,8 @@ class CaseController extends Controller
                 $response['flag'] = false;
                 $response['message'] = "Failed";
                 $response['data'] = [];
-                $error = $validation->errors();
-                return response()->json([$response, 'error' => $error]);
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             if ($request->subject == "") {
@@ -616,6 +620,7 @@ class CaseController extends Controller
                 $response['flag'] = false;
                 $response['message'] = "Case id is required.";
                 $response['data'] = null;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
             $fighter = fighter_info::updateOrCreate(
@@ -678,6 +683,7 @@ class CaseController extends Controller
                 $response['flag'] = false;
                 $response['message'] = "Case id is required!";
                 $response['data'] = [];
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 
@@ -782,6 +788,7 @@ class CaseController extends Controller
                 $response['flag'] = false;
                 $response['message'] = "To email is required";
                 $response['data'] = [];
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 
