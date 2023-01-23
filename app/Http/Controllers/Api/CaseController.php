@@ -570,7 +570,14 @@ class CaseController extends Controller
 
             $letter = Letters::where('id', $id)->update($letterData);
 
-            $this->cron_trait_letter_to_pdf($attachment);
+            $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
+            if ($pdfGeneration) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = $pdfGeneration;
+                $response['data'] = [];
+                return response()->json($response);
+            }
 
             $letter = Letters::where('id', $id)->first();
             $response = array();
