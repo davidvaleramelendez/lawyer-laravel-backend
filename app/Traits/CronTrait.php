@@ -140,7 +140,7 @@ trait CronTrait
                         ->set('input', ["import-2"])
                         ->set('optimize_print', true)
                         ->set('pdf_a', false)
-                        // ->set('engine_version', '2019')
+                        ->set('engine_version', '2019')
                         ->set('filename', str_replace(".docx", ".pdf", $invoice_docs->word_file))
                 )
                 ->addTask(
@@ -149,21 +149,22 @@ trait CronTrait
                         ->set('inline', false)
                         ->set('archive_multiple_files', false)
                 );
+
             $cloudconvert->jobs()->create($job);
             $cloudconvert->jobs()->wait($job); // Wait for job completion
 
             foreach ($job->getExportUrls() as $file) {
-
                 $source = $cloudconvert->getHttpTransport()->download($file->url)->detach();
                 Storage::disk('public')->put('documents/' . $file->filename, $source);
                 $path = "storage/documents/" . $file->filename;
                 DB::table("invoices")->where("id", $invoice_docs->id)->update(["pdf_file" => $file->filename, "pdf_path" => $path]);
-                $result['fff'] = $file->filename;
-                $result['data'] = $invoice_docs->id;
+                // $result['fff'] = $file->filename;
+                // $result['data'] = $invoice_docs->id;
             }
-            return true;
-        } catch (\Exception$e) {
+
             return false;
+        } catch (\Exception$e) {
+            return $e->getMessage();
         }
     }
 }
