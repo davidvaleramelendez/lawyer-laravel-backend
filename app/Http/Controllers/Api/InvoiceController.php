@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AccountSetting;
 use App\Models\Cases;
 use App\Models\CasesType;
 use App\Models\Invoice;
@@ -312,10 +311,17 @@ class InvoiceController extends Controller
             $path = 'storage/documents/' . $attachment;
             $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-            Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => '', 'pdf_path' => '']);
-            $this->cron_trait_invoice_to_pdf($attachment);
+            Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
             $invoice = Invoice::find($invoice->id);
+            $pdfGeneration = $this->cron_trait_invoice_to_pdf($attachment);
+            if ($pdfGeneration) {
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = $pdfGeneration;
+                $response['data'] = $invoice;
+                return response()->json($response);
+            }
 
             $response = array();
             $response['flag'] = true;
@@ -357,7 +363,7 @@ class InvoiceController extends Controller
             $invoice = Invoice::find($id);
             if ($invoice) {
                 DB::beginTransaction();
-                $userInfomation = AccountSetting::where('UserId', auth()->id())->first();
+                // $userInfomation = AccountSetting::where('UserId', auth()->id())->first();
 
                 InvoiceItem::where('invoice_id', $id)->delete();
 
@@ -372,15 +378,19 @@ class InvoiceController extends Controller
                 if (isset($request->invoice_no)) {
                     $invoiceUpdate['invoice_no'] = $request->invoice_no;
                 }
+
                 if (isset($request->invoice_date)) {
                     $eventUpdate['invoice_date'] = Carbon::parse($request->invoice_date)->format('Y-m-d');
                 }
+
                 if (isset($request->note)) {
                     $eventUpdate['note'] = $request->note;
                 }
+
                 if (isset($request->method)) {
                     $eventUpdate['method'] = $request->method;
                 }
+
                 if (isset($request->payment_details)) {
                     $eventUpdate['payment_details'] = $request->payment_details;
                 }
@@ -389,7 +399,6 @@ class InvoiceController extends Controller
 
                 $total = 0;
                 $vat = 0;
-
                 $invoice_item_details = "";
 
                 foreach ($request->items as $item) {
@@ -463,10 +472,18 @@ class InvoiceController extends Controller
                 $path = 'storage/documents/' . $attachment;
                 $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-                $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => '', 'pdf_path' => '']);
+                $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
-                $this->cron_trait_invoice_to_pdf($attachment);
+                $pdfGeneration = $this->cron_trait_invoice_to_pdf($attachment);
+                if ($pdfGeneration) {
+                    $response = array();
+                    $response['flag'] = true;
+                    $response['message'] = $pdfGeneration;
+                    $response['data'] = $invoice;
+                    return response()->json($response);
+                }
             }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";

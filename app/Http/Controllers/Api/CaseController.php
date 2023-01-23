@@ -431,8 +431,8 @@ class CaseController extends Controller
                 'word_path' => $path,
                 'frist_date' => Carbon::parse($request->frist_date)->format('Y-m-d'),
                 'isErledigt' => 0,
-                'pdf_file' => "",
-                'pdf_path' => "",
+                'pdf_file' => null,
+                'pdf_path' => null,
             ];
 
             if ($request && $request->created_date) {
@@ -441,9 +441,16 @@ class CaseController extends Controller
 
             $letterId = Letters::insertGetId($letterData);
 
-            $this->cron_trait_letter_to_pdf($attachment);
-
             $letter = Letters::where('id', $letterId)->first();
+            $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
+            if ($pdfGeneration) {
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = $pdfGeneration;
+                $response['data'] = $letter;
+                return response()->json($response);
+            }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -556,8 +563,8 @@ class CaseController extends Controller
                 'word_file' => $attachment,
                 'word_path' => $path,
                 'isErledigt' => 0,
-                'pdf_file' => "",
-                'pdf_path' => "",
+                'pdf_file' => null,
+                'pdf_path' => null,
             ];
 
             if ($request && $request->frist_date) {
@@ -570,16 +577,16 @@ class CaseController extends Controller
 
             $letter = Letters::where('id', $id)->update($letterData);
 
+            $letter = Letters::where('id', $id)->first();
             $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
             if ($pdfGeneration) {
                 $response = array();
-                $response['flag'] = false;
+                $response['flag'] = true;
                 $response['message'] = $pdfGeneration;
-                $response['data'] = [];
+                $response['data'] = $letter;
                 return response()->json($response);
             }
 
-            $letter = Letters::where('id', $id)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
