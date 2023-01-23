@@ -311,7 +311,7 @@ class InvoiceController extends Controller
             $path = 'storage/documents/' . $attachment;
             $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-            Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => '', 'pdf_path' => '']);
+            Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
             $invoice = Invoice::find($invoice->id);
             $pdfGeneration = $this->cron_trait_invoice_to_pdf($attachment);
@@ -472,7 +472,7 @@ class InvoiceController extends Controller
                 $path = 'storage/documents/' . $attachment;
                 $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
 
-                $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => '', 'pdf_path' => '']);
+                $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
                 $pdfGeneration = $this->cron_trait_invoice_to_pdf($attachment);
                 if ($pdfGeneration) {
