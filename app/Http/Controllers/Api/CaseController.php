@@ -402,7 +402,7 @@ class CaseController extends Controller
             $templateProcessor->setValue('case', $case_id);
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
-            $value1 = $request->message;
+            $value1 = strip_tags($request->message);
             $value1 = preg_replace('~\R~u', '</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="both"/></w:pPr><w:r><w:t>', $value1);
 
             $templateProcessor->setValue('message', $value1);
@@ -531,7 +531,7 @@ class CaseController extends Controller
             $templateProcessor->setValue('case', $case_id);
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
-            $value1 = $request->message;
+            $value1 = strip_tags($request->message);
 
             $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
 
