@@ -451,6 +451,8 @@ class CaseController extends Controller
                 return response()->json($response);
             }
 
+            $letter = Letters::where('id', $letterId)->first();
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -586,6 +588,8 @@ class CaseController extends Controller
                 $response['data'] = $letter;
                 return response()->json($response);
             }
+
+            $letter = Letters::where('id', $id)->first();
 
             $response = array();
             $response['flag'] = true;

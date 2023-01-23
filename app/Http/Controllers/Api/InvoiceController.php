@@ -256,7 +256,6 @@ class InvoiceController extends Controller
             $invoice_item_details = "";
 
             foreach ($request->items as $item) {
-
                 $total = $total + (float) $item['price'];
                 $invoice_item_details .= $item['item_detail'] . "   $ " . $item['price'];
                 if (is_null($item['vat'])) {
@@ -264,6 +263,7 @@ class InvoiceController extends Controller
                 } else {
                     $vat = $vat + (float) $item['vat'];
                 }
+
                 $itemData[] = [
                     'item_detail' => $item['item_detail'],
                     'price' => $item['price'],
@@ -271,6 +271,7 @@ class InvoiceController extends Controller
                     'vat' => isset($item['vat']) ? $item['vat'] : 0,
                 ];
             }
+
             InvoiceItem::insert($itemData);
             $invoice->total_price = (float) $total + (float) $vat;
             $invoice->remaining_amount = (float) $total + (float) $vat;
@@ -305,7 +306,7 @@ class InvoiceController extends Controller
             $templateProcessor->setValue('item_total', $invoice_data->total_price);
             $templateProcessor->setValue('invoice_updated_at', $invoice_data->updated_at);
             $templateProcessor->setValue('CaseID', $invoice_data->CaseID);
-            $templateProcessor->setValue('CaseTypeName', $invoice_data->CaseTypeName);
+            $templateProcessor->setValue('c_type', $invoice_data->CaseTypeName);
             $templateProcessor->setValue('item_details', $invoice_item_details);
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
             $path = 'storage/documents/' . $attachment;
@@ -323,6 +324,7 @@ class InvoiceController extends Controller
                 return response()->json($response);
             }
 
+            $invoice = Invoice::find($invoice->id);
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";
@@ -465,7 +467,7 @@ class InvoiceController extends Controller
                 $templateProcessor->setValue('invoice_updated_at', $invoice_data->updated_at);
                 $templateProcessor->setValue('status', $invoice_data->status);
                 $templateProcessor->setValue('CaseID', $invoice_data->CaseID);
-                $templateProcessor->setValue('CaseTypeName', $invoice_data->CaseTypeName);
+                $templateProcessor->setValue('c_type', $invoice_data->CaseTypeName);
                 $templateProcessor->setValue('item_details', $invoice_item_details);
 
                 $attachment = $invoice->word_file;
@@ -474,6 +476,7 @@ class InvoiceController extends Controller
 
                 $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
+                $invoice = Invoice::find($invoice->id);
                 $pdfGeneration = $this->cron_trait_invoice_to_pdf($attachment);
                 if ($pdfGeneration) {
                     $response = array();
@@ -482,6 +485,8 @@ class InvoiceController extends Controller
                     $response['data'] = $invoice;
                     return response()->json($response);
                 }
+
+                $invoice = Invoice::find($invoice->id);
             }
 
             $response = array();
