@@ -163,17 +163,12 @@ class InvoiceController extends Controller
     {
         try {
             $year = Carbon::now()->format('Y');
-
             $random = rand(100000, 999999);
-
             $invoiceNo = $year . $random;
 
             $allCases = Cases::all();
-
             $caseTypes = CasesType::where('Status', 'Active')->get();
-
             $customers = User::where('role_id', 11)->get();
-
             $userData = User::where('id', auth()->id())->first();
 
             $response = array();
@@ -306,7 +301,7 @@ class InvoiceController extends Controller
             $templateProcessor->setValue('item_total', $invoice_data->total_price);
             $templateProcessor->setValue('invoice_updated_at', $invoice_data->updated_at);
             $templateProcessor->setValue('CaseID', $invoice_data->CaseID);
-            $templateProcessor->setValue('c_type', $invoice_data->CaseTypeName);
+            $templateProcessor->setValue('CaseTypeName', $invoice_data->CaseTypeName);
             $templateProcessor->setValue('item_details', $invoice_item_details);
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
             $path = 'storage/documents/' . $attachment;
@@ -467,7 +462,7 @@ class InvoiceController extends Controller
                 $templateProcessor->setValue('invoice_updated_at', $invoice_data->updated_at);
                 $templateProcessor->setValue('status', $invoice_data->status);
                 $templateProcessor->setValue('CaseID', $invoice_data->CaseID);
-                $templateProcessor->setValue('c_type', $invoice_data->CaseTypeName);
+                $templateProcessor->setValue('CaseTypeName', $invoice_data->CaseTypeName);
                 $templateProcessor->setValue('item_details', $invoice_item_details);
 
                 $attachment = $invoice->word_file;
@@ -611,6 +606,7 @@ class InvoiceController extends Controller
                     }
                 }
             }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";
