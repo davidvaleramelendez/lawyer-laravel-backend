@@ -405,6 +405,9 @@ class CaseController extends Controller
 
             if ($request->message) {
                 $htmlString = str_replace('&', '&amp;', $request->message);
+                $htmlString = str_replace('<ins>', '<u>', $htmlString);
+                $htmlString = str_replace('</ins>', '</u>', $htmlString);
+
                 $wordTable = new Table();
                 $wordTable->addRow();
                 $cell = $wordTable->addCell(6200);
@@ -541,8 +544,9 @@ class CaseController extends Controller
 
             if ($request->message) {
                 $htmlString = str_replace('&', '&amp;', $request->message);
-                $htmlString = str_replace('<ins>', '<u>', $request->message);
-                $htmlString = str_replace('</ins>', '</u>', $request->message);
+                $htmlString = str_replace('<ins>', '<u>', $htmlString);
+                $htmlString = str_replace('</ins>', '</u>', $htmlString);
+
                 $wordTable = new Table();
                 $wordTable->addRow();
                 $cell = $wordTable->addCell(6200);
