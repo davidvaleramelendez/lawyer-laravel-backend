@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpWord\Element\Table;
+use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class CaseController extends Controller
@@ -529,42 +531,15 @@ class CaseController extends Controller
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
             if ($request->message) {
-                // $section = (new PhpWord())->addSection();
-                // Html::addHtml($section, $request->message, false, false);
-                // $containers = $section->getElements();
-                // $templateProcessor->cloneBlock('htmlblock', count($containers), true, true);
-
-                // for ($i = 0; $i < count($containers); $i++) {
-                //     // be aware of using setComplexBlock
-                //     // and the $i+1 as the cloned elements start with #1
-                //     $templateProcessor->setComplexBlock('html#' . ($i + 1), $containers[$i]);
-                // }
-                // $wrapper = new TextBox();
-                // Html::addHtml($wrapper, $request->message);
-                // // $containerWriter = new Container($xmlWriter, $section);
-                // // $containerWriter->write();
-                // // $htmlAsXml = $xmlWriter->getData();
-                // $xmlWriter = new XMLWriter();
-                // $containerWriter = new Container($xmlWriter, $wrapper, false);
-                // $containerWriter->write();
-                // $htmlAsXml = $xmlWriter->getData();
-                // // WordSettings::setOutputEscapingEnabled(false);
-                // $templateProcessor->setValue('message', $htmlAsXml);
-                // WordSettings::setOutputEscapingEnabled(true);
-                // dd($htmlAsXml);
-                // dd($templateProcessor);
-                // dd($htmlAsXml);
-
-                $wordTable = new \PhpOffice\PhpWord\Element\Table();
+                $htmlString = str_replace('&', '&amp;', $request->message);
+                $wordTable = new Table();
                 $wordTable->addRow();
-                $cell = $wordTable->addCell();
-                \PhpOffice\PhpWord\Shared\Html::addHtml($cell, $request->message);
+                $cell = $wordTable->addCell(6200);
+                Html::addHtml($cell, $htmlString);
                 $templateProcessor->setComplexBlock('message', $wordTable);
 
                 // $value1 = strip_tags($request->message);
-
                 // $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
-
                 // $templateProcessor->setValue('message', $value1);
             }
 
@@ -610,15 +585,15 @@ class CaseController extends Controller
 
             $letter = Letters::where('id', $id)->update($letterData);
 
-            $letter = Letters::where('id', $id)->first();
-            $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
-            if ($pdfGeneration) {
-                $response = array();
-                $response['flag'] = true;
-                $response['message'] = $pdfGeneration;
-                $response['data'] = $letter;
-                return response()->json($response);
-            }
+            // $letter = Letters::where('id', $id)->first();
+            // $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
+            // if ($pdfGeneration) {
+            //     $response = array();
+            //     $response['flag'] = true;
+            //     $response['message'] = $pdfGeneration;
+            //     $response['data'] = $letter;
+            //     return response()->json($response);
+            // }
 
             $letter = Letters::where('id', $id)->first();
 
