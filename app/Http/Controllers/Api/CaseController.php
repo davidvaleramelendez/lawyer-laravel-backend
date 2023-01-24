@@ -405,8 +405,6 @@ class CaseController extends Controller
             $value1 = strip_tags($request->message);
             $value1 = preg_replace('~\R~u', '</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="both"/></w:pPr><w:r><w:t>', $value1);
 
-            $templateProcessor->setValue('message', $value1);
-
             if ($fighter_data) {
                 $templateProcessor->setValue('f_name', $fighter_data->name . " " . $fighter_data->last_name);
                 $templateProcessor->setValue('f_address', $fighter_data->address);
@@ -531,11 +529,45 @@ class CaseController extends Controller
             $templateProcessor->setValue('case', $case_id);
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
-            $value1 = strip_tags($request->message);
+            if ($request->message) {
+                // $section = (new PhpWord())->addSection();
+                // Html::addHtml($section, $request->message, false, false);
+                // $containers = $section->getElements();
+                // $templateProcessor->cloneBlock('htmlblock', count($containers), true, true);
 
-            $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
+                // for ($i = 0; $i < count($containers); $i++) {
+                //     // be aware of using setComplexBlock
+                //     // and the $i+1 as the cloned elements start with #1
+                //     $templateProcessor->setComplexBlock('html#' . ($i + 1), $containers[$i]);
+                // }
+                // $wrapper = new TextBox();
+                // Html::addHtml($wrapper, $request->message);
+                // // $containerWriter = new Container($xmlWriter, $section);
+                // // $containerWriter->write();
+                // // $htmlAsXml = $xmlWriter->getData();
+                // $xmlWriter = new XMLWriter();
+                // $containerWriter = new Container($xmlWriter, $wrapper, false);
+                // $containerWriter->write();
+                // $htmlAsXml = $xmlWriter->getData();
+                // // WordSettings::setOutputEscapingEnabled(false);
+                // $templateProcessor->setValue('message', $htmlAsXml);
+                // WordSettings::setOutputEscapingEnabled(true);
+                // dd($htmlAsXml);
+                // dd($templateProcessor);
+                // dd($htmlAsXml);
 
-            $templateProcessor->setValue('message', $value1);
+                $wordTable = new \PhpOffice\PhpWord\Element\Table();
+                $wordTable->addRow();
+                $cell = $wordTable->addCell();
+                \PhpOffice\PhpWord\Shared\Html::addHtml($cell, $request->message);
+                $templateProcessor->setComplexBlock('message', $wordTable);
+
+                // $value1 = strip_tags($request->message);
+
+                // $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
+
+                // $templateProcessor->setValue('message', $value1);
+            }
 
             if ($fighter_data) {
                 $templateProcessor->setValue('f_name', $fighter_data->name . " " . $fighter_data->last_name);
@@ -579,15 +611,15 @@ class CaseController extends Controller
 
             $letter = Letters::where('id', $id)->update($letterData);
 
-            $letter = Letters::where('id', $id)->first();
-            $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
-            if ($pdfGeneration) {
-                $response = array();
-                $response['flag'] = true;
-                $response['message'] = $pdfGeneration;
-                $response['data'] = $letter;
-                return response()->json($response);
-            }
+            // $letter = Letters::where('id', $id)->first();
+            // $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
+            // if ($pdfGeneration) {
+            //     $response = array();
+            //     $response['flag'] = true;
+            //     $response['message'] = $pdfGeneration;
+            //     $response['data'] = $letter;
+            //     return response()->json($response);
+            // }
 
             $letter = Letters::where('id', $id)->first();
 
