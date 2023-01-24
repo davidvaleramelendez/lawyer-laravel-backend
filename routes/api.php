@@ -327,5 +327,8 @@ Route::group([
     Route::get('/admin/pdf-api/detail', [PdfApiController::class, 'getPdfApiDetail']);
     Route::get('/admin/pdf-api/delete/{id}', [PdfApiController::class, 'deletePdfApi']);
     /* /PdfApi */
+
+    /* Auth user profile update */
+    Route::post('/admin/profile/update-image', [ProfileController::class, 'update_account_profile']);
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

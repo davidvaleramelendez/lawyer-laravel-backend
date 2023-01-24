@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Storage;
 
 class ProfileController extends Controller
 {
@@ -100,8 +101,11 @@ class ProfileController extends Controller
             ]);
 
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response['flag'] = false;
+                $response['message'] = "Validation failed!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             $validationEmail = Validator::make($request->all(), [
@@ -130,19 +134,21 @@ class ProfileController extends Controller
             if ($request->image) {
                 $img_code = explode(',', $request->image);
                 $filedata = base64_decode($img_code[1]);
-                $filePath = 'public/images/avatars';
+                $filePath = 'uploads/images/avatars';
                 $f = finfo_open();
                 $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
                 @$mime_type = explode('/', $mime_type);
                 @$mime_type = $mime_type[1];
                 if ($mime_type) {
-                    \Storage::makeDirectory($filePath);
+                    if (Storage::exists($filePath)) {
+                        Storage::makeDirectory($filePath);
+                    }
+
                     $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                    if (\Storage::put($filePath . '/' . $filename, $filedata)) {
-                        $img_url = 'storage/images/avatars/' . $filename;
+                    if (Storage::put($filePath . '/' . $filename, $filedata)) {
                         unset($param['image']);
-                        $param['profile_photo_path'] = $img_url;
+                        $param['profile_photo_path'] = $filePath . '/' . $filename;
                     }
                 }
             }
@@ -183,6 +189,71 @@ class ProfileController extends Controller
                 $response['data'] = null;
                 return response()->json($response);
             }
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function update_account_profile(Request $request)
+    {
+        try {
+            $id = auth()->user()->id;
+
+            $validation = Validator::make($request->all(), [
+                'image' => 'required',
+            ]);
+
+            if ($validation->fails()) {
+                $response['flag'] = false;
+                $response['message'] = "Image is required!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
+            }
+
+            $user = User::with('role', 'permission')->where('id', $id)->first();
+
+            $param = $request->all();
+            if ($request->image) {
+                $img_code = explode(',', $request->image);
+                $filedata = base64_decode($img_code[1]);
+                $filePath = 'uploads/images/avatars';
+                $f = finfo_open();
+                $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
+
+                @$mime_type = explode('/', $mime_type);
+                @$mime_type = $mime_type[1];
+                if ($mime_type) {
+                    if (Storage::exists($filePath)) {
+                        Storage::makeDirectory($filePath);
+                    }
+
+                    $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
+                    if (Storage::put($filePath . '/' . $filename, $filedata)) {
+                        if ($user && $user->profile_photo_path) {
+                            if (Storage::exists($user->profile_photo_path)) {
+                                Storage::delete($user->profile_photo_path);
+                            }
+                        }
+                        unset($param['image']);
+                        $param['profile_photo_path'] = $filePath . '/' . $filename;
+                    }
+                }
+            }
+
+            User::where('id', $id)->update($param);
+            $user = User::with('role', 'permission')->where('id', $id)->first();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Profile image updated!';
+            $response['data'] = $user;
+            return response()->json($response);
+
         } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
