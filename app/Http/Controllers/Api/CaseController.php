@@ -399,7 +399,6 @@ class CaseController extends Controller
             $templateProcessor->setValue('state', $user_data->State);
             $templateProcessor->setValue('country', $user_data->Country);
             $templateProcessor->setValue('case', $case_id);
-            $templateProcessor->setValue('case', $case_id);
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
             $value1 = strip_tags($request->message);
@@ -523,7 +522,7 @@ class CaseController extends Controller
             $templateProcessor->setValue('address', $user_data->Address);
             $templateProcessor->setValue('address1', $user_data->Address1);
             $templateProcessor->setValue('city', $user_data->City);
-            $templateProcessor->setValue('pincode', $user_data->name);
+            $templateProcessor->setValue('postleitzahl', $user_data->Postcode);
             $templateProcessor->setValue('state', $user_data->State);
             $templateProcessor->setValue('country', $user_data->Country);
             $templateProcessor->setValue('case', $case_id);
@@ -611,15 +610,15 @@ class CaseController extends Controller
 
             $letter = Letters::where('id', $id)->update($letterData);
 
-            // $letter = Letters::where('id', $id)->first();
-            // $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
-            // if ($pdfGeneration) {
-            //     $response = array();
-            //     $response['flag'] = true;
-            //     $response['message'] = $pdfGeneration;
-            //     $response['data'] = $letter;
-            //     return response()->json($response);
-            // }
+            $letter = Letters::where('id', $id)->first();
+            $pdfGeneration = $this->cron_trait_letter_to_pdf($attachment);
+            if ($pdfGeneration) {
+                $response = array();
+                $response['flag'] = true;
+                $response['message'] = $pdfGeneration;
+                $response['data'] = $letter;
+                return response()->json($response);
+            }
 
             $letter = Letters::where('id', $id)->first();
 
