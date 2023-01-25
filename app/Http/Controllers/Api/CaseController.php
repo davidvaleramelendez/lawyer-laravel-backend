@@ -392,6 +392,8 @@ class CaseController extends Controller
             $user_data = DB::table("users")->where("id", $case_data->UserID)->first();
             $fighter_data = DB::table("fighter_infos")->where("CaseID", $case_id)->first();
 
+            $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+
             $templateProcessor = new TemplateProcessor(public_path('master') . "/case_letter_master.docx");
             $templateProcessor->setValue('name', $user_data->name);
             $templateProcessor->setValue('address', $user_data->Address);
@@ -427,9 +429,9 @@ class CaseController extends Controller
                 $templateProcessor->setValue('f_email', $fighter_data->email);
             }
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
-            $path = 'storage/documents/' . $attachment;
+            $path = $filePath . '/' . $attachment;
 
-            $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
+            $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
 
             $letterData = [
                 'case_id' => $case_id,
@@ -531,6 +533,8 @@ class CaseController extends Controller
             $user_data = DB::table("users")->where("id", $case_data->UserID)->first();
             $fighter_data = DB::table("fighter_infos")->where("CaseID", $case_id)->first();
 
+            $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+
             $templateProcessor = new TemplateProcessor(public_path('master') . "/case_letter_master.docx");
             $templateProcessor->setValue('name', $user_data->name);
             $templateProcessor->setValue('address', $user_data->Address);
@@ -568,13 +572,13 @@ class CaseController extends Controller
             }
 
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
-            $path = 'storage/documents/' . $attachment;
+            $path = $filePath . '/' . $attachment;
             if ($letter && $letter->word_path) {
                 $attachment = $letter->word_file;
                 $path = $letter->word_path;
             }
 
-            $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
+            $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
 
             $letterData = [
                 'case_id' => $case_id,

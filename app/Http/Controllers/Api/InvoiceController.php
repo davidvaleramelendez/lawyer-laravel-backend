@@ -206,10 +206,9 @@ class InvoiceController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed";
+                $response['message'] = "Validation failed!";
                 $response['data'] = [];
-                $error = $validation->errors();
-                $response['error'] = $error;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 
@@ -280,6 +279,8 @@ class InvoiceController extends Controller
             $invoice_data = DB::table("invoices")->where("id", $invoice->id)->first();
             $user_data = DB::table("users")->where("id", $request->customer_id)->first();
 
+            $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+
             $templateProcessor = new TemplateProcessor(public_path('master') . "/invoice_master.docx");
 
             $templateProcessor->setValue('name', $user_data->name);
@@ -304,8 +305,8 @@ class InvoiceController extends Controller
             $templateProcessor->setValue('CaseTypeName', $invoice_data->CaseTypeName);
             $templateProcessor->setValue('item_details', $invoice_item_details);
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
-            $path = 'storage/documents/' . $attachment;
-            $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
+            $path = $filePath . '/' . $attachment;
+            $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
 
             Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
@@ -349,10 +350,9 @@ class InvoiceController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed";
+                $response['message'] = "Validation failed!";
                 $response['data'] = [];
-                $error = $validation->errors();
-                $response['error'] = $error;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 
@@ -441,6 +441,8 @@ class InvoiceController extends Controller
                 $invoice_data = DB::table("invoices")->where("id", $invoice->id)->first();
                 $user_data = DB::table("users")->where("id", $request->customer_id)->first();
 
+                $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+
                 $templateProcessor = new TemplateProcessor(public_path('master') . "/invoice_reminder.docx");
                 $templateProcessor->setValue('name', $user_data->name);
                 $templateProcessor->setValue('address', $user_data->Address);
@@ -466,8 +468,8 @@ class InvoiceController extends Controller
                 $templateProcessor->setValue('item_details', $invoice_item_details);
 
                 $attachment = $invoice->word_file;
-                $path = 'storage/documents/' . $attachment;
-                $templateProcessor->saveAs(public_path('storage/documents/' . $attachment));
+                $path = $filePath . '/' . $attachment;
+                $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
 
                 $data = Invoice::where('id', $invoice->id)->update(['word_file' => $attachment, 'word_path' => $path, 'pdf_file' => null, 'pdf_path' => null]);
 
@@ -530,10 +532,9 @@ class InvoiceController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed.";
+                $response['message'] = "Validation failed!";
                 $response['data'] = [];
-                $response['error'] = $error;
-                $error = $validation->errors();
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
             $insert = [];
@@ -631,14 +632,14 @@ class InvoiceController extends Controller
         ]);
 
         if ($validation->fails()) {
-            $error = $validation->errors();
             $response = array();
             $response['flag'] = false;
-            $response['message'] = "failed";
+            $response['message'] = "Validation failed!";
             $response['data'] = null;
-            $response['error'] = $error;
+            $response['error'] = $validation->errors();
             return response()->json($response);
         }
+
         $data = array(
             'to' => $request->to,
             'subject' => $request->subject,
@@ -658,6 +659,7 @@ class InvoiceController extends Controller
                 }
 
             });
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Invoice send successfully. ';

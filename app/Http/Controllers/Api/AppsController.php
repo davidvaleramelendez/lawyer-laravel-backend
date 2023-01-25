@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Storage;
 
 class AppsController extends Controller
 {
@@ -274,25 +275,29 @@ class AppsController extends Controller
         if ($request->image) {
             $img_code = explode(',', $request->image);
             $filedata = base64_decode($img_code[1]);
-            $filePath = 'public/images/avatars';
+            $filePath = config('global.user_profile_path') ? config('global.user_profile_path') : 'uploads/images/avatars';
             $f = finfo_open();
             $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
             @$mime_type = explode('/', $mime_type);
             @$mime_type = $mime_type[1];
             if ($mime_type) {
+                if (!Storage::exists($filePath)) {
+                    Storage::makeDirectory($filePath);
+                }
 
-                \Storage::makeDirectory($filePath);
                 $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                if (\Storage::put($filePath . '/' . $filename, $filedata)) {
-                    $img_url = 'storage/images/avatars/' . $filename;
+                if (Storage::put($filePath . '/' . $filename, $filedata)) {
                     unset($param['image']);
-                    $param['profile_photo_path'] = $img_url;
+                    $param['profile_photo_path'] = $filePath . '/' . $filename;
                 }
             }
         }
 
-        $param['password'] = Hash::make($param['password']);
+        if ($param['password']) {
+            $param['password'] = Hash::make($param['password']);
+        }
+
         $is_save = User::insertGetId($param);
         $user = User::with('role')->where('id', $is_save)->first();
 
@@ -358,9 +363,16 @@ class AppsController extends Controller
                 'role_id' => 'required',
             ]);
 
+            $id = $request->id;
+            $user = User::where('id', $id)->first();
+
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Validation failed!";
+                $response['data'] = null;
+                $response['error'] = $validation->fails();
+                return response()->json($response);
             }
 
             $validationEmail = Validator::make($request->all(), [
@@ -368,15 +380,14 @@ class AppsController extends Controller
             ]);
 
             if ($validationEmail->fails()) {
-                $user = User::where('id', $request->id)->first();
                 $response = array();
                 $response['flag'] = false;
                 $response['message'] = "This Email address is already used.";
                 $response['data'] = $user;
+                $response['error'] = $validationEmail->fails();
                 return response()->json($response);
             }
 
-            $id = $request->id;
             $param = $request->all();
 
             $fullName = "";
@@ -401,25 +412,33 @@ class AppsController extends Controller
             if ($request->image) {
                 $img_code = explode(',', $request->image);
                 $filedata = base64_decode($img_code[1]);
-                $filePath = 'public/images';
+                $filePath = config('global.user_profile_path') ? config('global.user_profile_path') : 'uploads/images/avatars';
                 $f = finfo_open();
                 $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
                 @$mime_type = explode('/', $mime_type);
                 @$mime_type = $mime_type[1];
-                if ($mime_type) {
 
-                    \Storage::makeDirectory($filePath);
+                if ($mime_type) {
+                    if (!Storage::exists($filePath)) {
+                        Storage::makeDirectory($filePath);
+                    }
+
                     $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                    if (\Storage::put($filePath . '/' . $filename, $filedata)) {
-                        $img_url = 'storage/images/' . $filename;
+                    if (Storage::put($filePath . '/' . $filename, $filedata)) {
+                        if ($user && $user->profile_photo_path) {
+                            if (Storage::exists($user->profile_photo_path)) {
+                                Storage::delete($user->profile_photo_path);
+                            }
+                        }
+
                         unset($param['image']);
-                        $param['profile_photo_path'] = $img_url;
+                        $param['profile_photo_path'] = $filePath . '/' . $filename;
                     }
                 }
             }
             $user = User::where('id', $id)->update($param);
-            $user = User::with('role')->where('id', $request->id)->first();
+            $user = User::with('role')->where('id', $id)->first();
 
             if ($user && $user->id) {
                 if ($user->role_id == 10) {
@@ -709,6 +728,7 @@ class AppsController extends Controller
             return response()->json($response, $e);
         }
     }
+
     public function againstperson(Request $request)
     {
         fighter_info::updateOrCreate(
@@ -730,6 +750,7 @@ class AppsController extends Controller
         $response['data'] = [];
         return response()->json($response);
     }
+
     public function delete_cases($id = '')
     {
         $check = ContactNotes::where('ContactID', $id)->delete();

@@ -53,9 +53,11 @@ trait CronTrait
 
         foreach ($job->getExportUrls() as $file) {
             $source = $cloudconvert->getHttpTransport()->download($file->url)->detach();
-            Storage::disk('public')->put('documents/' . $file->filename, $source);
-            $path = 'storage/documents' . $file->filename;
-            DB::table("case_docs")->where("id", $case_docs->id)->update(["attachment_pdf" => $path]);
+            $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+            if (Storage::put($filePath . '/' . $file->filename, $source)) {
+                $path = $filePath . '/' . $file->filename;
+                DB::table("case_docs")->where("id", $case_docs->id)->update(["attachment_pdf" => $path]);
+            }
         }
     }
 
@@ -102,9 +104,11 @@ trait CronTrait
 
             foreach ($job->getExportUrls() as $file) {
                 $source = $cloudconvert->getHttpTransport()->download($file->url)->detach();
-                Storage::disk('public')->put('documents/' . $file->filename, $source);
-                $path = 'storage/documents/' . $file->filename;
-                DB::table("letters")->where("id", $letter_docs->id)->update(["pdf_file" => $file->filename, "pdf_path" => $path]);
+                $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+                if (Storage::put($filePath . '/' . $file->filename, $source)) {
+                    $path = $filePath . '/' . $file->filename;
+                    DB::table("letters")->where("id", $letter_docs->id)->update(["pdf_file" => $file->filename, "pdf_path" => $path]);
+                }
             }
             return false;
         } catch (\Exception$e) {
@@ -155,11 +159,13 @@ trait CronTrait
 
             foreach ($job->getExportUrls() as $file) {
                 $source = $cloudconvert->getHttpTransport()->download($file->url)->detach();
-                Storage::disk('public')->put('documents/' . $file->filename, $source);
-                $path = "storage/documents/" . $file->filename;
-                DB::table("invoices")->where("id", $invoice_docs->id)->update(["pdf_file" => $file->filename, "pdf_path" => $path]);
-                // $result['fff'] = $file->filename;
-                // $result['data'] = $invoice_docs->id;
+                $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+                if (Storage::put($filePath . '/' . $file->filename, $source)) {
+                    $path = $filePath . '/' . $file->filename;
+                    DB::table("invoices")->where("id", $invoice_docs->id)->update(["pdf_file" => $file->filename, "pdf_path" => $path]);
+                    // $result['fff'] = $file->filename;
+                    // $result['data'] = $invoice_docs->id;
+                }
             }
 
             return false;

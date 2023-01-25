@@ -119,6 +119,7 @@ class ProfileController extends Controller
                 return response()->json($response);
             }
 
+            $user = User::with('role', 'permission')->where('id', $id)->first();
             $param = $request->all();
 
             $fullName = "";
@@ -134,19 +135,25 @@ class ProfileController extends Controller
             if ($request->image) {
                 $img_code = explode(',', $request->image);
                 $filedata = base64_decode($img_code[1]);
-                $filePath = 'uploads/images/avatars';
+                $filePath = config('global.user_profile_path') ? config('global.user_profile_path') : 'uploads/images/avatars';
                 $f = finfo_open();
                 $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
                 @$mime_type = explode('/', $mime_type);
                 @$mime_type = $mime_type[1];
                 if ($mime_type) {
-                    if (Storage::exists($filePath)) {
+                    if (!Storage::exists($filePath)) {
                         Storage::makeDirectory($filePath);
                     }
 
                     $filename = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
                     if (Storage::put($filePath . '/' . $filename, $filedata)) {
+                        if ($user && $user->profile_photo_path) {
+                            if (Storage::exists($user->profile_photo_path)) {
+                                Storage::delete($user->profile_photo_path);
+                            }
+                        }
+
                         unset($param['image']);
                         $param['profile_photo_path'] = $filePath . '/' . $filename;
                     }
@@ -154,7 +161,6 @@ class ProfileController extends Controller
             }
 
             $is_save = User::where('id', $id)->update($param);
-            $user = User::with('role', 'permission')->where('id', $id)->first();
             if ($user && $user->id) {
                 if ($user->role_id == 10) {
                     $this->updateAdminPermission($user->id);
@@ -221,14 +227,14 @@ class ProfileController extends Controller
             if ($request->image) {
                 $img_code = explode(',', $request->image);
                 $filedata = base64_decode($img_code[1]);
-                $filePath = 'uploads/images/avatars';
+                $filePath = config('global.user_profile_path') ? config('global.user_profile_path') : 'uploads/images/avatars';
                 $f = finfo_open();
                 $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
                 @$mime_type = explode('/', $mime_type);
                 @$mime_type = $mime_type[1];
                 if ($mime_type) {
-                    if (Storage::exists($filePath)) {
+                    if (!Storage::exists($filePath)) {
                         Storage::makeDirectory($filePath);
                     }
 

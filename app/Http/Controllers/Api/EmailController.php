@@ -349,7 +349,6 @@ class EmailController extends Controller
             $response['pagination'] = ['perPage' => $perPage,
                 'totalRecord' => $data['count']];
             return response()->json($response);
-
         } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
@@ -522,8 +521,12 @@ class EmailController extends Controller
         ]);
 
         if ($validation->fails()) {
-            $error = $validation->errors();
-            return response()->json(['error' => $error]);
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "To email is required!";
+            $response['data'] = null;
+            $response['error'] = $validation->errors();
+            return response()->json($response);
         }
 
         try {
@@ -613,8 +616,12 @@ class EmailController extends Controller
             ]);
 
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Id is required!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             Email::where('id', $request->id)->update(array('is_delete' => 1, 'is_trash' => 1));
@@ -648,7 +655,6 @@ class EmailController extends Controller
     public function emailApp()
     {
         try {
-
             $users = User::where('id', '!=', auth()->user()->id)
                 ->get();
 
@@ -988,8 +994,12 @@ class EmailController extends Controller
         ]);
 
         if ($validation->fails()) {
-            $error = $validation->errors();
-            return response()->json(['error' => $error]);
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Email ids is required!";
+            $response['data'] = null;
+            $response['error'] = $validation->errors();
+            return response()->json($response);
         }
 
         if ($request->has('trash')) {

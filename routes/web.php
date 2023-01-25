@@ -18,4 +18,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/uploads/{path}', [FileController::class, 'getPreview']);
+Route::get('/preview/{path}', [FileController::class, 'getPreview']);

@@ -22,27 +22,22 @@ trait EmailTrait
     public function insertEmails($user_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
     {
         $oClient = Client::make([
-
             'host' => $imap_host,
-
             'port' => $imap_port,
-
             'encryption' => $imap_ssl ? 'ssl' : '',
-
             'validate_cert' => false,
-
             'username' => $imap_email,
-
             'password' => $imap_password,
-
             'protocol' => 'imap',
-
         ]);
 
         $oClient->connect();
         $folder = $oClient->getFolder('INBOX');
         $data = [];
         $messages = $folder->messages()->all()->get();
+
+        $filePath = config('global.file_root_path') ? config('global.file_root_path') . '/email' : 'uploads/email';
+        $filePath = config('global.attachment_path') ? $filePath . '/' . config('global.attachment_path') : $filePath . '/' . 'attachments';
 
         foreach ($messages as $message) {
             $msg = [];
@@ -68,7 +63,7 @@ trait EmailTrait
 
                 foreach ($message->getAttachments() as $attachment) {
                     array_push($att, $uid . '-' . $attachment->name);
-                    Storage::disk('public')->put('email/attachments/' . $uid . '-' . $attachment->name, $attachment->content);
+                    Storage::put($filePath . '/' . $uid . '-' . $attachment->name, $attachment->content);
                 }
                 $msg['attachedFiles'] = json_encode($att);
             }
@@ -91,13 +86,9 @@ trait EmailTrait
             $notifiable_type = 'App\Notifications\EmailSentNotification';
             $sender_id = @User::where('email', $sender)->first()->id;
             $msg_data = [
-
                 'subject' => $msg['subject'],
-
                 'message' => $msg['body'],
-
                 'attachments' => json_encode([])
-
             ];
 
             if (@$msg['attachedFiles']) {
@@ -148,7 +139,6 @@ trait EmailTrait
                 }
             }
         }
-
     }
 
     public function insertImapEmails($imap_id, $imap_host, $imap_port, $imap_ssl, $imap_email, $imap_password)
@@ -182,6 +172,9 @@ trait EmailTrait
 
             $folders = $oClient->getFolders();
             $data = [];
+
+            $filePath = config('global.file_root_path') ? config('global.file_root_path') . '/email' : 'uploads/email';
+            $filePath = config('global.attachment_path') ? $filePath . '/' . config('global.attachment_path') : $filePath . '/' . 'attachments';
 
             foreach ($folders as $folder) {
                 if ($folder->name != 'INBOX' && $folder->name != 'Spam') {
@@ -248,7 +241,7 @@ trait EmailTrait
                         foreach ($message->getAttachments() as $attachment) {
                             if ($attachment->name != "" && $attachment->name != "undefined") {
                                 array_push($att, '' . $uid . '-' . $attachment->name);
-                                Storage::disk('public')->put('email/attachments/' . $uid . '-' . $attachment->name, $attachment->content);
+                                Storage::put($filePath . '/' . $uid . '-' . $attachment->name, $attachment->content);
                             }
                         }
                         $msg['attachedFiles'] = json_encode($att);
@@ -339,7 +332,7 @@ trait EmailTrait
                         $created = Email::Create($msg);
                         if ($created && $created->attachedFiles) {
                             $attachmentFiles = json_decode($created->attachedFiles);
-                            $path = "storage/email/attachments";
+                            $path = $filePath;
                             if ($attachmentFiles && count($attachmentFiles) > 0) {
                                 $attchIds = array();
                                 foreach ($attachmentFiles as $key => $file) {
