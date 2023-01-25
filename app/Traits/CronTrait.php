@@ -24,11 +24,13 @@ trait CronTrait
         if (!$case_docs) {
             return false;
         }
+        $fullFilePath = str_replace('/', '*', $case_docs->attachment);
+
         $cloudconvert = new CloudConvert(['api_key' => $this->apiKey]);
         $job = (new Job())
             ->addTask(
                 (new Task('import/url', 'import-2'))
-                    ->set('url', url($case_docs->attachment))
+                    ->set('url', url('preview/' . $fullFilePath))
                     ->set('filename', $case_docs->attachment)
             )
             ->addTask(
@@ -74,11 +76,13 @@ trait CronTrait
                 $this->apiKey = $pdfApi->key;
             }
 
+            $fullFilePath = str_replace('/', '*', $letter_docs->word_path);
+
             $cloudconvert = new CloudConvert(['api_key' => $this->apiKey]);
             $job = (new Job())
                 ->addTask(
                     (new Task('import/url', 'import-2'))
-                        ->set('url', url($letter_docs->word_path))
+                        ->set('url', url('preview/' . $fullFilePath))
                         ->set('filename', $letter_docs->word_file)
                 )
                 ->addTask(
@@ -129,11 +133,13 @@ trait CronTrait
                 $this->apiKey = $pdfApi->key;
             }
 
+            $fullFilePath = str_replace('/', '*', $invoice_docs->word_path);
+
             $cloudconvert = new CloudConvert(['api_key' => $this->apiKey]);
             $job = (new Job())
                 ->addTask(
                     (new Task('import/url', 'import-2'))
-                        ->set('url', url($invoice_docs->word_path))
+                        ->set('url', url('preview/' . $fullFilePath))
                         ->set('filename', $invoice_docs->word_file)
                 )
                 ->addTask(

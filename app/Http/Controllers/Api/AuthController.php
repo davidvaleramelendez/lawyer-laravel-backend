@@ -37,6 +37,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
+            dd(url('test'));
             $UserArray = $request->all();
             if ($request->password) {
                 $UserArray['password'] = $this->decryptData($request->password);
