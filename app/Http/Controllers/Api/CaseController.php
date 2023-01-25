@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\TemplateProcessor;
+use Storage;
 
 class CaseController extends Controller
 {
@@ -393,6 +394,9 @@ class CaseController extends Controller
             $fighter_data = DB::table("fighter_infos")->where("CaseID", $case_id)->first();
 
             $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
+            }
 
             $templateProcessor = new TemplateProcessor(public_path('master') . "/case_letter_master.docx");
             $templateProcessor->setValue('name', $user_data->name);
@@ -534,6 +538,9 @@ class CaseController extends Controller
             $fighter_data = DB::table("fighter_infos")->where("CaseID", $case_id)->first();
 
             $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
+            }
 
             $templateProcessor = new TemplateProcessor(public_path('master') . "/case_letter_master.docx");
             $templateProcessor->setValue('name', $user_data->name);
