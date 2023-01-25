@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\EmailTemplate;
-use App\Models\User;
 use App\Models\Cases;
 use App\Models\Contact;
+use App\Models\EmailTemplate;
 use App\Models\EmailTemplateAttachment;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Shared\Text;
-
+use Storage;
 
 class EmailTemplateController extends Controller
 {
@@ -21,7 +20,7 @@ class EmailTemplateController extends Controller
     public function email_template_filter($status, $search, $skips, $perPage, $sortColumn, $sort)
     {
         $list = EmailTemplate::with('EmailTemplateAttachment')
-                    ->orderBy($sortColumn,$sort);
+            ->orderBy($sortColumn, $sort);
 
         $totalRecord = new EmailTemplate();
 
@@ -30,20 +29,20 @@ class EmailTemplateController extends Controller
             $totalRecord = $totalRecord->where('status', $status);
         }
 
-        if($search){
+        if ($search) {
             $list = $list
-                    ->where(function ($query) use($search) {
-                        $query->where('subject', 'LIKE', '%'. $search .'%');
-                    });     
+                ->where(function ($query) use ($search) {
+                    $query->where('subject', 'LIKE', '%' . $search . '%');
+                });
             $totalRecord = $totalRecord
-                            ->where(function ($query) use($search) {
-                                $query->where('subject', 'LIKE', '%'. $search .'%');
-                            });
+                ->where(function ($query) use ($search) {
+                    $query->where('subject', 'LIKE', '%' . $search . '%');
+                });
         }
 
         $list = $list->skip($skips)->take($perPage)->get();
         $totalRecord = $totalRecord->count();
-        return ['data' => $list, 'count' => $totalRecord]; 
+        return ['data' => $list, 'count' => $totalRecord];
     }
 
     public function get_email_templates(Request $request)
@@ -53,24 +52,23 @@ class EmailTemplateController extends Controller
             $startIndex = 0;
             $endIndex = 0;
             $skips = 0;
-            $page = $request->input(key: 'page') ?? 1;
-            $perPage = $request->input(key: 'perPage') ?? 100;
-            $sortColumn = $request->input(key: 'sortColumn') ?? 'id';
+            $page = $request->input(key:'page') ?? 1;
+            $perPage = $request->input(key:'perPage') ?? 100;
+            $sortColumn = $request->input(key:'sortColumn') ?? 'id';
             $skips = $perPage * ($page - 1) ?? 1;
-            $sort = $request->input(key: 'sort') ?? 'DESC';
-            $search = $request->input(key: 'search') ?? '';
-            $status = $request->input(key: 'status') ?? '';
+            $sort = $request->input(key:'sort') ?? 'DESC';
+            $search = $request->input(key:'search') ?? '';
+            $status = $request->input(key:'status') ?? '';
 
             $datas = $this->email_template_filter($status, $search, $skips, $perPage, $sortColumn, $sort);
 
-
             $list = $datas['data'];
             $totalRecord = $datas['count'];
-                
+
             $totalPages = ceil($totalRecord / $perPage);
-            
-            if(count($list) == 0) {
-                if($page > 0) {
+
+            if (count($list) == 0) {
+                if ($page > 0) {
                     $page = 1;
                     $skips = $perPage * ($page - 1) ?? 1;
                     $datas = $this->email_template_filter($status, $search, $skips, $perPage, $sortColumn, $sort);
@@ -79,7 +77,7 @@ class EmailTemplateController extends Controller
                 }
             }
 
-            if(!empty($list) && $list->count() > 0) {
+            if (!empty($list) && $list->count() > 0) {
                 $pageIndex = ($page - 1) ?? 0;
                 $startIndex = ($pageIndex * $perPage) + 1;
                 $endIndex = min($startIndex - 1 + $perPage, $totalRecord);
@@ -90,34 +88,34 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = $list;
             $response['pagination'] = ['perPage' => $perPage,
-                                        'totalRecord' => $totalRecord,
-                                        'sortColumn' => $sortColumn,
-                                        'sort' => $sort,
-                                        'totalPages' => $totalPages,
-                                        'pageIndex' => $pageIndex,
-                                        'startIndex' => $startIndex,
-                                        'endIndex' => $endIndex ];
+                'totalRecord' => $totalRecord,
+                'sortColumn' => $sortColumn,
+                'sort' => $sort,
+                'totalPages' => $totalPages,
+                'pageIndex' => $pageIndex,
+                'startIndex' => $startIndex,
+                'endIndex' => $endIndex];
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
             $response['data'] = [];
             return response()->json($response);
         }
-        
+
     }
 
     public function get_email_template($id)
     {
         try {
-            $data = EmailTemplate::with('EmailTemplateAttachment')->where('id',$id)->first();
+            $data = EmailTemplate::with('EmailTemplateAttachment')->where('id', $id)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -131,17 +129,15 @@ class EmailTemplateController extends Controller
         try {
             $validation = Validator::make($request->all(), [
                 'subject' => 'required',
-                'template'    => 'required',
+                'template' => 'required',
             ]);
 
-
-            if($validation->fails()){
+            if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = 'Failed.';
+                $response['message'] = 'Validation failed!';
                 $response['data'] = null;
-                $error=$validation->errors();
-                $response['error'] = $error;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 
@@ -156,7 +152,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template created successfully.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -169,32 +165,34 @@ class EmailTemplateController extends Controller
     {
         try {
             $validation = Validator::make($request->all(), [
-                'id'    => 'required',
+                'id' => 'required',
                 'subject' => 'required',
-                'template'    => 'required',
+                'template' => 'required',
             ]);
-            
 
-            if($validation->fails()){
+            if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = 'Failed.';
+                $response['message'] = 'Validation failed!';
                 $response['data'] = null;
-                $error=$validation->errors();
-                $response['error'] = $error;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
+
             $id = $request->id;
             $data = EmailTemplate::find($id);
-            if($request->subject) {
+            if ($request->subject) {
                 $data->subject = $request->subject;
             }
-            if($request->template) {
+
+            if ($request->template) {
                 $data->template = $request->template;
             }
-            if($request->status) {
+
+            if ($request->status) {
                 $data->status = $request->status;
             }
+
             $data->save();
 
             $response = array();
@@ -202,14 +200,14 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template updated successfully.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
             $response['data'] = null;
             return response()->json($response);
         }
-        
+
     }
 
     public function email_template_delete($id)
@@ -217,12 +215,10 @@ class EmailTemplateController extends Controller
         try {
             $template = EmailTemplate::where('id', $id)->first();
             $data = EmailTemplateAttachment::where('email_template_id', $id)->get();
-            foreach($data as $value) {
+            foreach ($data as $value) {
                 if ($value && $value->path) {
-                    $image_path = $value->path;
-                    $file_exists = file_exists($image_path);
-                    if ($file_exists) {
-                        unlink($image_path);
+                    if (!Storage::exists($value->path)) {
+                        Storage::delete($value->path);
                     }
                     $value->delete();
                 }
@@ -233,7 +229,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template deleted successfully.';
             $response['data'] = null;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -250,7 +246,7 @@ class EmailTemplateController extends Controller
             }
 
             return $macro;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
@@ -263,7 +259,7 @@ class EmailTemplateController extends Controller
             }
 
             return $subject;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
@@ -291,16 +287,15 @@ class EmailTemplateController extends Controller
 
             $this->templateData = str_replace($search, $replace, $this->templateData);
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
-    
+
     public function templateCaseShortCode($CaseID)
-    {  
-        try { 
-            if($CaseID)
-            {
+    {
+        try {
+            if ($CaseID) {
                 $case = Cases::where('CaseID', $CaseID)->first();
                 $this->setValue('CaseID', $case->CaseID);
                 $this->setValue('ContactID', $case->ContactID);
@@ -311,7 +306,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('Status', $case->Status);
             }
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
@@ -319,8 +314,7 @@ class EmailTemplateController extends Controller
     public function templateContactShortCode($ContactID)
     {
         try {
-            if($ContactID)
-            {
+            if ($ContactID) {
                 $contact = Contact::where('ContactID', $ContactID)->first();
                 $this->setValue('ContactID', $contact->ContactID);
                 $this->setValue('ContactName', $contact->Name);
@@ -331,7 +325,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('message_id', $contact->message_id);
             }
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
@@ -339,8 +333,7 @@ class EmailTemplateController extends Controller
     public function templateUserShortCode($UserID)
     {
         try {
-            if($UserID)
-            {
+            if ($UserID) {
                 $user = User::where('id', $UserID)->first();
                 $this->setValue('name', $user->name);
                 $this->setValue('email', $user->email);
@@ -357,7 +350,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('Country', $user->Country);
             }
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             return false;
         }
     }
@@ -370,10 +363,8 @@ class EmailTemplateController extends Controller
 
             $CaseID = $request->CaseID;
             $ContactID = $request->ContactID;
-            if($CaseID || $ContactID)
-            {   
-                if($CaseID)
-                {
+            if ($CaseID || $ContactID) {
+                if ($CaseID) {
                     $CaseUserId = Cases::where('CaseID', $CaseID)->first();
                     $this->templateUserShortCode($CaseUserId->UserID);
                 }
@@ -382,8 +373,7 @@ class EmailTemplateController extends Controller
             }
 
             $UserID = $request->UserID;
-            if($UserID)
-            {
+            if ($UserID) {
                 $this->templateUserShortCode($UserID);
             }
 
@@ -392,7 +382,7 @@ class EmailTemplateController extends Controller
             $response['message'] = "Email template set successfully.";
             $response['data'] = $this->templateData;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -404,14 +394,14 @@ class EmailTemplateController extends Controller
     public function view_email_template(Request $request, $id)
     {
         try {
-            $template = EmailTemplate::with('EmailTemplateAttachment')->where('id',$id)->first();
-            $template['htmlBody']= view('email-template.view', compact('template'))->render();
+            $template = EmailTemplate::with('EmailTemplateAttachment')->where('id', $id)->first();
+            $template['htmlBody'] = view('email-template.view', compact('template'))->render();
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";
             $response['data'] = $template;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();

@@ -305,7 +305,6 @@ class CaseRecordController extends Controller
             $response['data'] = null;
             return response()->json($response);
         }
-
     }
 
     public function case_send_email(Request $request, $id = '')

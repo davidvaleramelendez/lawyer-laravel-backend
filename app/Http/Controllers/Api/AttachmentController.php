@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Storage;
 
 class AttachmentController extends Controller
 {
@@ -24,17 +25,28 @@ class AttachmentController extends Controller
                     $extension = $file['extension'];
                     $img_code = explode(',', $attachment);
                     $filedata = base64_decode($img_code[1]);
-                    $filePath = 'public/' . $request->type . '/attachments';
+
+                    $filePath = config('global.file_root_path') ? config('global.file_root_path') : 'uploads';
+                    if ($request && $request->type) {
+                        $filePath = $filePath . '/' . $request->type;
+                    }
+
+                    $filePath = config('global.attachment_path') ? $filePath . '/' . config('global.attachment_path') : $filePath . '/' . 'attachments';
+
                     $f = finfo_open();
                     $mime_type = finfo_buffer($f, $filedata, FILEINFO_MIME_TYPE);
 
                     @$mime_type = explode('/', $mime_type);
                     @$mime_type = $extension ?? $mime_type[1];
+                    $img_url = null;
                     if ($mime_type) {
-                        \Storage::makeDirectory($filePath);
+                        if (!Storage::exists($filePath)) {
+                            Storage::makeDirectory($filePath);
+                        }
+
                         $name = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                        if (\Storage::put($filePath . '/' . $name, $filedata)) {
-                            $img_url = 'storage/' . $request->type . '/' . 'attachments/' . $name;
+                        if (Storage::put($filePath . '/' . $name, $filedata)) {
+                            $img_url = $filePath . '/' . $name;
                         }
                     }
 
@@ -70,10 +82,10 @@ class AttachmentController extends Controller
     {
         try {
             $attachment = Attachment::where('id', $id)->first();
-            $image_path = $attachment->path;
-            $file_exists = file_exists($image_path);
-            if ($file_exists) {
-                unlink($image_path);
+            if ($attachment && $attachment->path) {
+                if (Storage::exists($attachment->path)) {
+                    Storage::delete($attachment->path);
+                }
             }
             $attachment->delete();
 
@@ -110,10 +122,10 @@ class AttachmentController extends Controller
             $ids = $request->ids;
             $attachments = Attachment::whereIn('id', $ids)->get();
             foreach ($attachments as $key => $attachment) {
-                $image_path = $attachment->path;
-                $file_exists = file_exists($image_path);
-                if ($file_exists) {
-                    unlink($image_path);
+                if ($attachment && $attachment->path) {
+                    if (Storage::exists($attachment->path)) {
+                        Storage::delete($attachment->path);
+                    }
                 }
                 Attachment::where('id', $attachment->id)->delete();
             }

@@ -126,6 +126,7 @@ class ContactController extends Controller
                 'IsCase' => 0,
                 'deleted' => 0,
             ]);
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Contact added Successfully.';
@@ -163,10 +164,12 @@ class ContactController extends Controller
         try {
             $laywers = User::where('role_id', 12)->orWhere('role_id', 10)->orWhere('role_id', 14)->get();
             $types = CasesType::where('Status', 'Active')->get();
+
             $data = array(
                 'laywers' => $laywers,
                 'types' => $types,
             );
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -190,12 +193,15 @@ class ContactController extends Controller
             $caseTypeId = $param['CaseTypeID'];
             $validation = Validator::make($request->all(), [
                 'LaywerID' => 'required',
-
             ]);
 
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "LaywerID is required!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             $check = User::where('email', $param['email'])->first();
@@ -340,8 +346,12 @@ class ContactController extends Controller
             ]);
 
             if ($validation->fails()) {
-                $error = $validation->errors();
-                return response()->json(['error' => $error]);
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Validation failed!";
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
             }
 
             $param = $request->all();
@@ -387,7 +397,6 @@ class ContactController extends Controller
     public function update_contact(Request $request, AddContact $id)
     {
         try {
-
             $updateData = [
                 'Name' => $request->name,
                 'Email' => $request->email,
@@ -415,7 +424,6 @@ class ContactController extends Controller
             $response['data'] = null;
             return response()->json($response);
         }
-
     }
 
     public function contact_view($id)

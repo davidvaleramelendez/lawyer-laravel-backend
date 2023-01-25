@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CloudStorageController extends Controller
@@ -199,8 +200,9 @@ class CloudStorageController extends Controller
     public function folder_create(Request $request)
     {
         try {
-            if (!is_dir('storage/cloudstorage')) {
-                File::makeDirectory(public_path('storage/cloudstorage'));
+            $filePath = config('global.cloud_storage_path') ? config('global.cloud_storage_path') : 'uploads/cloudstorage';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
             }
 
             $validation = Validator::make($request->all(), [
@@ -212,7 +214,7 @@ class CloudStorageController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed.";
+                $response['message'] = "Validation failed!";
                 $response['data'] = null;
                 $response['error'] = $validation->errors();
                 return response()->json($response);
@@ -226,8 +228,9 @@ class CloudStorageController extends Controller
                     $parent_id = $parent->id;
                 }
             }
-            if (!is_dir('storage/cloudstorage/' . $userId)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
+
+            if (!Storage::exists($filePath . '/' . $userId)) {
+                Storage::makeDirectory($filePath . '/' . $userId);
             }
 
             $data = new CloudStorage();
@@ -237,6 +240,7 @@ class CloudStorageController extends Controller
             if ($parent_id != null) {
                 $slug = $slug . '-' . $parent_id;
             }
+
             $checkSlug = CloudStorage::where('user_id', $userId)->where('slug', $slug)->first();
             if ($checkSlug && $checkSlug->id) {
                 $slug = $slug . '-' . rand(0, 9) . '-' . rand(0, 99);
@@ -245,24 +249,23 @@ class CloudStorageController extends Controller
             if ($parent_id != null) {
                 $data->parent_id = $parent_id;
             }
+
             $data->user_id = $userId;
             if ($parent_id != null) {
                 $parent_path = CloudStorage::where('id', $parent_id)->first();
                 $data->path = $parent_path->path . '/' . $slug;
             } else {
-                $data->path = 'storage/cloudstorage/' . $userId . '/' . $slug;
+                $data->path = $filePath . '/' . $userId . '/' . $slug;
             }
             $data->type = $request->type;
 
             if ($parent_id) {
                 $parentPath = CloudStorage::where('id', $parent_id)->where('user_id', $userId)->first();
-                if (!is_dir($parentPath->path . '/' . $slug)) {
-                    File::makeDirectory(public_path($parentPath->path . '/' . $slug));
+                if (!Storage::exists($parentPath->path . '/' . $slug)) {
+                    Storage::makeDirectory($parentPath->path . '/' . $slug);
                 }
-            } else if (!is_dir('storage/cloudstorage/' . $userId) . '/' . $slug) {
-                if (!is_dir('storage/cloudstorage/' . $userId . '/' . $slug)) {
-                    File::makeDirectory(public_path('storage/cloudstorage/' . $userId . '/' . $slug));
-                }
+            } else if (!Storage::exists($filePath . '/' . $userId . '/' . $slug)) {
+                Storage::makeDirectory($filePath . '/' . $userId . '/' . $slug);
             }
             $data->save();
 
@@ -283,8 +286,9 @@ class CloudStorageController extends Controller
     public function folder_update(Request $request)
     {
         try {
-            if (!is_dir('storage/cloudstorage')) {
-                File::makeDirectory(public_path('storage/cloudstorage'));
+            $filePath = config('global.cloud_storage_path') ? config('global.cloud_storage_path') : 'uploads/cloudstorage';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
             }
 
             $validation = Validator::make($request->all(), [
@@ -296,7 +300,7 @@ class CloudStorageController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed.";
+                $response['message'] = "Validation failed!";
                 $response['data'] = null;
                 $response['error'] = $validation->errors();
                 return response()->json($response);
@@ -321,8 +325,8 @@ class CloudStorageController extends Controller
                 $files = CloudStorage::where('parent_id', $data->id)->where('type', 'file')->get();
                 $parentPath = CloudStorage::where('id', $parent_id)->first();
 
-                $source = public_path($data->path);
-                $destination = public_path($parentPath->path);
+                $source = storage_path('app/' . $data->path);
+                $destination = storage_path('app/' . $parentPath->path);
                 shell_exec('mv ' . $source . ' ' . $destination . ' ');
 
                 $data->path = $parentPath->path . '/' . $data->slug;
@@ -333,7 +337,7 @@ class CloudStorageController extends Controller
                 }
             } else if ($request->root == true) {
                 $data->parent_id = null;
-                if (!is_dir('storage/cloudstorage/' . $userId . '/' . $data->slug)) {
+                if (!Storage::exists($filePath . '/' . $userId . '/' . $data->slug)) {
                     $files = CloudStorage::where('parent_id', $data->id)->where('type', 'file')->get();
 
                     $source = public_path($data->path);
@@ -418,8 +422,11 @@ class CloudStorageController extends Controller
                         $this->forceRecursionDelete($children);
                     }
 
-                    $folderPath = public_path($data->path);
-                    $folderExists = File::deleteDirectory($folderPath);
+                    if ($data->path) {
+                        if (Storage::exists($data->path)) {
+                            Storage::delete($data->path);
+                        }
+                    }
                     $data->forceDelete();
                 }
             }
@@ -431,8 +438,11 @@ class CloudStorageController extends Controller
         try {
             $data = CloudStorage::where('id', $id)->onlyTrashed()->first();
             if ($data && $data->id) {
-                $folderPath = public_path($data->path);
-                $folderExists = File::deleteDirectory($folderPath);
+                if ($data->path) {
+                    if (Storage::exists($data->path)) {
+                        Storage::delete($data->path);
+                    }
+                }
 
                 $children = CloudStorage::where('parent_id', $data->id)->withTrashed()->get();
                 if ($children && count($children) > 0) {
@@ -498,8 +508,9 @@ class CloudStorageController extends Controller
     public function file_create(Request $request)
     {
         try {
-            if (!is_dir('storage/cloudstorage')) {
-                File::makeDirectory(public_path('storage/cloudstorage'));
+            $filePath = config('global.cloud_storage_path') ? config('global.cloud_storage_path') : 'uploads/cloudstorage';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
             }
 
             $validation = Validator::make($request->all(), [
@@ -510,7 +521,7 @@ class CloudStorageController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed.";
+                $response['message'] = "Validation failed!";
                 $response['data'] = null;
                 $response['error'] = $validation->errors();
                 return response()->json($response);
@@ -525,14 +536,14 @@ class CloudStorageController extends Controller
                 }
             }
 
-            if (!is_dir('storage/cloudstorage/' . $userId)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
+            if (!Storage::exists($filePath . '/' . $userId)) {
+                Storage::makeDirectory($filePath . '/' . $userId);
             }
 
             $files = [];
             if ($request->attachments) {
                 foreach ($request->attachments as $key => $file) {
-                    $filePath = 'storage/cloudstorage/' . $userId;
+                    $filePath = $filePath . '/' . $userId;
                     $attachment = $file['file'];
                     $extension = $file['extension'];
                     $img_code = explode(',', $attachment);
@@ -548,7 +559,7 @@ class CloudStorageController extends Controller
                     @$mime_type = $extension ?? $mime_type[1];
                     if ($mime_type) {
                         $name = time() . '-' . rand(0000, 9999) . '.' . $mime_type;
-                        if (file_put_contents(public_path() . '/' . $filePath . '/' . $name, $filedata)) {
+                        if (Storage::put($filePath . '/' . $name, $filedata)) {
                             $img_url = $filePath . '/' . $name;
                         }
                     }
@@ -586,8 +597,9 @@ class CloudStorageController extends Controller
     public function file_update(Request $request)
     {
         try {
-            if (!is_dir('storage/cloudstorage')) {
-                File::makeDirectory(public_path('storage/cloudstorage'));
+            $filePath = config('global.cloud_storage_path') ? config('global.cloud_storage_path') : 'uploads/cloudstorage';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
             }
 
             $validation = Validator::make($request->all(), [
@@ -599,7 +611,7 @@ class CloudStorageController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = "Failed";
+                $response['message'] = "Validation failed!";
                 $response['data'] = null;
                 $response['error'] = $validation->errors();
                 return response()->json($response);
@@ -607,11 +619,12 @@ class CloudStorageController extends Controller
 
             $id = $request->id;
             $userId = $request->user_id ?? auth()->user()->id;
-            $parent_id = null;
-            if (!is_dir('storage/cloudstorage/' . $userId)) {
-                File::makeDirectory(public_path('storage/cloudstorage/' . $userId));
+
+            if (!Storage::exists($filePath . '/' . $userId)) {
+                Storage::makeDirectory($filePath . '/' . $userId);
             }
 
+            $parent_id = null;
             if ($request->parent_id) {
                 $parent = CloudStorage::where('id', $request->parent_id)->first();
                 if ($parent && $parent->id) {
@@ -626,14 +639,16 @@ class CloudStorageController extends Controller
             if ($data->file_name) {
                 if ($parent_id != null) {
                     $parent_path = CloudStorage::where('id', $parent_id)->where('type', 'folder')->first();
-                    File::move(public_path($data->path), public_path($parent_path->path . '/' . $data->file_name));
+                    File::move(storage_path('app/' . $data->path), storage_path('app/' . $parent_path->path . '/' . $data->file_name));
+                    // File::move(public_path($data->path), public_path($parent_path->path . '/' . $data->file_name));
                     $data->parent_id = $parent_id;
                     $data->path = $parent_path->path . '/' . $data->file_name;
                 } else if ($request->root == true) {
                     $data->parent_id = null;
-                    $parent_path = public_path('storage/cloudstorage/' . $userId . '/' . $data->file_name);
-                    File::move(public_path($data->path), $parent_path);
-                    $data->path = 'storage/cloudstorage/' . $userId . '/' . $data->file_name;
+                    $parent_path = storage_path('app/' . $filePath . '/' . $userId . '/' . $data->file_name);
+                    // File::move(public_path($data->path), $parent_path);
+                    File::move(storage_path('app/' . $data->path), $parent_path);
+                    $data->path = $filePath . '/' . $userId . '/' . $data->file_name;
                 }
             }
 
@@ -676,10 +691,10 @@ class CloudStorageController extends Controller
         try {
             $data = CloudStorage::where('id', $id)->onlyTrashed()->first();
             if ($data && $data->id) {
-                $filePath = $data->path;
-                $fileExists = file_exists($filePath);
-                if ($fileExists) {
-                    unlink($filePath);
+                if ($data->path) {
+                    if (Storage::exists($data->path)) {
+                        Storage::delete($data->path);
+                    }
                 }
                 $data->forceDelete();
             }

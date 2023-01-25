@@ -23,9 +23,11 @@ class ChatController extends Controller
                 $response = array();
                 $response['flag'] = false;
                 $response['message'] = 'Id is requird';
-                $response['data'] = $users;
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
+
             $id = $request->id;
             $userId = $request->user_id ?? auth()->user()->id;
 
@@ -190,8 +192,9 @@ class ChatController extends Controller
             if ($validation->fails()) {
                 $response = array();
                 $response['flag'] = false;
-                $response['message'] = 'Failed.';
-                $response['data'] = $users;
+                $response['message'] = 'Validation failed!';
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
                 return response()->json($response);
             }
 

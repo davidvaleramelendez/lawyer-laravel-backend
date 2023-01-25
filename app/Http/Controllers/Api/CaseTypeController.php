@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CasesType;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CaseTypeController extends Controller
 {
@@ -18,7 +18,7 @@ class CaseTypeController extends Controller
             $response['message'] = 'Success';
             $response['data'] = $datas;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -30,13 +30,13 @@ class CaseTypeController extends Controller
     public function get_case_type($id)
     {
         try {
-            $data = CasesType::where('CaseTypeID',$id)->first();
+            $data = CasesType::where('CaseTypeID', $id)->first();
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -49,12 +49,16 @@ class CaseTypeController extends Controller
     {
         $validation = Validator::make($request->all(), [
             'CaseTypeName' => 'required',
-            'Status'    => 'required',
+            'Status' => 'required',
         ]);
 
-        if($validation->fails()){
-            $error=$validation->errors();
-            return response()->json(['error' => $error]);
+        if ($validation->fails()) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Validation failed!";
+            $response['data'] = null;
+            $response['error'] = $validation->errors();
+            return response()->json($response);
         }
 
         try {
@@ -66,10 +70,10 @@ class CaseTypeController extends Controller
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Case type created  successfully';
-            $response['data']=$data;
+            $response['data'] = $data;
 
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -86,10 +90,15 @@ class CaseTypeController extends Controller
             'Status' => 'required',
         ]);
 
-        if($validation->fails()){
-            $error=$validation->errors();
-            return response()->json(['error' => $error]);
+        if ($validation->fails()) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = "Validation failed!";
+            $response['data'] = null;
+            $response['error'] = $validation->errors();
+            return response()->json($response);
         }
+
         try {
             $id = $request->CaseTypeID;
             $data = CasesType::find($id);
@@ -100,10 +109,10 @@ class CaseTypeController extends Controller
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Case type updated  successfully';
-            $response['data']=$data;
+            $response['data'] = $data;
 
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
@@ -122,7 +131,7 @@ class CaseTypeController extends Controller
             $response['data'] = null;
 
             return response()->json($response);
-        } catch (\Exception $e) {
+        } catch (\Exception$e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = 'Failed.';
