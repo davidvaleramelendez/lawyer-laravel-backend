@@ -832,26 +832,15 @@ class EmailController extends Controller
             $type = $request->type ?? 'email';
             $email_group_id = $request->email_group_id;
 
-            if ($type == 'notification') {
-                $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('created_at', 'DESC')->first();
-                if (!$notification || !$notification->id) {
-                    $notification = CustomNotification::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
-                }
-                $notificationReply = [];
-                if ($notification && $notification->id) {
-                    $notificationReply = CustomNotification::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('created_at', 'DESC')->get();
-                }
-            } else {
-                $notification = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('id', 'DESC')->first();
-                if (!$notification || !$notification->id) {
-                    $notification = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
-                }
+            $email = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->orderBy('id', 'DESC')->first();
+            if (!$email || !$email->id) {
+                $email = Email::with('sender', 'receiver', 'attachment')->where('id', $id)->first();
+            }
 
-                $notificationReply = [];
-                if ($notification && $notification->id) {
-                    DB::table('emails')->where('email_group_id', $notification->email_group_id)->update(["is_read" => 1]);
-                    $notificationReply = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $notification->id)->orderBy('id')->get();
-                }
+            $emailReply = [];
+            if ($email && $email->id) {
+                DB::table('emails')->where('email_group_id', $email->email_group_id)->update(["is_read" => 1]);
+                $emailReply = Email::with('sender', 'receiver', 'attachment')->where('email_group_id', $email_group_id)->whereNot('id', $email->id)->orderBy('id')->get();
             }
 
             $users = User::whereNot('id', $userId)->get();
@@ -860,7 +849,7 @@ class EmailController extends Controller
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = ['users' => $users] ?? null;
-            $response['data']['mailData'] = ['replies' => $notificationReply, 'mail' => $notification] ?? null;
+            $response['data']['mailData'] = ['replies' => $emailReply, 'mail' => $email] ?? null;
             return response()->json($response);
 
         } catch (Exception $e) {
