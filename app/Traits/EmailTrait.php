@@ -470,20 +470,24 @@ trait EmailTrait
                 $id = date('Ym') . sprintf("%04s", $id + 1);
                 $contact['id'] = $id;
 
-                if (Contact::where('message_id', $msg['message_id'])->doesntExist()) {
-                    Contact::insert([
-                        'ContactID' => $contact['id'],
-                        'Name' => $contact['from'],
-                        'Email' => $contact['email'],
-                        'PhoneNo' => $contact['telephone'] ?? '',
-                        'Subject' => $contact['subject'] ?? '',
-                        'message' => $contact['message'],
-                        'message_id' => $msg['message_id'],
-                        'CreatedAt' => Carbon::now(),
+                $user = User::where('email', trim($contact['email']))->first();
 
-                    ]);
+                if (!$user || !$user->id) {
+                    if (Contact::where('message_id', $msg['message_id'])->doesntExist()) {
+                        Contact::insert([
+                            'ContactID' => $contact['id'],
+                            'Name' => $contact['from'],
+                            'Email' => $contact['email'],
+                            'PhoneNo' => $contact['telephone'] ?? '',
+                            'Subject' => $contact['subject'] ?? '',
+                            'message' => $contact['message'],
+                            'message_id' => $msg['message_id'],
+                            'CreatedAt' => Carbon::now(),
 
-                    Mail::to($contact['email'])->send(new OnlineAnfrage($contact['id'], $contact['from']));
+                        ]);
+
+                        Mail::to($contact['email'])->send(new OnlineAnfrage($contact['id'], $contact['from']));
+                    }
                 }
             }
 
