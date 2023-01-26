@@ -77,7 +77,7 @@ class EmailSentNotification extends Notification
             ->bcc($this->bcc)
             ->view('content.apps.email.email-template.email-template', with(['id' => $this->id, 'user' => $this->user, 'email_message' => $this->complete_message]));
         foreach ($this->attachments as $filePath) {
-            $email->attach($filePath);
+            $email->attach(storage_path('app/' . $filePath));
         }
 
         return $email;
