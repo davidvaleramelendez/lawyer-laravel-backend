@@ -338,6 +338,7 @@ Route::group([
     Route::post('/admin/voice-recording/create', [VoiceRecordingController::class, 'createVoiceRecording']);
     Route::post('/admin/voice-recording/update', [VoiceRecordingController::class, 'updateVoiceRecording']);
     Route::get('/admin/voice-recording/delete/{id}', [VoiceRecordingController::class, 'deleteVoiceRecording']);
+    Route::get('/admin/voice-recording/is-erledigt/{id}', [VoiceRecordingController::class, 'isErledigtVoiceRecording']);
     /* /VoiceRecording */
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

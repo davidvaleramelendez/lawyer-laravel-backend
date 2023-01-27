@@ -15,10 +15,12 @@ return new class extends Migration
     {
         Schema::create('voice_recordings', function (Blueprint $table) {
             $table->id();
+            $table->unsignedInteger('user_id')->nullable();
             $table->unsignedInteger('case_id')->nullable();
             $table->string('name')->nullable();
             $table->string('subject')->nullable();
             $table->string('path')->nullable();
+            $table->integer('isErledigt')->default(0);
             $table->timestamps();
         });
     }
