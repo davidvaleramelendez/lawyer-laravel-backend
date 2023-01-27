@@ -217,7 +217,7 @@ class EmailTemplateController extends Controller
             $data = EmailTemplateAttachment::where('email_template_id', $id)->get();
             foreach ($data as $value) {
                 if ($value && $value->path) {
-                    if (!Storage::exists($value->path)) {
+                    if (Storage::exists($value->path)) {
                         Storage::delete($value->path);
                     }
                     $value->delete();

@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TimelineController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TopNotificationController;
+use App\Http\Controllers\Api\VoiceRecordingController;
 use App\Http\Controllers\GoogleWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -330,5 +331,13 @@ Route::group([
 
     /* Auth user profile update */
     Route::post('/admin/profile/update-image', [ProfileController::class, 'update_account_profile']);
+
+    /* VoiceRecording */
+    Route::get('/admin/voice-recording/list', [VoiceRecordingController::class, 'getVoiceRecordings']);
+    Route::get('/admin/voice-recording/{id}', [VoiceRecordingController::class, 'getVoiceRecording']);
+    Route::post('/admin/voice-recording/create', [VoiceRecordingController::class, 'createVoiceRecording']);
+    Route::post('/admin/voice-recording/update', [VoiceRecordingController::class, 'updateVoiceRecording']);
+    Route::get('/admin/voice-recording/delete/{id}', [VoiceRecordingController::class, 'deleteVoiceRecording']);
+    /* /VoiceRecording */
 });
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

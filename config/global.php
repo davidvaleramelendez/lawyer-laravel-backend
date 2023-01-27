@@ -12,6 +12,8 @@ return [
     "email_template_attachment_path" => "uploads/emailtemplateattachment",
 
     "cloud_storage_path" => "uploads/cloudstorage",
+
+    "voice_recording_path" => "uploads/voicerecordings",
 ]
 
 ?>
