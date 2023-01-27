@@ -149,8 +149,10 @@ class VoiceRecordingController extends Controller
             }
 
             $data = new VoiceRecording();
+            $data->user_id = auth()->user()->id ?? null;
             $data->case_id = $request->case_id ?? null;
             $data->subject = $request->subject;
+
             if ($request->attachment) {
                 $split = explode(',', $request->attachment);
                 $filedata = base64_decode($split[1]);
@@ -166,6 +168,8 @@ class VoiceRecordingController extends Controller
                     }
                 }
             }
+
+            $data->isErledigt = 0;
             $data->save();
 
             $response = array();
@@ -206,6 +210,10 @@ class VoiceRecordingController extends Controller
 
             $id = $request->id;
             $data = VoiceRecording::find($id);
+            if ($request->user_id) {
+                $data->user_id = $request->user_id;
+            }
+
             if ($request->case_id) {
                 $data->case_id = $request->case_id;
             }
@@ -276,6 +284,34 @@ class VoiceRecordingController extends Controller
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
             $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function isErledigtVoiceRecording($id)
+    {
+        try {
+            $data = VoiceRecording::where('id', $id)->first();
+
+            $isErledigt = 0;
+            if ($data && $data->isErledigt == 0) {
+                $isErledigt = 1;
+            }
+
+            VoiceRecording::where('id', $id)->update([
+                'isErledigt' => $isErledigt,
+            ]);
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Success.';
+            $response['data'] = [];
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = [];
             return response()->json($response);
         }
     }
