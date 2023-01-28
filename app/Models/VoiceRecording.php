@@ -18,7 +18,16 @@ class VoiceRecording extends Model
     //     'role_id',
     // ];
 
-    protected $with = ['cases'];
+    protected $with = ['user', 'cases'];
+
+    protected $casts = [
+        'isErledigt' => 'integer',
+    ];
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
 
     public function cases()
     {

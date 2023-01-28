@@ -84,7 +84,7 @@ class AuthController extends Controller
                 ['password' => bcrypt($request->password)]
             ));
             return response()->json([
-                'message' => 'User successfully registered',
+                'message' => 'User successfully registered!',
                 'user' => $user,
             ], 201);
         } catch (\Exception$e) {
@@ -107,7 +107,7 @@ class AuthController extends Controller
         $user = Auth::user(); //or Auth::user()
         // Revoke current user token
         $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
-        return response()->json(['flag' => true, 'message' => 'User successfully signed out'], 201);
+        return response()->json(['flag' => true, 'message' => 'User successfully signed out!'], 201);
     }
     /**
      * Refresh a token.
@@ -138,7 +138,7 @@ class AuthController extends Controller
             $response['data'] = ['userData' => $user, 'accessToken' => $token, 'tokenType' => 'bearer', 'expiresIn' => 86400 * 7];
             return response()->json($response, 201);
         } else {
-            return response()->json(['flag' => false, "message" => "Unauthenticated."]);
+            return response()->json(['flag' => false, "message" => "Unauthenticated!"]);
         }
     }
     /**
@@ -176,7 +176,7 @@ class AuthController extends Controller
 
         $response = array();
         $response['flag'] = true;
-        $response['message'] = 'User logged successfully';
+        $response['message'] = 'User logged successfully!';
         $response['data'] = ['userData' => $user, 'accessToken' => $access_token, 'tokenType' => 'bearer', 'languageLabels' => $languageLabels, 'expiresIn' => 86400];
         return response()->json($response);
     }
