@@ -22,13 +22,13 @@ class TimelineController extends Controller
             $letter_search = $request->input(key:'letter_search') ?? '';
             $invoice_search = $request->input(key:'invoice_search') ?? '';
 
-            $currentDate = date('Y-m-d', strtotime("-1 days"));
+            $currentDate = date('Y-m-d');
 
             if (Helper::get_user_permissions(6) == 1) {
-                $letters = Letters::with('cases', 'user')->where("isErledigt", 0)->where('frist_date', '>', date('Y-m-d', strtotime("-60 days")))->where('frist_date', $currentDate);
-                $casedocs = Casedocs::where("isErledigt", 0)->where('frist_date', '>', date('Y-m-d', strtotime("-60 days")))->where('frist_date', $currentDate)->orderBy('frist_date', 'ASC')->get();
+                $letters = Letters::with('cases', 'user')->where("isErledigt", 0)->where('frist_date', '>', date('Y-m-d', strtotime("-60 days")))->where('frist_date', '<', $currentDate);
+                $casedocs = Casedocs::where("isErledigt", 0)->where('frist_date', '>', date('Y-m-d', strtotime("-60 days")))->where('frist_date', '<', $currentDate)->orderBy('frist_date', 'ASC')->get();
 
-                $invoices = invoice::with('user', 'created_user', 'case')->whereNot("status", "paid")->where('invoice_due_date', '>', date('Y-m-d', strtotime("-60 days")))->where('invoice_due_date', $currentDate);
+                $invoices = invoice::with('user', 'created_user', 'case')->whereNot("status", "paid")->where('invoice_due_date', '>', date('Y-m-d', strtotime("-60 days")))->where('invoice_due_date', '<', $currentDate);
                 $casedocs = Casedocs::where("deleted", 0)->where("is_archived", 0)->get();
             } else {
                 $letters = array();
