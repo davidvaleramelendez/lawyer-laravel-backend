@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\EmailTemplateAttachmentController;
 use App\Http\Controllers\Api\EmailTemplateController;
 use App\Http\Controllers\Api\GoogleController;
+use App\Http\Controllers\Api\ImportLetterFileController;
 use App\Http\Controllers\Api\InquiryImapController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LanguageController;
@@ -340,5 +341,16 @@ Route::group([
     Route::get('/admin/voice-recording/delete/{id}', [VoiceRecordingController::class, 'deleteVoiceRecording']);
     Route::get('/admin/voice-recording/is-erledigt/{id}', [VoiceRecordingController::class, 'isErledigtVoiceRecording']);
     /* /VoiceRecording */
+
+    /* ImportLetterFile */
+    Route::get('/admin/import-letter-file/list', [ImportLetterFileController::class, 'getImportLetterFiles']);
+    Route::get('/admin/import-letter-file/{id}', [ImportLetterFileController::class, 'getImportLetterFile']);
+    Route::post('/admin/import-letter-file/create', [ImportLetterFileController::class, 'createImportLetterFile']);
+    Route::post('/admin/import-letter-file/update', [ImportLetterFileController::class, 'updateImportLetterFile']);
+    Route::get('/admin/import-letter-file/delete/{id}', [ImportLetterFileController::class, 'deleteImportLetterFile']);
+    Route::get('/admin/import-letter-file/is-erledigt/{id}', [ImportLetterFileController::class, 'isErledigtImportLetterFile']);
+    Route::post('/admin/import-letter-file/create-multiple', [ImportLetterFileController::class, 'createMultipleImportLetterFile']);
+    /* /ImportLetterFile */
 });
+
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

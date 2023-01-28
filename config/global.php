@@ -14,6 +14,8 @@ return [
     "cloud_storage_path" => "uploads/cloudstorage",
 
     "voice_recording_path" => "uploads/voicerecordings",
+
+    "import_letter_file_path" => "uploads/importletterfiles",
 ]
 
 ?>
