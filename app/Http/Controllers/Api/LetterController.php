@@ -14,11 +14,23 @@ class LetterController extends Controller
     {
         $userId = auth()->user()->id;
         if (Helper::get_user_permissions(6) == 1) {
-            $list = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
-            $totalRecord = Letters::with('cases', 'user')->where('is_archived', 0)->where("deleted", 0);
+            $list = Letters::with('cases', 'user')->where(function ($query) {
+                $query->Where('is_archived', 0)
+                    ->where('deleted', 0);
+            })->orderBy($sortColumn, $sort);
+            $totalRecord = Letters::with('cases', 'user')->where(function ($query) {
+                $query->Where('is_archived', 0)
+                    ->where('deleted', 0);
+            });
         } else {
-            $list = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0)->orderBy($sortColumn, $sort);
-            $totalRecord = Letters::with('cases', 'user')->where('user_id', $userId)->where('is_archived', 0)->where("deleted", 0);
+            $list = Letters::with('cases', 'user')->where('user_id', $userId)->where(function ($query) {
+                $query->Where('is_archived', 0)
+                    ->where('deleted', 0);
+            })->orderBy($sortColumn, $sort);
+            $totalRecord = Letters::with('cases', 'user')->where('user_id', $userId)->where(function ($query) {
+                $query->Where('is_archived', 0)
+                    ->where('deleted', 0);
+            });
         }
 
         if ($caseId) {
@@ -93,6 +105,56 @@ class LetterController extends Controller
                 'pageIndex' => $pageIndex,
                 'startIndex' => $startIndex,
                 'endIndex' => $endIndex];
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function get_case_letters(Request $request)
+    {
+        try {
+            $userId = auth()->user()->id;
+            $sortColumn = $request->input(key:'sortColumn') ?? 'id';
+            $sort = $request->input(key:'sort') ?? 'DESC';
+
+            if (Helper::get_user_permissions(6) == 1) {
+                $letters = Letters::with('cases', 'user')->where(function ($query) {
+                    $query->Where('is_archived', 0)
+                        ->where('is_imported_file', 0)
+                        ->where('deleted', 0);
+                })->orderBy($sortColumn, $sort);
+
+                $importedLetterFiles = Letters::with('cases', 'user')->where(function ($query) {
+                    $query->Where('is_archived', 0)
+                        ->where('is_imported_file', 1)
+                        ->where('deleted', 0);
+                })->orderBy($sortColumn, $sort);
+            } else {
+                $letters = Letters::with('cases', 'user')->where('user_id', $userId)->where(function ($query) {
+                    $query->Where('is_archived', 0)
+                        ->where('is_imported_file', 0)
+                        ->where('deleted', 0);
+                })->orderBy($sortColumn, $sort);
+
+                $importedLetterFiles = Letters::with('cases', 'user')->where('user_id', $userId)->where(function ($query) {
+                    $query->Where('is_archived', 0)
+                        ->where('is_imported_file', 1)
+                        ->where('deleted', 0);
+                })->orderBy($sortColumn, $sort);
+            }
+
+            $letters = $letters->get();
+            $importedLetterFiles = $importedLetterFiles->get();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Success.';
+            $response['data'] = ["letters" => $letters ?? [], "importedLetterFiles" => $importedLetterFiles ?? []];
             return response()->json($response);
         } catch (\Exception$e) {
             $response = array();
@@ -188,5 +250,4 @@ class LetterController extends Controller
             return response()->json($response);
         }
     }
-
 }

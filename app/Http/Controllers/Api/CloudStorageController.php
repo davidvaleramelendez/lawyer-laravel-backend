@@ -640,13 +640,11 @@ class CloudStorageController extends Controller
                 if ($parent_id != null) {
                     $parent_path = CloudStorage::where('id', $parent_id)->where('type', 'folder')->first();
                     File::move(storage_path('app/' . $data->path), storage_path('app/' . $parent_path->path . '/' . $data->file_name));
-                    // File::move(public_path($data->path), public_path($parent_path->path . '/' . $data->file_name));
                     $data->parent_id = $parent_id;
                     $data->path = $parent_path->path . '/' . $data->file_name;
                 } else if ($request->root == true) {
                     $data->parent_id = null;
                     $parent_path = storage_path('app/' . $filePath . '/' . $userId . '/' . $data->file_name);
-                    // File::move(public_path($data->path), $parent_path);
                     File::move(storage_path('app/' . $data->path), $parent_path);
                     $data->path = $filePath . '/' . $userId . '/' . $data->file_name;
                 }

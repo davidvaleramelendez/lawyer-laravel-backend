@@ -118,6 +118,7 @@ Route::group([
     Route::get('/admin/letter/{id}', [LetterController::class, 'get_letter']);
     Route::get('/admin/letter/update_archived/{id}', [LetterController::class, 'case_documents_archived'])->name('admin-letter-archived');
     Route::get('/admin/letter/update_status/{id}', [LetterController::class, 'case_letter_update_status'])->name('case_letter_update_status');
+    Route::get('/admin/case/letter/list', [LetterController::class, 'get_case_letters']);
 
     Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class, 'case_letter_erledigt'])->name('admin-case_letter_erledigt');
 
@@ -350,6 +351,7 @@ Route::group([
     Route::get('/admin/import-letter-file/delete/{id}', [ImportLetterFileController::class, 'deleteImportLetterFile']);
     Route::get('/admin/import-letter-file/is-erledigt/{id}', [ImportLetterFileController::class, 'isErledigtImportLetterFile']);
     Route::post('/admin/import-letter-file/create-multiple', [ImportLetterFileController::class, 'createMultipleImportLetterFile']);
+    Route::post('/admin/import-letter-file/move-to-letter', [ImportLetterFileController::class, 'moveImportLetterFileToLetter']);
     /* /ImportLetterFile */
 });
 

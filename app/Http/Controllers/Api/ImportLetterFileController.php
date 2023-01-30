@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ImportLetterFile;
+use App\Models\Letters;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Storage;
 
 class ImportLetterFileController extends Controller
 {
@@ -402,6 +404,85 @@ class ImportLetterFileController extends Controller
             $response['flag'] = true;
             $response['message'] = 'Letter files saved successfully!';
             $response['data'] = $importLetterFiles;
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = [];
+            return response()->json($response);
+        }
+    }
+
+    public function moveImportLetterFileToLetter(Request $request)
+    {
+        try {
+            $validation = Validator::make($request->all(), [
+                'ids' => 'required',
+            ]);
+
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = 'Ids is required!';
+                $response['data'] = null;
+                $response['error'] = $validation->errors();
+                return response()->json($response);
+            }
+
+            $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
+            $documentFilePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+            if (!Storage::exists($documentFilePath)) {
+                Storage::makeDirectory($documentFilePath);
+            }
+
+            $ids = $request->ids;
+            $importedLetterFiles = ImportLetterFile::whereIn('id', $ids)->get();
+            if ($importedLetterFiles) {
+                foreach ($importedLetterFiles as $key => $importedFile) {
+                    if ($importedFile && $importedFile->case_id) {
+                        $letter = new Letters();
+                        $letter->user_id = auth()->user()->id;
+                        $letter->case_id = $importedFile->case_id;
+                        $letter->subject = $importedFile->subject;
+                        $letter->frist_date = $importedFile->frist_date;
+
+                        if ($importedFile->file_path) {
+                            $extension = null;
+                            $oldFileName = explode(".", $importedFile->file_path);
+                            if ($oldFileName && count($oldFileName) > 0) {
+                                $extension = $oldFileName[count($oldFileName) - 1];
+                            }
+
+                            $extension = $extension ?? "pdf";
+                            $attachment = time() . "_" . rand(0, 9999) . "." . $extension;
+                            $oldPath = storage_path('app/' . $importedFile->file_path);
+                            $newPath = storage_path('app/' . $documentFilePath . '/' . $attachment);
+                            File::move($oldPath, $newPath);
+                            $letter->pdf_file = $attachment;
+                            $letter->pdf_path = $documentFilePath . "/" . $attachment;
+                            $letter->created_date = $importedFile->created_at;
+                            $letter->last_date = $importedFile->created_at;
+                            $letter->is_imported_file = 1;
+                            $letter->save();
+
+                            if ($letter && $letter->id) {
+                                if ($importedFile->file_path) {
+                                    if (Storage::exists($importedFile->file_path)) {
+                                        Storage::delete($importedFile->file_path);
+                                    }
+                                }
+                                $importedFile->delete();
+                            }
+                        }
+                    }
+                }
+            }
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Letter files moved successfully!';
+            $response['data'] = null;
             return response()->json($response);
         } catch (Exception $e) {
             $response = array();
