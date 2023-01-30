@@ -30,6 +30,7 @@ class Letters extends Model
         'deleted' => 'integer',
         'is_archived' => 'integer',
         'isErledigt' => 'integer',
+        'is_imported_file' => 'integer',
     ];
 
     public function user()

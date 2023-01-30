@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('pdf_file')->nullable();
             $table->text('pdf_path')->nullable();
             $table->integer('isErledigt')->default(0);
+            $table->integer('is_imported_file')->default(0);
             $table->timestamps();
         });
     }
