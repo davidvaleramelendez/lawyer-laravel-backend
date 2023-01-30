@@ -2,11 +2,16 @@
 
 namespace App\Traits;
 
+use App\Models\ImportLetterFile;
 use App\Models\PdfApi;
+use Carbon\Carbon;
 use CloudConvert\CloudConvert;
 use CloudConvert\Models\Job;
 use CloudConvert\Models\Task;
+use Dcblogdev\Dropbox\Facades\Dropbox;
+use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 trait CronTrait
@@ -115,7 +120,7 @@ trait CronTrait
                 }
             }
             return false;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return $e->getMessage();
         }
     }
@@ -175,8 +180,104 @@ trait CronTrait
             }
 
             return false;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return $e->getMessage();
+        }
+    }
+
+    public function cronTraitImportDropboxLetterPdfFiles()
+    {
+        try {
+            $dropbox = Dropbox::connect();
+            $fileList = Dropbox::files()->listContents($path = 'My Folder');
+            if ($fileList && @$fileList['entries']) {
+                $files = $fileList['entries'];
+                if ($files && count($files) > 0) {
+                    $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
+                    if (!Storage::exists($filePath)) {
+                        Storage::makeDirectory($filePath);
+                    }
+
+                    foreach ($files as $file) {
+                        $name = $file['name'];
+                        $format = explode("-", $name);
+                        $caseId = null;
+                        $subject = null;
+                        $fristDate = null;
+
+                        if ($format && count($format) > 0) {
+                            foreach ($format as $key => $value) {
+                                if ($key == 2) {
+                                    $value = $this->removeAfterPositionValue($value, ".");
+                                    $value = str_replace("_", "-", $value);
+                                    if (new Carbon($value)) {
+                                        $fristDate = new Carbon($value);
+                                    }
+                                } else if ($key == 1) {
+                                    $subject = str_replace("_", " ", $value);
+                                } else {
+                                    $caseId = $value;
+                                }
+                            }
+                        }
+
+                        if ($file['path_lower']) {
+                            $extension = null;
+                            $oldFileName = explode(".", $name);
+                            if ($oldFileName && count($oldFileName) > 0) {
+                                $extension = $oldFileName[count($oldFileName) - 1];
+                            }
+
+                            $extension = $extension ?? "pdf";
+
+                            if ($extension == "pdf") {
+                                $file_name = time() . '-' . rand(0000, 9999) . '.' . $extension;
+                                if (Dropbox::files()->download($file['path_lower'], storage_path("app/" . $filePath . '/'), $autoRename = false, $allowOwnershipTransfer = false)) {
+                                    if (Storage::exists($filePath . "/" . $name)) {
+                                        $oldPath = storage_path('app/' . $filePath . "/" . $name);
+                                        $newPath = storage_path('app/' . $filePath . '/' . $file_name);
+                                        File::move($oldPath, $newPath);
+
+                                        $importedLetter = new ImportLetterFile();
+                                        $importedLetter->name = $name ?? null;
+                                        $importedLetter->case_id = $caseId ?? null;
+                                        $importedLetter->subject = $subject ?? null;
+                                        $importedLetter->frist_date = $fristDate ?? null;
+                                        $importedLetter->file_name = $file_name;
+                                        $importedLetter->file_path = $filePath . '/' . $file_name;
+                                        $importedLetter->save();
+
+                                        if ($importedLetter && $importedLetter->id) {
+                                            Dropbox::files()->delete($file['path_lower']);
+                                        }
+                                    }
+                                }
+                            } else {
+                                Dropbox::files()->delete($file['path_lower']);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    public function removeAfterPositionValue($string = "", $key)
+    {
+        try {
+            $position = strpos($string, $key);
+            if ($position !== false) {
+                $newString = substr($string, 0, $position);
+                return $newString;
+            }
+
+            return $string;
+        } catch (Exception $e) {
+            return $string;
         }
     }
 }

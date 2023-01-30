@@ -67,6 +67,7 @@ Route::group([
 /* Cron job */
 Route::get('/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron'])->name('email-cron');
 Route::get('/contact/contact-imap/cron', [ContactController::class, 'contactImapCron'])->name('contact-imap-cron');
+Route::get('/import-letter-file/cron/import-pdf', [ImportLetterFileController::class, 'cronImportDropboxFiles']);
 /* /Cron job */
 
 Route::group([
