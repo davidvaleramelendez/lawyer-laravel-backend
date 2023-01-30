@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cases;
 use App\Models\ImportLetterFile;
 use App\Models\Letters;
+use App\Traits\CronTrait;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -14,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 
 class ImportLetterFileController extends Controller
 {
+    use CronTrait;
+
     public function getImportLetterFileFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort)
     {
         $list = ImportLetterFile::orderBy($sortColumn, $sort);
@@ -217,12 +221,20 @@ class ImportLetterFileController extends Controller
                 $data->user_id = $request->user_id;
             }
 
+            if (!$data->user_id) {
+                $data->user_id = auth()->user()->id;
+            }
+
             if ($request->case_id) {
                 $data->case_id = $request->case_id;
             }
 
             if ($request->subject) {
                 $data->subject = $request->subject;
+            }
+
+            if ($request->frist_date) {
+                $data->frist_date = $request->frist_date;
             }
 
             if ($request->attachment) {
@@ -441,38 +453,44 @@ class ImportLetterFileController extends Controller
             if ($importedLetterFiles) {
                 foreach ($importedLetterFiles as $key => $importedFile) {
                     if ($importedFile && $importedFile->case_id) {
-                        $letter = new Letters();
-                        $letter->user_id = auth()->user()->id;
-                        $letter->case_id = $importedFile->case_id;
-                        $letter->subject = $importedFile->subject;
-                        $letter->frist_date = $importedFile->frist_date;
+                        if (Cases::where('CaseID', $importedFile->case_id)->doesntExist()) {
+                            $letter = new Letters();
+                            $letter->user_id = auth()->user()->id;
+                            $letter->case_id = $importedFile->case_id;
+                            $letter->subject = $importedFile->subject;
+                            $letter->frist_date = $importedFile->frist_date;
 
-                        if ($importedFile->file_path) {
-                            $extension = null;
-                            $oldFileName = explode(".", $importedFile->file_path);
-                            if ($oldFileName && count($oldFileName) > 0) {
-                                $extension = $oldFileName[count($oldFileName) - 1];
-                            }
+                            if ($importedFile->file_path) {
+                                $extension = null;
+                                $oldFileName = explode(".", $importedFile->file_path);
+                                if ($oldFileName && count($oldFileName) > 0) {
+                                    $extension = $oldFileName[count($oldFileName) - 1];
+                                }
 
-                            $extension = $extension ?? "pdf";
-                            $attachment = time() . "_" . rand(0, 9999) . "." . $extension;
-                            $oldPath = storage_path('app/' . $importedFile->file_path);
-                            $newPath = storage_path('app/' . $documentFilePath . '/' . $attachment);
-                            File::move($oldPath, $newPath);
-                            $letter->pdf_file = $attachment;
-                            $letter->pdf_path = $documentFilePath . "/" . $attachment;
-                            $letter->created_date = $importedFile->created_at;
-                            $letter->last_date = $importedFile->created_at;
-                            $letter->is_imported_file = 1;
-                            $letter->save();
+                                $extension = $extension ?? "pdf";
+                                $attachment = time() . "_" . rand(0, 9999) . "." . $extension;
 
-                            if ($letter && $letter->id) {
-                                if ($importedFile->file_path) {
-                                    if (Storage::exists($importedFile->file_path)) {
-                                        Storage::delete($importedFile->file_path);
+                                if (Storage::exists($importedFile->file_path)) {
+                                    $oldPath = storage_path('app/' . $importedFile->file_path);
+                                    $newPath = storage_path('app/' . $documentFilePath . '/' . $attachment);
+                                    File::move($oldPath, $newPath);
+
+                                    $letter->pdf_file = $attachment;
+                                    $letter->pdf_path = $documentFilePath . "/" . $attachment;
+                                    $letter->created_date = $importedFile->created_at;
+                                    $letter->last_date = $importedFile->created_at;
+                                    $letter->is_imported_file = 1;
+                                    $letter->save();
+
+                                    if ($letter && $letter->id) {
+                                        if ($importedFile->file_path) {
+                                            if (Storage::exists($importedFile->file_path)) {
+                                                Storage::delete($importedFile->file_path);
+                                            }
+                                        }
+                                        $importedFile->delete();
                                     }
                                 }
-                                $importedFile->delete();
                             }
                         }
                     }
@@ -489,6 +507,30 @@ class ImportLetterFileController extends Controller
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
             $response['data'] = [];
+            return response()->json($response);
+        }
+    }
+
+    public function cronImportDropboxFiles()
+    {
+        try {
+            $flag = true;
+            $message = "Success!";
+
+            $dropbox = $this->cronTraitImportDropboxLetterPdfFiles();
+            if ($dropbox) {
+                $flag = false;
+                $message = $dropbox;
+            }
+
+            $response = array();
+            $response['flag'] = $flag;
+            $response['message'] = $message;
+            return response()->json($response);
+        } catch (Exception $e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
             return response()->json($response);
         }
     }
