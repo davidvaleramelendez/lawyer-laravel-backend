@@ -655,9 +655,8 @@ class InvoiceController extends Controller
 
                 $message->from('test@valera-melendez.de', 'It Vision Studio');
                 if ($invoice->pdf_file) {
-                    $message->attach(public_path('storage/documents/' . $invoice->pdf_file));
+                    $message->attach(storage_path('app/uploads/documents/' . $invoice->pdf_file));
                 }
-
             });
 
             $response = array();
