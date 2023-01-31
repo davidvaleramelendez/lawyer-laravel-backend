@@ -340,15 +340,16 @@ class CloudStorageController extends Controller
                 if (!Storage::exists($filePath . '/' . $userId . '/' . $data->slug)) {
                     $files = CloudStorage::where('parent_id', $data->id)->where('type', 'file')->get();
 
-                    $source = public_path($data->path);
-                    $destination = public_path('storage/cloudstorage/' . $userId);
+                    $source = storage_path('app/' . $data->path);
+                    $destination = storage_path('app/' . $filePath . '/' . $userId);
+
                     shell_exec('mv ' . $source . ' ' . $destination . ' ');
                     if ($files && count($files) > 0) {
                         foreach ($files as $file) {
                             CloudStorage::where('id', $file->id)->update(['path' => $destination . '/' . $file->file_name]);
                         }
                     }
-                    $data->path = 'storage/cloudstorage/' . $userId . '/' . $data->slug;
+                    $data->path = $filePath . '/' . $userId . '/' . $data->slug;
                 }
             }
             $data->type = $request->type;

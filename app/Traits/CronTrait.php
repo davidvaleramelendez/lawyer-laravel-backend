@@ -188,12 +188,14 @@ trait CronTrait
     public function cronTraitImportDropboxLetterPdfFiles()
     {
         try {
+            $folderName = "My Folder";
+            $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
+
             $dropbox = Dropbox::connect();
-            $fileList = Dropbox::files()->listContents($path = 'My Folder');
+            $fileList = Dropbox::files()->listContents($path = $folderName);
             if ($fileList && @$fileList['entries']) {
                 $files = $fileList['entries'];
                 if ($files && count($files) > 0) {
-                    $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
                     if (!Storage::exists($filePath)) {
                         Storage::makeDirectory($filePath);
                     }
@@ -266,7 +268,7 @@ trait CronTrait
         }
     }
 
-    public function removeAfterPositionValue($string = "", $key)
+    public function removeAfterPositionValue($string = "", $key = "")
     {
         try {
             $position = strpos($string, $key);
