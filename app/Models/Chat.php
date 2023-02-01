@@ -11,8 +11,7 @@ class Chat extends Model
 
     protected $guarded = [];
     protected $casts = [
-        'sender_id' => 'integer',
-        'receiver_id' => 'integer',
+        'room_id' => 'integer',
         'read_at' => 'integer',
     ];
 
