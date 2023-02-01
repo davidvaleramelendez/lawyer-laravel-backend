@@ -16,8 +16,7 @@ return new class extends Migration
         Schema::create('chat_rooms', function (Blueprint $table) {
             $table->id();
             $table->longtext('user_ids')->nullable()->comment("(DC2Type:json)");
-            $table->timestamp('created_at')->nullable()->useCurrent();
-            $table->timestamp('updated_at')->nullable()->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 
