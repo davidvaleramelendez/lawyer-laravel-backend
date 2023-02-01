@@ -20,8 +20,7 @@ class CreateChatsTable extends Migration
             $table->unsignedBigInteger('receiver_id')->nullable();
             $table->text('message')->nullable();
             $table->integer('read_at')->default(0);
-            $table->timestamp('created_at')->nullable()->useCurrent();
-            $table->timestamp('updated_at')->nullable()->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 
