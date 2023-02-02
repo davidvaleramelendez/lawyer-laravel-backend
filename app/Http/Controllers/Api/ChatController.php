@@ -202,6 +202,8 @@ class ChatController extends Controller
 
             DB::beginTransaction();
             try {
+                Chat::where('receiver_id', $userId)->where('sender_id', $request->receiver_id)->update(['read_at' => 1]);
+
                 $chat = Chat::create([
                     'message' => $request->message,
                     'sender_id' => $userId,
