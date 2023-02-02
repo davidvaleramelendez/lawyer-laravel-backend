@@ -10,8 +10,10 @@ class Chat extends Model
     use HasFactory;
 
     protected $guarded = [];
+    public $timestamps = true;
     protected $casts = [
-        'room_id' => 'integer',
+        'sender_id' => 'integer',
+        'receiver_id' => 'integer',
         'read_at' => 'integer',
     ];
 

@@ -42,6 +42,8 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array
      */
+    public $timestamps = true;
+
     protected $casts = [
         'email_verified_at' => 'datetime',
         'role_id' => 'integer',
