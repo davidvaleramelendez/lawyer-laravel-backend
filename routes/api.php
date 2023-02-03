@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\LetterController;
 use App\Http\Controllers\Api\LetterTemplateController;
 use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\PdfApiController;
+use App\Http\Controllers\Api\PlacetelCallApiTokenController;
 use App\Http\Controllers\Api\PlacetelCallController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
@@ -366,6 +367,12 @@ Route::group([
     Route::get('/admin/placetel-call/fetch/incoming-calls', [PlacetelCallController::class, 'fetchAllIncomingCalls']);
     Route::post('/admin/placetel-call/delete-multiple', [PlacetelCallController::class, 'deleteMultiplePlacetelCall']);
     /* /PlacetelCall */
+
+    /* PlacetelCallApiToken */
+    Route::post('/admin/placetel-call-api-token/create_update', [PlacetelCallApiTokenController::class, 'createOrUpdate']);
+    Route::get('/admin/placetel-call-api-token/detail', [PlacetelCallApiTokenController::class, 'getDetail']);
+    Route::get('/admin/placetel-call-api-token/delete/{id}', [PlacetelCallApiTokenController::class, 'deleteApiToken']);
+    /* /PlacetelCallApiToken */
 });
 
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

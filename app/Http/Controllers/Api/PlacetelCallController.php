@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlacetelCall;
+use App\Models\PlacetelCallApiToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
@@ -21,7 +22,11 @@ class PlacetelCallController extends Controller
     {
         $this->placetelApiUrl = env('PLACETEL_CALL_API_URL', '');
         $this->placetelApiVersion = env('PLACETEL_CALL_API_VERSION', '');
-        $this->placetelToken = env('PLACETEL_CALL_API_TOKEN', '');
+
+        $placetelCallApiToken = PlacetelCallApiToken::orderBy('id', 'DESC')->first();
+        if ($placetelCallApiToken && $placetelCallApiToken->token) {
+            $this->placetelToken = $placetelCallApiToken->token;
+        }
     }
 
     public function getPlacetelCallStatsCount()
@@ -341,7 +346,8 @@ class PlacetelCallController extends Controller
             $message = "Fetched all incoming calls successfully!";
             $data = null;
 
-            $date = Carbon::now()->subDays()->format('Y-m-d');
+            // $date = Carbon::now()->subDays()->format('Y-m-d');
+            $date = Carbon::now()->format('Y-m-d');
 
             $url = $this->placetelApiUrl;
             if ($this->placetelApiVersion) {
@@ -380,10 +386,12 @@ class PlacetelCallController extends Controller
                                 $createData->from_number = $apiData->from_number ?? null;
                                 $createData->response = json_encode($apiData);
                                 $createData->unread = $apiData->unread;
-                                $createData->save();
+                                // $createData->save();
                             }
                         }
                     }
+
+                    $data = $apiResponse;
                 }
             }
 
