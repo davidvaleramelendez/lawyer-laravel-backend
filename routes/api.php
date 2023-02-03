@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\LetterController;
 use App\Http\Controllers\Api\LetterTemplateController;
 use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\PdfApiController;
+use App\Http\Controllers\Api\PlacetelCallController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TimelineController;
@@ -354,6 +355,17 @@ Route::group([
     Route::post('/admin/import-letter-file/create-multiple', [ImportLetterFileController::class, 'createMultipleImportLetterFile']);
     Route::post('/admin/import-letter-file/move-to-letter', [ImportLetterFileController::class, 'moveImportLetterFileToLetter']);
     /* /ImportLetterFile */
+
+    /* PlacetelCall */
+    Route::get('/admin/placetel-call/stats-count', [PlacetelCallController::class, 'getPlacetelCallStatsCount']);
+    Route::get('/admin/placetel-call/list', [PlacetelCallController::class, 'getPlacetelCalls']);
+    Route::get('/admin/placetel-call/{id}', [PlacetelCallController::class, 'getPlacetelCall']);
+    Route::post('/admin/placetel-call/create', [PlacetelCallController::class, 'createPlacetelCall']);
+    Route::post('/admin/placetel-call/update', [PlacetelCallController::class, 'updatePlacetelCall']);
+    Route::get('/admin/placetel-call/delete/{id}', [PlacetelCallController::class, 'deletePlacetelCall']);
+    Route::get('/admin/placetel-call/fetch/incoming-calls', [PlacetelCallController::class, 'fetchAllIncomingCalls']);
+    Route::post('/admin/placetel-call/delete-multiple', [PlacetelCallController::class, 'deleteMultiplePlacetelCall']);
+    /* /PlacetelCall */
 });
 
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');

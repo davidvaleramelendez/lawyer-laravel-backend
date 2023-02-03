@@ -535,7 +535,7 @@ class ImportLetterFileController extends Controller
         }
     }
 
-    public function removeAfterPositionValue($string = "", $key)
+    public function removeAfterPositionValue($string = "", $key = "")
     {
         try {
             $position = strpos($string, $key);
