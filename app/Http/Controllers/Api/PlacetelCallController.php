@@ -354,7 +354,7 @@ class PlacetelCallController extends Controller
                 $url = $url . "/" . $this->placetelApiVersion;
             }
 
-            $apiResponse = Http::withHeaders([
+            $apiResponse = Http::timeout(60)->withHeaders([
                 'Authorization' => "Bearer " . $this->placetelToken,
             ])->get($url . "/calls", [
                 'filter[date]' => $date,
@@ -386,7 +386,7 @@ class PlacetelCallController extends Controller
                                 $createData->from_number = $apiData->from_number ?? null;
                                 $createData->response = json_encode($apiData);
                                 $createData->unread = $apiData->unread;
-                                // $createData->save();
+                                $createData->save();
                             }
                         }
                     }

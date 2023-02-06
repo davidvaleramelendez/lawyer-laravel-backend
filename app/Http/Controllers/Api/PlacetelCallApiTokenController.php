@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlacetelCallApiToken;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -28,7 +29,7 @@ class PlacetelCallApiTokenController extends Controller
             $response['message'] = $message;
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -72,7 +73,7 @@ class PlacetelCallApiTokenController extends Controller
             $response['message'] = "Placetel call api token details updated!";
             $response['data'] = $placetelCallApiToken;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -91,7 +92,7 @@ class PlacetelCallApiTokenController extends Controller
             $response['message'] = "Placetel call api token details deleted!";
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();

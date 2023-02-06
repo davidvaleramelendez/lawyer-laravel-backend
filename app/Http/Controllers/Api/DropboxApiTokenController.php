@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DropboxApiToken;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -28,7 +29,7 @@ class DropboxApiTokenController extends Controller
             $response['message'] = $message;
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -84,7 +85,7 @@ class DropboxApiTokenController extends Controller
             $response['message'] = "Dropbox api token details updated!";
             $response['data'] = $dropboxApiToken;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -103,7 +104,7 @@ class DropboxApiTokenController extends Controller
             $response['message'] = "Droppbox api token details deleted!";
             $response['data'] = [];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();

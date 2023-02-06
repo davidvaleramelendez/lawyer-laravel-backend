@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\MusterDocumentController;
 use App\Http\Controllers\Api\PdfApiController;
 use App\Http\Controllers\Api\PlacetelCallApiTokenController;
 use App\Http\Controllers\Api\PlacetelCallController;
+use App\Http\Controllers\Api\PlacetelSipUserIdController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TimelineController;
@@ -375,11 +376,19 @@ Route::group([
     Route::get('/admin/placetel-call-api-token/delete/{id}', [PlacetelCallApiTokenController::class, 'deleteApiToken']);
     /* /PlacetelCallApiToken */
 
-    /* PlacetelCallApiToken */
+    /* DropboxApiToken */
     Route::post('/admin/dropbox-api-token/create_update', [DropboxApiTokenController::class, 'createOrUpdate']);
     Route::get('/admin/dropbox-api-token/detail', [DropboxApiTokenController::class, 'getDetail']);
     Route::get('/admin/dropbox-api-token/delete/{id}', [DropboxApiTokenController::class, 'deleteApiToken']);
-    /* /PlacetelCallApiToken */
+    /* /DropboxApiToken */
+
+    /* PlacetelSipUserId */
+    Route::get('/admin/placetel-api-sip-user/list', [PlacetelSipUserIdController::class, 'getPlacetelApiSipUserList']);
+    Route::post('/admin/placetel-api-sip-user/create_update', [PlacetelSipUserIdController::class, 'createOrUpdate']);
+    Route::get('/admin/placetel-api-sip-user/detail', [PlacetelSipUserIdController::class, 'getDetail']);
+    Route::get('/admin/placetel-api-sip-user/delete/{id}', [PlacetelSipUserIdController::class, 'deleteApiToken']);
+    Route::post('/admin/placetel-api-sip-user/initiate/call', [PlacetelSipUserIdController::class, 'initiatePlacetelApiCall']);
+    /* /PlacetelSipUserId */
 });
 
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
