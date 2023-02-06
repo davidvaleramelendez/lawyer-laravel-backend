@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\DropboxApiToken;
 use App\Models\ImportLetterFile;
 use App\Models\PdfApi;
 use Carbon\Carbon;
@@ -10,6 +11,7 @@ use CloudConvert\Models\Job;
 use CloudConvert\Models\Task;
 use Dcblogdev\Dropbox\Facades\Dropbox;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -191,6 +193,15 @@ trait CronTrait
             $folderName = "My Folder";
             $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
 
+            $dropboxApiToken = DropboxApiToken::orderBy('id', 'DESC')->first();
+            if ($dropboxApiToken && $dropboxApiToken->id) {
+                Config::set('dropbox.clientId', $dropboxApiToken->client_id ?? "");
+                Config::set('dropbox.clientSecret', $dropboxApiToken->secret ?? "");
+                Config::set('dropbox.accessToken', $dropboxApiToken->token ?? "");
+                Config::set('dropbox.accessType', $dropboxApiToken->access_type ?? "offline");
+            }
+
+            // dd(Config::get('dropbox.clientId'));
             $dropbox = Dropbox::connect();
             $fileList = Dropbox::files()->listContents($path = $folderName);
             if ($fileList && @$fileList['entries']) {
