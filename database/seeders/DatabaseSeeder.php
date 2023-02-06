@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CasesType;
+use App\Models\DropboxApiToken;
 use App\Models\PdfApi;
 use App\Models\Permissions;
 use App\Models\PlacetelCallApiToken;
@@ -157,6 +158,19 @@ class DatabaseSeeder extends Seeder
         ];
 
         PlacetelCallApiToken::insert($placetelCallApiToken);
+        /* /Placetel Call Api Token */
+
+        /* Placetel Call Api Token */
+        $dropboxApiToken = [
+            'client_id' => "o5vz7z0sae5wi11",
+            'secret' => "6pd1ujc3d8rlmkp",
+            'token' => "sl.BYQXn68scNWG55hhbrDbr-e-Fetb-R29sn8UziYZ11cCNI_RbGcaU6JVsaxvG1r64STRudg3xrpImyXtrPh9TmaHl7JKY5XueQGYKMKE1ho_M1sEsJyrOalzfEPGGzVmLC9FNk1p4CQ",
+            'access_type' => "offline",
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+
+        DropboxApiToken::insert($dropboxApiToken);
         /* /Placetel Call Api Token */
     }
 }

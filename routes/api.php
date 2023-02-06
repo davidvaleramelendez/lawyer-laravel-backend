@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ContactImapController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DropboxApiTokenController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\EmailTemplateAttachmentController;
 use App\Http\Controllers\Api\EmailTemplateController;
@@ -372,6 +373,12 @@ Route::group([
     Route::post('/admin/placetel-call-api-token/create_update', [PlacetelCallApiTokenController::class, 'createOrUpdate']);
     Route::get('/admin/placetel-call-api-token/detail', [PlacetelCallApiTokenController::class, 'getDetail']);
     Route::get('/admin/placetel-call-api-token/delete/{id}', [PlacetelCallApiTokenController::class, 'deleteApiToken']);
+    /* /PlacetelCallApiToken */
+
+    /* PlacetelCallApiToken */
+    Route::post('/admin/dropbox-api-token/create_update', [DropboxApiTokenController::class, 'createOrUpdate']);
+    Route::get('/admin/dropbox-api-token/detail', [DropboxApiTokenController::class, 'getDetail']);
+    Route::get('/admin/dropbox-api-token/delete/{id}', [DropboxApiTokenController::class, 'deleteApiToken']);
     /* /PlacetelCallApiToken */
 });
 
