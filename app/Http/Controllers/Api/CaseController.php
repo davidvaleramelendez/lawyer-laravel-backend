@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\Element\Table;
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\Shared\Html;
 use PhpOffice\PhpWord\TemplateProcessor;
 use Storage;
@@ -410,7 +411,8 @@ class CaseController extends Controller
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
             if ($request->message) {
-                $htmlString = str_replace('&', '&amp;', $request->message);
+                $htmlString = str_replace('', '&amp;', $request->message);
+                $htmlString = str_replace('&nbsp;', ' ', $htmlString);
                 $htmlString = str_replace('<ins>', '<u>', $htmlString);
                 $htmlString = str_replace('</ins>', '</u>', $htmlString);
 
@@ -418,10 +420,9 @@ class CaseController extends Controller
                 $wordTable->addRow();
                 $cell = $wordTable->addCell(6200);
                 Html::addHtml($cell, $htmlString);
+                Settings::setOutputEscapingEnabled(false);
                 $templateProcessor->setComplexBlock('message', $wordTable);
-
-                // $value1 = strip_tags($request->message);
-                // $value1 = preg_replace('~\R~u', '</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="both"/></w:pPr><w:r><w:t>', $value1);
+                Settings::setOutputEscapingEnabled(true);
             }
 
             if ($fighter_data) {
@@ -435,7 +436,7 @@ class CaseController extends Controller
             $attachment = time() . "_" . rand(0, 9999) . ".docx";
             $path = $filePath . '/' . $attachment;
 
-            $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
+            $templateProcessor->saveAs(storage_path('app/' . $path));
 
             $letterData = [
                 'case_id' => $case_id,
@@ -472,7 +473,7 @@ class CaseController extends Controller
 
             $response = array();
             $response['flag'] = true;
-            $response['message'] = 'Success.';
+            $response['message'] = 'Success!';
             $response['data'] = $letter;
             return response()->json($response);
         } catch (\Exception$e) {
@@ -554,7 +555,15 @@ class CaseController extends Controller
             $templateProcessor->setValue('subject', strip_tags($request->subject));
 
             if ($request->message) {
-                $htmlString = str_replace('&', '&amp;', $request->message);
+                // $value1 = strip_tags($request->message);
+                // $value1 = str_replace('&nbsp;', ' ', $value1);
+                // $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
+                // Settings::setOutputEscapingEnabled(false);
+                // $templateProcessor->setValue('message', $value1);
+                // Settings::setOutputEscapingEnabled(true);
+
+                $htmlString = str_replace('', '&amp;', $request->message);
+                $htmlString = str_replace('&nbsp;', ' ', $htmlString);
                 $htmlString = str_replace('<ins>', '<u>', $htmlString);
                 $htmlString = str_replace('</ins>', '</u>', $htmlString);
 
@@ -562,11 +571,9 @@ class CaseController extends Controller
                 $wordTable->addRow();
                 $cell = $wordTable->addCell(6200);
                 Html::addHtml($cell, $htmlString);
+                Settings::setOutputEscapingEnabled(false);
                 $templateProcessor->setComplexBlock('message', $wordTable);
-
-                // $value1 = strip_tags($request->message);
-                // $value1 = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $value1);
-                // $templateProcessor->setValue('message', $value1);
+                Settings::setOutputEscapingEnabled(true);
             }
 
             if ($fighter_data) {
@@ -585,7 +592,7 @@ class CaseController extends Controller
                 $path = $letter->word_path;
             }
 
-            $templateProcessor->saveAs(storage_path('app/' . $filePath . '/' . $attachment));
+            $templateProcessor->saveAs(storage_path('app/' . $path));
 
             $letterData = [
                 'case_id' => $case_id,
