@@ -124,6 +124,7 @@ Route::group([
     Route::get('/admin/letter/update_archived/{id}', [LetterController::class, 'case_documents_archived'])->name('admin-letter-archived');
     Route::get('/admin/letter/update_status/{id}', [LetterController::class, 'case_letter_update_status'])->name('case_letter_update_status');
     Route::get('/admin/case/letter/list', [LetterController::class, 'get_case_letters']);
+    Route::post('/admin/case/letter/template/download/generate', [LetterController::class, 'caseLetterTemplateDownload']);
 
     Route::get('/admin/case/letter_erledigt/{id}', [CaseController::class, 'case_letter_erledigt'])->name('admin-case_letter_erledigt');
 

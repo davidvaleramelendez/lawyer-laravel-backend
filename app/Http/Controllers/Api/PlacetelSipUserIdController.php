@@ -16,6 +16,7 @@ class PlacetelSipUserIdController extends Controller
     public $placetelApiUrl = "";
     public $placetelApiVersion = "";
     public $placetelToken = "";
+    public $placetelFullUrl = "";
 
     public function __construct()
     {
@@ -26,6 +27,11 @@ class PlacetelSipUserIdController extends Controller
         if ($placetelCallApiToken && $placetelCallApiToken->token) {
             $this->placetelToken = $placetelCallApiToken->token;
         }
+
+        $this->placetelFullUrl = $this->placetelApiUrl;
+        if ($this->placetelApiVersion) {
+            $this->placetelFullUrl = $this->placetelFullUrl . "/" . $this->placetelApiVersion;
+        }
     }
 
     public function getPlacetelApiSipUserList()
@@ -35,14 +41,9 @@ class PlacetelSipUserIdController extends Controller
             $message = "Placetel api sip users received!";
             $data = [];
 
-            $url = $this->placetelApiUrl;
-            if ($this->placetelApiVersion) {
-                $url = $url . "/" . $this->placetelApiVersion;
-            }
-
             $apiResponse = Http::timeout(60)->withHeaders([
                 'Authorization' => "Bearer " . $this->placetelToken,
-            ])->get($url . "/sip_users");
+            ])->get($this->placetelFullUrl . "/sip_users");
 
             $apiResponse = $apiResponse->getBody()->getContents();
             $apiResponse = json_decode($apiResponse);
@@ -198,11 +199,6 @@ class PlacetelSipUserIdController extends Controller
             $message = "Please choose your placetel VoIP from account setting!";
             $data = null;
 
-            $url = $this->placetelApiUrl;
-            if ($this->placetelApiVersion) {
-                $url = $url . "/" . $this->placetelApiVersion;
-            }
-
             $id = $request->id;
             $placetelCall = PlacetelCall::where('id', $id)->first();
 
@@ -216,7 +212,7 @@ class PlacetelSipUserIdController extends Controller
 
                     $apiResponse = Http::connectTimeout(60)->timeout(60)->withHeaders([
                         'Authorization' => "Bearer " . $this->placetelToken,
-                    ])->post($url . "/calls", [
+                    ])->post($this->placetelFullUrl . "/calls", [
                         "sipuid" => $placetelSipUserId->sipuid,
                         "target" => $placetelCall->from_number,
                     ]);

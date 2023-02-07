@@ -17,6 +17,7 @@ class PlacetelCallController extends Controller
     public $placetelApiUrl = "";
     public $placetelApiVersion = "";
     public $placetelToken = "";
+    public $placetelFullUrl = "";
 
     public function __construct()
     {
@@ -26,6 +27,11 @@ class PlacetelCallController extends Controller
         $placetelCallApiToken = PlacetelCallApiToken::orderBy('id', 'DESC')->first();
         if ($placetelCallApiToken && $placetelCallApiToken->token) {
             $this->placetelToken = $placetelCallApiToken->token;
+        }
+
+        $this->placetelFullUrl = $this->placetelApiUrl;
+        if ($this->placetelApiVersion) {
+            $this->placetelFullUrl = $this->placetelFullUrl . "/" . $this->placetelApiVersion;
         }
     }
 
@@ -286,15 +292,38 @@ class PlacetelCallController extends Controller
     public function deletePlacetelCall($id)
     {
         try {
+            $flag = false;
+            $message = "Not found!";
+            $data = null;
+
             $placetelCall = PlacetelCall::where('id', $id)->first();
             if ($placetelCall && $placetelCall->id) {
+                if (isset($placetelCall->placetel_call_id)) {
+                    $apiResponse = Http::timeout(60)->withHeaders([
+                        'Authorization' => "Bearer " . $this->placetelToken,
+                    ])->delete($this->placetelFullUrl . "/calls/" . $placetelCall->placetel_call_id);
+
+                    $apiResponse = $apiResponse->getBody()->getContents();
+                    $apiResponse = json_decode($apiResponse);
+
+                    if (isset($apiResponse->error)) {
+                        $flag = false;
+                        $message = $apiResponse->error;
+                    } else {
+                        $flag = true;
+                        $message = "Placetel call deleted successfully!";
+                    }
+                } else {
+                    $flag = true;
+                    $message = "Placetel call deleted successfully!";
+                }
                 $placetelCall->delete();
             }
 
             $response = array();
-            $response['flag'] = true;
-            $response['message'] = 'Placetel call deleted successfully!';
-            $response['data'] = null;
+            $response['flag'] = $flag;
+            $response['message'] = $message;
+            $response['data'] = $data;
             return response()->json($response);
         } catch (\Exception$e) {
             $response = array();
@@ -339,7 +368,7 @@ class PlacetelCallController extends Controller
         }
     }
 
-    public function fetchAllIncomingCalls()
+    public function fetchAllIncomingCalls(Request $request)
     {
         try {
             $flag = true;
@@ -347,16 +376,11 @@ class PlacetelCallController extends Controller
             $data = null;
 
             // $date = Carbon::now()->subDays()->format('Y-m-d');
-            $date = Carbon::now()->format('Y-m-d');
-
-            $url = $this->placetelApiUrl;
-            if ($this->placetelApiVersion) {
-                $url = $url . "/" . $this->placetelApiVersion;
-            }
+            $date = $request->date ? Carbon::parse($request->date)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
 
             $apiResponse = Http::timeout(60)->withHeaders([
                 'Authorization' => "Bearer " . $this->placetelToken,
-            ])->get($url . "/calls", [
+            ])->get($this->placetelFullUrl . "/calls", [
                 'filter[date]' => $date,
             ]);
 
