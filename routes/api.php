@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\PlacetelCallApiTokenController;
 use App\Http\Controllers\Api\PlacetelCallController;
 use App\Http\Controllers\Api\PlacetelSipUserIdController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PlacetelNotifyController;
 use App\Http\Controllers\Api\SiteSettingsController;
 use App\Http\Controllers\Api\TimelineController;
 use App\Http\Controllers\Api\TodoController;
@@ -73,6 +74,10 @@ Route::get('/email/email-imap/INBOX/cron', [EmailController::class, 'emailCron']
 Route::get('/contact/contact-imap/cron', [ContactController::class, 'contactImapCron'])->name('contact-imap-cron');
 Route::get('/import-letter-file/cron/import-pdf', [ImportLetterFileController::class, 'cronImportDropboxFiles']);
 /* /Cron job */
+
+/* Placetel Notify */
+Route::post('/placetel_notify', [PlacetelNotifyController::class, 'index']);
+/* /Placetel Notify */
 
 Route::group([
     'middleware' => 'auth:sanctum',
@@ -390,6 +395,11 @@ Route::group([
     Route::get('/admin/placetel-api-sip-user/delete/{id}', [PlacetelSipUserIdController::class, 'deleteApiToken']);
     Route::post('/admin/placetel-api-sip-user/initiate/call', [PlacetelSipUserIdController::class, 'initiatePlacetelApiCall']);
     /* /PlacetelSipUserId */
+
+    /* PlacetelIncomingSip */
+    Route::get('/admin/placetel-api-sip-user/incoming_detail', [PlacetelNotifyController::class, 'getDetail']);
+    Route::post('/admin/placetel-api-sip-user/incoming_create_update', [PlacetelNotifyController::class, 'createOrUpdate']);
+    /* /PlacetelIncomingSip */
 });
 
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
