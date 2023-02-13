@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PlacetelIncomingSip;
+use App\Models\PlacetelSipUserId;
 use App\Models\PlacetelAcceptedNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Validator;
 class PlacetelNotifyController extends Controller
 {
     public function index(Request $request) {
-        if(!$this->checkSignature($request)) 
-            return response('Signature not valid.');
+        // if(!$this->checkSignature($request)) 
+        //     return response('Signature not valid.');
         $event = $request->input('event');
         $message = 'Get notified.';
         switch($event) {
@@ -45,7 +45,7 @@ class PlacetelNotifyController extends Controller
 
     public function acceptedNotify($request) {
         // Get the user from peer
-        $item = PlacetelIncomingSip::where('sipuid', $request->peer)->first();
+        $item = PlacetelSipUserId::where('sipuid', $request->peer)->first();
         if(!$item) {
             return 'Get accepted notification successfully. But user not found.';
         } else {
@@ -83,18 +83,26 @@ class PlacetelNotifyController extends Controller
     }
 
     public function getNotification() {
-        $notification = PlacetelAcceptedNotification::with('user')->first();
-        $user = $notification->user;
-        $data = [
-            'user_id' => $notification->user_id,
-            'from' => $notification->from_number,
-            'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
-            'name' => $user ? $user->name : '',
-        ];
-        $response['flag'] = true;
-        $response['message'] = $notification ? 'Success.' : 'Not Found';
-        $response['data'] = $data;
-        return response()->json($response);
+        $item = PlacetelSipUserId::where('user_id', auth()->user()->id)->first();
+        if(!$item) {
+            $response['flag'] = false;
+            $response['message'] = $notification ? 'Success.' : 'VoIP Not Found';
+            $response['data'] = null;
+            return response()->json($response);
+        } else {
+            $notification = PlacetelAcceptedNotification::where('peer', $item->sipuid)->with('user')->first();
+            $user = $notification->user ?? null;
+            $data = [
+                'user_id' => $notification->user_id ?? null,
+                'from' => $notification->from_number ?? null,
+                'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
+                'name' => $user ? $user->name : '',
+            ];
+            $response['flag'] = isset($notification);
+            $response['message'] = $notification ? 'Success.' : 'Not Found';
+            $response['data'] = $data;
+            return response()->json($response);
+        }
     }
 
     public function getDetail() {
@@ -104,18 +112,18 @@ class PlacetelNotifyController extends Controller
             $message = "Not found!";
 
             $userId = auth()->user()->id;
-            $placetelIncomingSip = PlacetelIncomingSip::where('user_id', $userId)->orderBy('id', 'DESC')->first();
-            if ($placetelIncomingSip && $placetelIncomingSip->id) {
+            $item = PlacetelSipUserId::where('user_id', $userId)->orderBy('id', 'DESC')->first();
+            if ($item && $item->id) {
                 $flag = true;
-                if ($placetelIncomingSip->response) {
-                    $placetelIncomingSip->response = json_decode($placetelIncomingSip->response);
+                if ($item->response) {
+                    $item->response = json_decode($item->response);
                 }
 
-                $data = $placetelIncomingSip;
+                $data = $item;
                 $message = "Success.";
             }
 
-            $notAllowedSipList = PlacetelIncomingSip::select('sipuid')->whereNot('user_id', $userId)->get();
+            $notAllowedSipList = PlacetelSipUserId::select('sipuid')->whereNot('user_id', $userId)->get();
 
             $response = array();
             $response['flag'] = $flag;
@@ -162,21 +170,21 @@ class PlacetelNotifyController extends Controller
                 $updateData['response'] = json_encode($request->response);
             }
 
-            $placetelIncomingSip = PlacetelIncomingSip::where('user_id', $userId)->orderBy('id', 'DESC')->first();
-            if ($placetelIncomingSip) {
-                $placetelIncomingSip->update($updateData);
+            $item = PlacetelSipUserId::where('user_id', $userId)->orderBy('id', 'DESC')->first();
+            if ($item) {
+                $item->update($updateData);
             } else {
-                $placetelIncomingSip = PlacetelIncomingSip::create($updateData);
+                $item = PlacetelSipUserId::create($updateData);
             }
 
-            if ($placetelIncomingSip && $placetelIncomingSip->response) {
-                $placetelIncomingSip->response = json_decode($placetelIncomingSip->response);
+            if ($item && $item->response) {
+                $item->response = json_decode($item->response);
             }
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Placetel incoming sipuid details updated!";
-            $response['data'] = $placetelIncomingSip;
+            $response['data'] = $item;
             return response()->json($response);
         } catch (Exception $e) {
             $response = array();
