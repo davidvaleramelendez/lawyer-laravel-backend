@@ -78,11 +78,7 @@ class PlacetelNotifyController extends Controller
     }
 
     public function hungupNotify($request) {
-        $item = PlacetelSipUserId::where('user_id', auth()->user()->id)->first();
         PlacetelAcceptedNotification::where('call_id', $request->call_id)->delete();
-        if ($item) {
-            PlacetelAcceptedNotification::where('peer', $item->sipuid)->delete();
-        }
         return 'Get Hungup notification successfully.';
     }
 
