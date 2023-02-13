@@ -71,7 +71,7 @@ class PlacetelNotifyController extends Controller
             ]);
             $result = json_decode($response->getBody()->getContents());
             if($result)
-                return 'Send notification to '.$request->peer.' successfully.';
+                return 'Send notification to '.$response->getBody()->getContents().' successfully.';
             else
                 return 'The user is not available now.';
         }
