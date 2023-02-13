@@ -86,7 +86,7 @@ class PlacetelNotifyController extends Controller
         $item = PlacetelSipUserId::where('user_id', auth()->user()->id)->first();
         if(!$item) {
             $response['flag'] = false;
-            $response['message'] = $notification ? 'Success.' : 'VoIP Not Found';
+            $response['message'] = 'VoIP Not Found';
             $response['data'] = null;
             return response()->json($response);
         } else {
