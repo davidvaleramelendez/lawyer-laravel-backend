@@ -49,7 +49,6 @@ class PlacetelNotifyController extends Controller
         if(!$item) {
             return 'Get accepted notification successfully. But user not found.';
         } else {
-            return env('PLACETEL_NOTIFY_ENDPOINT');
             $from = $request->from;
             $photo = '';
             $user = User::where('Contact', $request->from)->first();
@@ -72,7 +71,7 @@ class PlacetelNotifyController extends Controller
             ]);
             $result = json_decode($response->getBody()->getContents());
             if($result)
-                return 'Send notification to '.json_decode($result).' successfully.';
+                return 'Send notification to '.$request->peer.' successfully.';
             else
                 return 'The user is not available now.';
         }
