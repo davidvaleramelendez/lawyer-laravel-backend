@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlacetelIncomingSip;
+use App\Models\PlacetelAcceptedNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -12,8 +13,8 @@ use Illuminate\Support\Facades\Validator;
 class PlacetelNotifyController extends Controller
 {
     public function index(Request $request) {
-        // if(!$this->checkSignature($request)) 
-        //     return response('Signature not valid.');
+        if(!$this->checkSignature($request)) 
+            return response('Signature not valid.');
         $event = $request->input('event');
         $message = 'Get notified.';
         switch($event) {
@@ -23,6 +24,8 @@ class PlacetelNotifyController extends Controller
             case 'CallAccepted':
                 $message = $this->acceptedNotify($request);
                 break;
+            case 'HungUp':
+                $message = $this->hungupNotify($request);
             default:
                 break;
         }
@@ -49,6 +52,17 @@ class PlacetelNotifyController extends Controller
             $from = $request->from;
             $photo = '';
             $user = User::where('Contact', $request->from)->first();
+            
+            // Save it to database
+            $acceptedNotification = new PlacetelAcceptedNotification();
+            $acceptedNotification->user_id = $user ? $user->id : null;
+            $acceptedNotification->from_number = $request->from;
+            $acceptedNotification->to_number = $request->to;
+            $acceptedNotification->call_id = $request->call_id;
+            $acceptedNotification->peer = $request->peer;
+            $acceptedNotification->save();
+
+            // Call websocket endpoint
             $response = Http::timeout(60)->post(env('PLACETEL_NOTIFY_ENDPOINT'), [
                 'user_id' => $item->user_id,
                 'from' => $from,
@@ -61,6 +75,26 @@ class PlacetelNotifyController extends Controller
             else
                 return 'The user is not available now.';
         }
+    }
+
+    public function hungupNotify($request) {
+        PlacetelAcceptedNotification::where('call_id', $request->call_id)->delete();
+        return 'Get Hungup notification successfully.';
+    }
+
+    public function getNotification() {
+        $notification = PlacetelAcceptedNotification::with('user')->first();
+        $user = $notification->user;
+        $data = [
+            'user_id' => $notification->user_id,
+            'from' => $notification->from_number,
+            'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
+            'name' => $user ? $user->name : '',
+        ];
+        $response['flag'] = true;
+        $response['message'] = $notification ? 'Success.' : 'Not Found';
+        $response['data'] = $data;
+        return response()->json($response);
     }
 
     public function getDetail() {

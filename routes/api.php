@@ -399,6 +399,7 @@ Route::group([
     /* PlacetelIncomingSip */
     Route::get('/admin/placetel-api-sip-user/incoming_detail', [PlacetelNotifyController::class, 'getDetail']);
     Route::post('/admin/placetel-api-sip-user/incoming_create_update', [PlacetelNotifyController::class, 'createOrUpdate']);
+    Route::get('/admin/placetel-api-sip-user/accepted_notification', [PlacetelNotifyController::class, 'getNotification']);
     /* /PlacetelIncomingSip */
 });
 
