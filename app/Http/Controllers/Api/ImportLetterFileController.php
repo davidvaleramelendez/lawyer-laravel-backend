@@ -355,7 +355,8 @@ class ImportLetterFileController extends Controller
             $ids = array();
             if ($request->attachments) {
                 foreach ($request->attachments as $key => $file) {
-                    $name = $file['name'];
+                    $name = $this->removeAfterPositionValue($file['name'], ".");
+                    $name = $this->removeAfterPositionValue($name, "^");
                     $format = explode("-", $name);
                     $caseId = null;
                     $subject = null;
@@ -364,7 +365,6 @@ class ImportLetterFileController extends Controller
                     if ($format && count($format) > 0) {
                         foreach ($format as $key => $value) {
                             if ($key == 2) {
-                                $value = $this->removeAfterPositionValue($value, ".");
                                 $value = str_replace("_", "-", $value);
                                 if (new Carbon($value)) {
                                     $fristDate = new Carbon($value);
@@ -453,7 +453,7 @@ class ImportLetterFileController extends Controller
             if ($importedLetterFiles) {
                 foreach ($importedLetterFiles as $key => $importedFile) {
                     if ($importedFile && $importedFile->case_id) {
-                        if (Cases::where('CaseID', $importedFile->case_id)->doesntExist()) {
+                        if (!Cases::where('CaseID', $importedFile->case_id)->doesntExist()) {
                             $letter = new Letters();
                             $letter->user_id = auth()->user()->id;
                             $letter->case_id = $importedFile->case_id;

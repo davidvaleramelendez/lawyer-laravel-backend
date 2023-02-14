@@ -297,7 +297,7 @@ class LetterController extends Controller
             $userName = "";
 
             if ($userData && $userData->name) {
-                $userName = ":" . str_replace(" ", "_", $userData->name);
+                $userName = "^" . str_replace(" ", "_", $userData->name);
             }
 
             if (!$subject) {
@@ -312,7 +312,7 @@ class LetterController extends Controller
                 }
             }
 
-            $fileName = $caseId . "-" . str_replace(" ", "_", $subject) . "-" . $fristDate . $userName . ".docx";
+            $fileName = $caseId . "-" . str_replace(" ", "_", $subject) . "-" . str_replace("-", "_", $fristDate) . $userName . ".docx";
 
             $templateProcessor = new TemplateProcessor(public_path('master') . "/case_letter_master.docx");
             $templateProcessor->setValue('name', $userData->name);
