@@ -212,7 +212,8 @@ trait CronTrait
                     }
 
                     foreach ($files as $file) {
-                        $name = $file['name'];
+                        $name = $this->removeAfterPositionValue($file['name'], ".");
+                        $name = $this->removeAfterPositionValue($name, "^");
                         $format = explode("-", $name);
                         $caseId = null;
                         $subject = null;
@@ -221,7 +222,6 @@ trait CronTrait
                         if ($format && count($format) > 0) {
                             foreach ($format as $key => $value) {
                                 if ($key == 2) {
-                                    $value = $this->removeAfterPositionValue($value, ".");
                                     $value = str_replace("_", "-", $value);
                                     if (new Carbon($value)) {
                                         $fristDate = new Carbon($value);
@@ -236,7 +236,7 @@ trait CronTrait
 
                         if ($file['path_lower']) {
                             $extension = null;
-                            $oldFileName = explode(".", $name);
+                            $oldFileName = explode(".", $file['name']);
                             if ($oldFileName && count($oldFileName) > 0) {
                                 $extension = $oldFileName[count($oldFileName) - 1];
                             }
@@ -246,8 +246,8 @@ trait CronTrait
                             if ($extension == "pdf") {
                                 $file_name = time() . '-' . rand(0000, 9999) . '.' . $extension;
                                 if (Dropbox::files()->download($file['path_lower'], storage_path("app/" . $filePath . '/'), $autoRename = false, $allowOwnershipTransfer = false)) {
-                                    if (Storage::exists($filePath . "/" . $name)) {
-                                        $oldPath = storage_path('app/' . $filePath . "/" . $name);
+                                    if (Storage::exists($filePath . "/" . $file['name'])) {
+                                        $oldPath = storage_path('app/' . $filePath . "/" . $file['name']);
                                         $newPath = storage_path('app/' . $filePath . '/' . $file_name);
                                         File::move($oldPath, $newPath);
 
