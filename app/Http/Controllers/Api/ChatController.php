@@ -8,6 +8,7 @@ use App\Models\Chat;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
@@ -272,6 +273,35 @@ class ChatController extends Controller
             $response['flag'] = true;
             $response['message'] = 'Success.';
             $response['data'] = ['chats' => $chats, 'chatCount' => $chats_count, 'totalChatCount' => $totalRecord];
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function mark_important(Request $request, $id) {
+        try {
+            $chat = Chat::find($id);
+            $chat->is_important = true;
+            $chat->save();
+
+            $other = $chat->sender_id === auth()->user()->id ? $chat->receiver_id : $chat->sender_id;
+            
+            Http::timeout(60)->post(env('SOCKET_URL').'/chat_important', [
+                'user_id' => $other,
+                'operator' => auth()->user()->name,
+                'photo' => auth()->user()->profile_photo_path ?? '',
+                'msg' => $chat->message
+            ]);
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Marked as important successfully.';
+            $response['data'] = null;
             return response()->json($response);
         } catch (\Exception$e) {
             $response = array();

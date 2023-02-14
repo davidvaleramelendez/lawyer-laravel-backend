@@ -63,7 +63,7 @@ class PlacetelNotifyController extends Controller
             $acceptedNotification->save();
 
             // Call websocket endpoint
-            $response = Http::timeout(60)->post(env('PLACETEL_NOTIFY_ENDPOINT'), [
+            $response = Http::timeout(60)->post(env('SOCKET_URL').'/placetel_notify', [
                 'user_id' => $item->user_id,
                 'from' => $from,
                 'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',

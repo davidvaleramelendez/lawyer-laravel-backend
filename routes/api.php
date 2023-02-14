@@ -244,6 +244,7 @@ Route::group([
     Route::get('/admin/chat/get_users', [ChatController::class, 'get_users'])->name('admin-chat-get_users');
     Route::post('/admin/chat/send_chat', [ChatController::class, 'send_chat'])->name('admin-chat-send');
     Route::get('/admin/chat/history/{id}', [ChatController::class, 'chatHistory'])->name('admin-chat-history');
+    Route::get('/admin/chat/mark_important/{id}', [ChatController::class, 'mark_important'])->name('admin-chat-important');
 
     Route::get('/admin/helper/get_contacts', [AppsController::class, 'get_contacts'])->name('admin-helper-get_contacts');
     Route::get('/admin/helper/get_notifications', [AppsController::class, 'get_notifications'])->name('admin-helper-get_notifications');
