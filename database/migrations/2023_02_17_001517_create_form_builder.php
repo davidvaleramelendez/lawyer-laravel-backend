@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('form_builders', function (Blueprint $table) {
             $table->id();
-            $table->string('content')->nullable();
+            $table->text('content')->nullable();
             $table->timestamps();
         });
     }
