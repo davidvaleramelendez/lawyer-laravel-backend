@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('subject')->nullable();
             $table->string('path')->nullable();
+            $table->longtext('transcript_json')->nullable();
             $table->integer('isErledigt')->default(0);
             $table->timestamps();
         });

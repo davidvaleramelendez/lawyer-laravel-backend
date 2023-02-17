@@ -169,6 +169,10 @@ class VoiceRecordingController extends Controller
                 }
             }
 
+            if ($request->transcript_json) {
+                $data->transcript_json = $request->transcript_json ? json_encode($request->transcript_json) : null;
+            }
+
             $data->isErledigt = 0;
             $data->save();
 
@@ -243,6 +247,11 @@ class VoiceRecordingController extends Controller
                     }
                 }
             }
+
+            if ($request->transcript_json) {
+                $data->transcript_json = $request->transcript_json ? json_encode($request->transcript_json) : null;
+            }
+
             $data->save();
 
             $response = array();
