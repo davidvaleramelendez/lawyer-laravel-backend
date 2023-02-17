@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\TimelineController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TopNotificationController;
 use App\Http\Controllers\Api\VoiceRecordingController;
+use App\Http\Controllers\Api\FormBuilderController;
 use App\Http\Controllers\GoogleWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -402,6 +403,11 @@ Route::group([
     Route::post('/admin/placetel-api-sip-user/incoming_create_update', [PlacetelNotifyController::class, 'createOrUpdate']);
     Route::get('/admin/placetel-api-sip-user/accepted_notification', [PlacetelNotifyController::class, 'getNotification']);
     /* /PlacetelIncomingSip */
+
+    /* Form Builder */
+    Route::get('/admin/form-builder', [FormBuilderController::class, 'index']);
+    Route::post('/admin/form-builder', [FormBuilderController::class, 'update']);
+    /* /Form Builder */
 });
 
 Route::post('google/webhook', [GoogleWebhookController::class, 'index'])->name('google.webhook');
