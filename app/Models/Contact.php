@@ -23,6 +23,8 @@ class Contact extends Model
      */
     protected $primaryKey = 'ContactID';
     protected $guarded = [];
+    public $timestamps = true;
+
     protected $fillable = [
         'ContactID',
         'Name',
