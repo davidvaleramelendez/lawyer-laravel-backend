@@ -20,9 +20,9 @@ class ImportLetterFileController extends Controller
 
     public function getImportLetterFileFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort)
     {
-        $list = ImportLetterFile::orderBy($sortColumn, $sort);
+        $list = ImportLetterFile::where('isErledigt', 0)->orderBy($sortColumn, $sort);
 
-        $totalRecord = new ImportLetterFile();
+        $totalRecord = ImportLetterFile::where('isErledigt', 0);
 
         if ($caseId) {
             $list = $list->where('case_id', $caseId);
@@ -317,6 +317,57 @@ class ImportLetterFileController extends Controller
                 'isErledigt' => $isErledigt,
             ]);
 
+            if ($isErledigt && Cases::where('CaseID', $data->case_id)->exists()) {
+                $letter = new Letters();
+                $letter->user_id = auth()->user()->id;
+                $letter->case_id = $data->case_id ?? null;
+                $letter->subject = $data->subject ?? null;
+                $letter->frist_date = $data->frist_date ?? null;
+
+                $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
+                if (!Storage::exists($filePath)) {
+                    Storage::makeDirectory($filePath);
+                }
+
+                $documentFilePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+                if (!Storage::exists($documentFilePath)) {
+                    Storage::makeDirectory($documentFilePath);
+                }
+
+                if ($data->file_path) {
+                    $extension = null;
+                    $oldFileName = explode(".", $data->file_path);
+                    if ($oldFileName && count($oldFileName) > 0) {
+                        $extension = $oldFileName[count($oldFileName) - 1];
+                    }
+
+                    $extension = $extension ?? "pdf";
+                    $attachment = time() . "_" . rand(0, 9999) . "." . $extension;
+
+                    if (Storage::exists($data->file_path)) {
+                        $oldPath = storage_path('app/' . $data->file_path);
+                        $newPath = storage_path('app/' . $documentFilePath . '/' . $attachment);
+                        File::move($oldPath, $newPath);
+
+                        $letter->pdf_file = $attachment;
+                        $letter->pdf_path = $documentFilePath . "/" . $attachment;
+                        $letter->created_date = $data->created_at;
+                        $letter->last_date = $data->created_at;
+                        $letter->is_imported_file = 1;
+                        $letter->save();
+
+                        if ($letter && $letter->id) {
+                            if ($data->file_path) {
+                                if (Storage::exists($data->file_path)) {
+                                    Storage::delete($data->file_path);
+                                }
+                            }
+                            $data->delete();
+                        }
+                    }
+                }
+            }
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
@@ -443,6 +494,10 @@ class ImportLetterFileController extends Controller
             }
 
             $filePath = config('global.import_letter_file_path') ? config('global.import_letter_file_path') : 'uploads/importletterfiles';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
+            }
+
             $documentFilePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
             if (!Storage::exists($documentFilePath)) {
                 Storage::makeDirectory($documentFilePath);
@@ -453,7 +508,7 @@ class ImportLetterFileController extends Controller
             if ($importedLetterFiles) {
                 foreach ($importedLetterFiles as $key => $importedFile) {
                     if ($importedFile && $importedFile->case_id) {
-                        if (!Cases::where('CaseID', $importedFile->case_id)->doesntExist()) {
+                        if (Cases::where('CaseID', $importedFile->case_id)->exists()) {
                             $letter = new Letters();
                             $letter->user_id = auth()->user()->id;
                             $letter->case_id = $importedFile->case_id;

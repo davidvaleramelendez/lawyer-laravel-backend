@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\TemplateProcessor;
+use Storage;
 
 class InvoiceController extends Controller
 {
@@ -280,6 +281,9 @@ class InvoiceController extends Controller
             $user_data = DB::table("users")->where("id", $request->customer_id)->first();
 
             $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+            if (!Storage::exists($filePath)) {
+                Storage::makeDirectory($filePath);
+            }
 
             $templateProcessor = new TemplateProcessor(public_path('master') . "/invoice_master.docx");
 
@@ -442,6 +446,9 @@ class InvoiceController extends Controller
                 $user_data = DB::table("users")->where("id", $request->customer_id)->first();
 
                 $filePath = config('global.document_path') ? config('global.document_path') : 'uploads/documents';
+                if (!Storage::exists($filePath)) {
+                    Storage::makeDirectory($filePath);
+                }
 
                 $templateProcessor = new TemplateProcessor(public_path('master') . "/invoice_reminder.docx");
                 $templateProcessor->setValue('name', $user_data->name);
