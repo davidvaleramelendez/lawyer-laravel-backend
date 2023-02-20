@@ -405,8 +405,12 @@ Route::group([
     /* /PlacetelIncomingSip */
 
     /* Form Builder */
-    Route::get('/admin/form-builder', [FormBuilderController::class, 'index']);
-    Route::post('/admin/form-builder', [FormBuilderController::class, 'update']);
+    Route::get('/admin/form-builder', [FormBuilderController::class, 'get_list']);
+    Route::post('/admin/form-builder/create', [FormBuilderController::class, 'create']);
+    Route::get('/admin/form-builder/details/{id}', [FormBuilderController::class, 'get_detail']);
+    Route::post('/admin/form-builder/update/{id}', [FormBuilderController::class, 'update']);
+    Route::delete('/admin/form-builder/delete/{id}', [FormBuilderController::class, 'delete']);
+    Route::get('/admin/form-builder/reorder/{id1}/{id2}', [FormBuilderController::class, 'reorder']);
     /* /Form Builder */
 });
 
