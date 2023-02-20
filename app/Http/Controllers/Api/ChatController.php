@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
+use App\Models\PersonalAccessToken;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -104,8 +106,7 @@ class ChatController extends Controller
                 }
             }
 
-            $users = User::with('role')->whereNotIn('role_id', ['11'])
-                ->whereNot('id', $userId);
+            $users = User::with('role')->withExists('hasChatStatus')->whereNotIn('role_id', ['11'])->whereNot('id', $userId);
 
             $chats = Chat::with('sender', 'receiver')
                 ->where(function ($query) use ($userId) {
@@ -137,6 +138,7 @@ class ChatController extends Controller
             if ($chats && count($chats) > 0) {
                 foreach ($chats as $chat) {
                     if ($userId == $chat->sender_id) {
+                        $checkToken = PersonalAccessToken::where('tokenable_id', $chat->receiver_id)->exists();
                         $chatCount = Chat::where('receiver_id', $userId)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
                         $myChats[$chat->receiver_id] = [
                             'id' => $chat->id,
@@ -146,11 +148,13 @@ class ChatController extends Controller
                             'profile_photo_path' => $chat->receiver->profile_photo_path ?? null,
                             'created_at' => $chat->created_at,
                             'read_at' => isset($chat->read_at) ? $chat->read_at : 0,
+                            'has_chat_status_exists' => $checkToken ? true : false,
                             'count' => $chatCount,
                         ];
                     }
 
                     if ($userId == $chat->receiver_id) {
+                        $checkToken = PersonalAccessToken::where('tokenable_id', $chat->sender_id)->exists();
                         $chatCount = Chat::where('receiver_id', $userId)->where('sender_id', $chat->sender_id)->where('read_at', 0)->count();
                         $myChats[$chat->sender_id] =
                             [
@@ -161,6 +165,7 @@ class ChatController extends Controller
                             'profile_photo_path' => $chat->sender->profile_photo_path ?? null,
                             'created_at' => $chat->created_at,
                             'read_at' => isset($chat->read_at) ? $chat->read_at : 0,
+                            'has_chat_status_exists' => $checkToken ? true : false,
                             'count' => $chatCount,
                         ];
                     }
@@ -173,7 +178,7 @@ class ChatController extends Controller
             $response['message'] = 'Success';
             $response['data'] = ['userData' => $user, 'users' => $users, 'chats' => $myChats];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -223,7 +228,7 @@ class ChatController extends Controller
                     'message' => $ex->getMessage(),
                 ]);
             }
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = "Failed.";
@@ -274,7 +279,7 @@ class ChatController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = ['chats' => $chats, 'chatCount' => $chats_count, 'totalChatCount' => $totalRecord];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -283,19 +288,20 @@ class ChatController extends Controller
         }
     }
 
-    public function mark_important(Request $request, $id) {
+    public function mark_important(Request $request, $id)
+    {
         try {
             $chat = Chat::find($id);
             $chat->is_important = true;
             $chat->save();
 
             $other = $chat->sender_id === auth()->user()->id ? $chat->receiver_id : $chat->sender_id;
-            
-            Http::timeout(60)->post(env('SOCKET_URL').'/chat_important', [
+
+            Http::timeout(60)->post(env('SOCKET_URL') . '/chat_important', [
                 'user_id' => $other,
                 'operator' => auth()->user()->name,
                 'photo' => auth()->user()->profile_photo_path ?? '',
-                'msg' => $chat->message
+                'msg' => $chat->message,
             ]);
 
             $response = array();
@@ -303,7 +309,7 @@ class ChatController extends Controller
             $response['message'] = 'Marked as important successfully.';
             $response['data'] = null;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();

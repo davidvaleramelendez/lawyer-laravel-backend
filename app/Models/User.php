@@ -85,6 +85,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return false;
     }
 
+    public function hasChatStatus()
+    {
+        return $this->hasOne(PersonalAccessToken::class, 'tokenable_id', 'id');
+    }
+
     private function getUserRole()
     {
         return $this->role()->getResults();
