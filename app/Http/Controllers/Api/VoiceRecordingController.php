@@ -13,9 +13,9 @@ class VoiceRecordingController extends Controller
 {
     public function getVoiceRecordingFilter($caseId, $search, $skips, $perPage, $sortColumn, $sort)
     {
-        $list = VoiceRecording::orderBy($sortColumn, $sort);
+        $list = VoiceRecording::where('isErledigt', 0)->orderBy($sortColumn, $sort);
 
-        $totalRecord = new VoiceRecording();
+        $totalRecord = VoiceRecording::where('isErledigt', 0);
 
         if ($caseId) {
             $list = $list->where('case_id', $caseId);
