@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->nullable();
             $table->string('description')->nullable();
+            $table->integer('form_id')->nullable();
             $table->integer('priority')->default(0);
             $table->text('content')->nullable();
             $table->timestamps();

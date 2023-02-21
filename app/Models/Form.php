@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class FormBuilder extends Model
+class Form extends Model
 {
     use HasFactory;
 
-    public function form()
+    public function steps()
     {
-        return $this->hasOne(Form::class, 'id', 'form_id');
+        return $this->hasMany(FormBuilder::class, 'form_id', 'id');
     }
 }

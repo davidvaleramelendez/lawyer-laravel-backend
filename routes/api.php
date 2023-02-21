@@ -80,6 +80,10 @@ Route::get('/import-letter-file/cron/import-pdf', [ImportLetterFileController::c
 Route::post('/placetel_notify', [PlacetelNotifyController::class, 'index']);
 /* /Placetel Notify */
 
+/* Form Builder */
+Route::get('/form-builder/link/{form_link}', [FormBuilderController::class, 'get_step_list_by_link']);
+/* /Form Builder */
+
 Route::group([
     'middleware' => 'auth:sanctum',
 ], function ($router) {
@@ -405,12 +409,19 @@ Route::group([
     /* /PlacetelIncomingSip */
 
     /* Form Builder */
-    Route::get('/admin/form-builder', [FormBuilderController::class, 'get_list']);
-    Route::post('/admin/form-builder/create', [FormBuilderController::class, 'create']);
-    Route::get('/admin/form-builder/details/{id}', [FormBuilderController::class, 'get_detail']);
-    Route::post('/admin/form-builder/update/{id}', [FormBuilderController::class, 'update']);
-    Route::delete('/admin/form-builder/delete/{id}', [FormBuilderController::class, 'delete']);
-    Route::get('/admin/form-builder/reorder/{id1}/{id2}', [FormBuilderController::class, 'reorder']);
+    Route::get('/admin/form-builder/form', [FormBuilderController::class, 'get_form_list']);
+    Route::post('/admin/form-builder/form/create', [FormBuilderController::class, 'create_form']);
+    Route::post('/admin/form-builder/form/publish/{id}', [FormBuilderController::class, 'publish_form']);
+    Route::post('/admin/form-builder/form/update/{id}', [FormBuilderController::class, 'update_form']);
+    Route::delete('/admin/form-builder/form/delete/{id}', [FormBuilderController::class, 'delete_form']);
+
+    Route::get('/admin/form-builder/step/{form_id}', [FormBuilderController::class, 'get_step_list']);
+    Route::post('/admin/form-builder/step/create/{form_id}', [FormBuilderController::class, 'create_step']);
+    Route::get('/admin/form-builder/step/details/{id}', [FormBuilderController::class, 'get_step_detail']);
+    Route::post('/admin/form-builder/step/update/{id}', [FormBuilderController::class, 'update_step']);
+    Route::post('/admin/form-builder/step/update_content/{id}', [FormBuilderController::class, 'update_content']);
+    Route::delete('/admin/form-builder/step/delete/{id}', [FormBuilderController::class, 'delete_step']);
+    Route::get('/admin/form-builder/step/reorder/{id1}/{id2}', [FormBuilderController::class, 'reorder_step']);
     /* /Form Builder */
 });
 
