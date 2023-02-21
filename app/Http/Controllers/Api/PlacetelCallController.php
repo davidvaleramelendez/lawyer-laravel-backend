@@ -86,6 +86,7 @@ class PlacetelCallController extends Controller
                     $query->where('from_number', 'LIKE', '%' . $search . '%')
                         ->orWhere('type', 'LIKE', '%' . $search . '%');
                 });
+
             $totalRecord = $totalRecord
                 ->where(function ($query) use ($search) {
                     $query->where('from_number', 'LIKE', '%' . $search . '%')
@@ -213,6 +214,7 @@ class PlacetelCallController extends Controller
             $data->placetel_call_id = $request->placetel_call_id ?? null;
             $data->type = $request->type ?? null;
             $data->from_number = $request->from_number ?? null;
+            $data->note = $request->note ?? null;
             $data->save();
 
             $response = array();
@@ -271,6 +273,10 @@ class PlacetelCallController extends Controller
 
             if ($request->from_number) {
                 $data->from_number = $request->from_number;
+            }
+
+            if ($request->note || $request->note == "") {
+                $data->note = $request->note ?? null;
             }
 
             $data->save();
