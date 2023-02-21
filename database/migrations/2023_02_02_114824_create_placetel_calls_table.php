@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->string('from_number')->nullable();
             $table->longtext('response')->nullable();
+            $table->text('note')->nullable();
             $table->boolean('unread')->default(0);
             $table->timestamps();
         });
