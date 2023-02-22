@@ -312,8 +312,10 @@ Route::group([
     Route::post('/admin/file/update', [CloudStorageController::class, 'file_update']);
     Route::get('/admin/file/trash/{id}', [CloudStorageController::class, 'markFileTrash']);
     Route::get('/admin/file/delete/{id}', [CloudStorageController::class, 'markFileDelete']);
+    Route::get('/admin/cloud/get_users', [CloudStorageController::class, 'get_users']);
     Route::get('/admin/cloud/mark-important', [CloudStorageController::class, 'markImportant']);
     Route::get('/admin/cloud/mark-restore', [CloudStorageController::class, 'markRestore']);
+    Route::get('/admin/cloud/mark-share', [CloudStorageController::class, 'markShare']);
 
     Route::get('/admin/top-notification-email', [TopNotificationController::class, 'getAllUnreadNotification']);
     Route::get('/admin/top-notification-chat', [TopNotificationController::class, 'getAllUnreadChat']);

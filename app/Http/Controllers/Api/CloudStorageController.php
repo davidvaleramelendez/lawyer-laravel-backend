@@ -66,16 +66,54 @@ class CloudStorageController extends Controller
         }
     }
 
-    public function cloudFilter($userId, $parentId, $search, $sortBy, $slug)
+    public function checkSharedStatus($id) {
+        $userId = auth()->user()->id;
+        $item = CloudStorage::where('id', $id)->where('deleted_at', null)->first();
+        if (!$item) {
+            return false;
+        } if ($item->shared_user_id == $userId) {
+            return true;
+        } else if ($item->parent_id) {
+            return $this->checkSharedStatus($item->parent_id);
+        } else {
+            return false;
+        }
+    }
+
+    public function setSharedBreadcrumbs($id, $breadcrumbs) {
+        $this->breadcrumbs = $breadcrumbs;
+        $userId = auth()->user()->id;
+        $item = CloudStorage::where('id', $id)->where('deleted_at', null)->first();
+        if (!$item) {
+            return;
+        }
+        array_push($this->breadcrumbs, $item);
+        if ($item->shared_user_id == $userId) {
+            return;
+        }
+        if ($item->parent_id) {
+            return $this->setSharedBreadcrumbs($item->parent_id, $this->breadcrumbs);
+        }
+    }
+
+    public function cloudFilter($userId, $parentId, $search, $sortBy, $slug, $shared)
     {
         $folders = CloudStorage::where('type', 'folder')
-            ->where('user_id', $userId);
-
+        ->with(['user' => function ($query) {
+            $query->select('id', 'name');
+        }]);
+        
         $files = CloudStorage::with('parent')
-            ->select('*')
-            ->where('type', 'file')
-            ->where('user_id', $userId);
+            ->with(['user' => function ($query) {
+                $query->select('id', 'name');
+            }])
+            ->where('type', 'file');
 
+        if (!$shared) {
+            $folders = $folders->where('user_id', $userId);
+            $files = $files->where('user_id', $userId);
+        }
+            
         if ($search) {
             $folders = $folders->where(function ($query) use ($search) {
                 $query->Where('name', 'LIKE', "%{$search}%");
@@ -106,6 +144,19 @@ class CloudStorageController extends Controller
                 ->where('parent.deleted_at', null)
                 ->where('main.deleted_at', '!=', null);
 
+        } else if ($slug == 'shared') {
+            $folders = CloudStorage::where('shared_user_id', $userId)
+                ->with(['user' => function ($query) {
+                    $query->select('id', 'name');
+                }])
+                ->where('type', 'folder');
+
+            $files = CloudStorage::where('shared_user_id', $userId)
+                ->with(['user' => function ($query) {
+                    $query->select('id', 'name');
+                }])
+                ->where('type', 'file');
+
         } else {
             $folders = $folders->where('parent_id', $parentId);
             $files = $files->where('parent_id', $parentId);
@@ -127,7 +178,7 @@ class CloudStorageController extends Controller
 
         $files = $files->get();
 
-        return ['folders' => $folders, 'files' => $files];
+        return ['folders' => $folders, 'files' => $files, 'shared' => $shared];
     }
 
     public function get_folders(Request $request)
@@ -150,23 +201,36 @@ class CloudStorageController extends Controller
                 }
             }
 
-            if ($slug && ($slug != 'important' || $slug != 'recent' || $slug != 'trash')) {
-                $parentData = CloudStorage::where('slug', $slug)->where('user_id', $userId)->where('deleted_at', null)->first();
+            $shared = false;
+
+            if ($slug && ($slug != 'important' || $slug != 'recent' || $slug != 'trash' || $slug != 'shared')) {
+                $parentData = CloudStorage::where('slug', $slug)->where('deleted_at', null)->first();
                 if ($parentData && $parentData->id) {
                     $parentId = $parentData->id;
-                    $this->checkFolderParent($parentId, $this->breadcrumbs, $userId);
+                    $shared = $this->checkSharedStatus($parentId);
+                    if ($parentData->user_id == auth()->user()->id) {
+                        $this->checkFolderParent($parentId, $this->breadcrumbs, $userId);
+                    } else if($shared) {
+                        $this->setSharedBreadcrumbs($parentId, $this->breadcrumbs);
+                    }
                 }
             }
 
-            $data = $this->cloudFilter($userId, $parentId, $search, $sortBy, $slug);
+            $data = $this->cloudFilter($userId, $parentId, $search, $sortBy, $slug, $shared);
 
             $folders = $data['folders'];
             $files = $data['files'];
+            $shared = $data['shared'];
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Success.';
-            $response['data'] = ['folders' => $folders, 'files' => $files, 'breadcrumbs' => $this->breadcrumbs];
+            $response['data'] = [
+                'folders' => $folders, 
+                'files' => $files, 
+                'breadcrumbs' => $this->breadcrumbs,
+                'shared' => $shared
+            ];
             return response()->json($response);
         } catch (\Exception$e) {
             $response = array();
@@ -793,6 +857,88 @@ class CloudStorageController extends Controller
                 $important = null;
             }
             CloudStorage::where('id', $request->id)->update(['important_at' => $important]);
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Success.';
+            $response['data'] = null;
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = null;
+            return response()->json($response);
+        }
+    }
+
+    public function get_users(Request $request)
+    {
+        try {
+            $userId = $request->user_id ?? auth()->user()->id;
+            
+            $users = DB::table('users')->whereNot('id', $userId)->get();
+
+            $response = array();
+            $response['flag'] = true;
+            $response['message'] = 'Success.';
+            $response['data'] = $users;
+            return response()->json($response);
+        } catch (\Exception$e) {
+            $response = array();
+            $response['flag'] = false;
+            $response['message'] = $e->getMessage();
+            $response['data'] = [];
+            return response()->json($response);
+        }
+    }
+
+    public function recursionShare($childrens, $shared_user_id)
+    {
+        foreach ($childrens as $key => $value) {
+            if ($value && $value->id) {
+                $data = CloudStorage::where('id', $value->id)->first();
+                if ($data && $data->id) {
+                    $children = CloudStorage::where('parent_id', $value->id)->get();
+                    if ($children && count($children) > 0) {
+                        $this->recursionShare($children, $shared_user_id);
+                    }
+
+                    $data->shared_user_id = $shared_user_id;
+                    $data->save();
+                }
+            }
+        }
+    }
+
+    public function markShare(Request $request)
+    {
+        try {
+            $validation = Validator::make($request->all(), [
+                'id' => 'required'
+            ]);
+
+            if ($validation->fails()) {
+                $response = array();
+                $response['flag'] = false;
+                $response['message'] = "Id is required.";
+                $response['data'] = null;
+                return response()->json($response);
+            }
+
+            $data = CloudStorage::where('id', $request->id)->first();
+            
+            if ($data && $data->id) {
+                // if ($data && $data->type == "folder") {
+
+                //     $children = CloudStorage::where('parent_id', $data->id)->get();
+                //     if ($children && count($children) > 0) {
+                //         $this->recursionShare($children, $request->shared_user_id);
+                //     }
+                // }
+                $data->shared_user_id = $request->shared_user_id;
+                $data->save();
+            }
 
             $response = array();
             $response['flag'] = true;

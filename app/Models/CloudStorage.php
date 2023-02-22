@@ -26,4 +26,9 @@ class CloudStorage extends Model
         $children->getQuery()->select('*', 'id as value', 'name as label')->where('type', 'folder');
         return $children;
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
