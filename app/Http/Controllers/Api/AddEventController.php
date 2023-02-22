@@ -32,10 +32,14 @@ class AddEventController extends Controller
                 ->whereNot('id', $userId)
                 ->get();
 
+            $filterUsers = User::whereNotIn('role_id', [11])
+                ->whereNot('id', $userId)
+                ->get();
+
             $response = array();
             $response['flag'] = true;
             $response['message'] = "Success.";
-            $response['data'] = $users;
+            $response['data'] = ["users" => $users, "filterUsers" => $filterUsers];
             return response()->json($response);
         } catch (\Exception$e) {
             $response = array();
@@ -46,37 +50,24 @@ class AddEventController extends Controller
         }
     }
 
-    public function getEvents(Request $request)
+    public function getEventFilter($userId, $search, $filter)
     {
-        try {
-            $filter = $request->filter ?? '';
-            $userId = $request->user_id ? (int) $request->user_id : auth()->user()->id;
+        $events = AddEvent::select(
+            [
+                'id as id',
+                'event_url as event_url',
+                'title as title',
+                'start_date as start',
+                'end_date as end',
+                'allDay as allDay',
+                'business as calendar',
+                'guest as guest',
+                'location as location',
+                'description as description',
+            ]
+        );
 
-            if ($userId != auth()->user()->id) {
-                if (!Helper::get_user_permissions(14)) {
-                    $response = array();
-                    $response['flag'] = false;
-                    $response['message'] = "You do not have permission.";
-                    $response['data'] = [];
-                    return response()->json($response);
-                }
-            }
-
-            $events = AddEvent::select(
-                [
-                    'id as id',
-                    'event_url as event_url',
-                    'title as title',
-                    'start_date as start',
-                    'end_date as end',
-                    'allDay as allDay',
-                    'business as calendar',
-                    'guest as guest',
-                    'location as location',
-                    'description as description',
-                ]
-            );
-
+        if ($userId) {
             // if (auth()->user()->role_id != 10) {
             // $events = $events->whereJsonContains('guest', [$userId]);
             $events = $events->where(function ($query) use ($userId) {
@@ -84,14 +75,26 @@ class AddEventController extends Controller
                     ->orWhereJsonContains('guest', [$userId]);
             });
             // }
+        }
 
-            if ($filter) {
-                $events = $events->whereIn('business', json_decode($filter));
-            }
+        if ($filter) {
+            $events = $events->whereIn('business', json_decode($filter));
+        }
 
-            $events = $events->get();
-            $eventData = [];
+        if ($search) {
+            $events = $events->where(function ($query) use ($search) {
+                $query->Where('title', 'LIKE', "%{$search}%")
+                    ->orWhere('business', 'LIKE', "%{$search}%")
+                    ->orWhere('event_url', 'LIKE', "%{$search}%")
+                    ->orWhere('location', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%");
+            });
+        }
 
+        $events = $events->get();
+        $eventData = [];
+
+        if ($events && count($events) > 0) {
             foreach ($events as $event) {
                 $data = [];
                 $data['id'] = $event->id;
@@ -123,6 +126,30 @@ class AddEventController extends Controller
                 $data['event_url'] = $event->event_url;
                 array_push($eventData, $data);
             }
+        }
+
+        return ['data' => $eventData ?? []];
+    }
+
+    public function getEvents(Request $request)
+    {
+        try {
+            $search = $request->search ?? '';
+            $filter = $request->filter ?? '';
+            $userId = $request->user_id ? (int) $request->user_id : auth()->user()->id;
+
+            if ($userId != auth()->user()->id) {
+                if (!Helper::get_user_permissions(14)) {
+                    $response = array();
+                    $response['flag'] = false;
+                    $response['message'] = "You do not have permission.";
+                    $response['data'] = [];
+                    return response()->json($response);
+                }
+            }
+
+            $events = $this->getEventFilter($userId, $search, $filter);
+            $eventData = $events['data'] ?? [];
 
             $response = array();
             $response['flag'] = true;
