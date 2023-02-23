@@ -354,17 +354,18 @@ class ContactController extends Controller
                 return response()->json($response);
             }
 
-            $param = $request->all();
-            $param['UserID'] = Auth::user()->id ?? 0;
+            $userId = auth()->user()->id ?? null;
 
-            unset($param['_token']);
-
-            $is_save = ContactNotes::insertGetId($param);
+            $data = new ContactNotes();
+            $data->UserID = $userId ?? null;
+            $data->ContactID = $request->ContactID ?? null;
+            $data->Notes = $request->Notes ?? null;
+            $data->save();
 
             $response = array();
             $response['flag'] = true;
             $response['message'] = 'Note added successfully.';
-            $response['data'] = $param;
+            $response['data'] = $data;
             return response()->json($response, 201);
         } catch (\Exception$e) {
             $response = array();
@@ -433,7 +434,6 @@ class ContactController extends Controller
             $contact->read_at = 1;
             $contact->save();
             $Notes = ContactNotes::where('ContactID', $id)->orderBy('ContactNotesID', 'ASC')->get();
-            $pageConfigs = ['pageHeader' => false];
             $users = User::all();
 
             $laywers = User::where('role_id', 12)->orWhere('role_id', 10)->orWhere('role_id', 14)->where('Status', 'Active')->get();

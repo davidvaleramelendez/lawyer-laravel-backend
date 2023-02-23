@@ -22,6 +22,6 @@ class ContactNotes extends Model
      */
     protected $primaryKey = 'ContactNotesID';
     protected $guarded = [];
-    public $timestamps = false;
-    
+    public $timestamps = true;
+
 }

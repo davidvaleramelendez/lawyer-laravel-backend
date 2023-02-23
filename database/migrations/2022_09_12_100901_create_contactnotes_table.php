@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('contactnotes', function (Blueprint $table) {
             $table->increments('ContactNotesID');
-            $table->unsignedInteger('ContactID');
-            $table->text('Notes');
-            $table->unsignedInteger('UserID');
+            $table->unsignedInteger('ContactID')->nullable();
+            $table->text('Notes')->nullable();
+            $table->unsignedInteger('UserID')->nullable();
             $table->timestamps();
         });
     }
