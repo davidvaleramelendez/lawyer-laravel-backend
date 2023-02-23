@@ -77,7 +77,7 @@ class ChatController extends Controller
             $response['message'] = 'Success';
             $response['data'] = ['userData' => $user, 'chats' => $chats, 'chatCount' => $count, 'totalChatCount' => $totalRecord];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -216,12 +216,21 @@ class ChatController extends Controller
                     'receiver_id' => $request->receiver_id,
                 ]);
 
+                $receiver = User::with('role')->where('id', $request->receiver_id)->first();
+                if ($receiver && $receiver->id) {
+                    Http::timeout(60)->post(env('SOCKET_URL') . '/chat_message_notification', [
+                        'user_id' => $receiver->id,
+                        'name' => $receiver->name,
+                        'msg' => $request->message,
+                    ]);
+                }
+
                 DB::commit();
                 return response()->json([
                     'flag' => true,
                     'message' => 'Chat Added',
                 ]);
-            } catch (\Exception$ex) {
+            } catch (Exception $ex) {
                 DB::rollBack();
                 return response()->json([
                     'flag' => false,
