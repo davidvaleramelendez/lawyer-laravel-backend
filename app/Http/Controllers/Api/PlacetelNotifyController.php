@@ -63,7 +63,7 @@ class PlacetelNotifyController extends Controller
             $acceptedNotification->save();
 
             // Call websocket endpoint
-            $response = Http::timeout(60)->post(env('SOCKET_URL').'/placetel_notify', [
+            $response = Http::timeout(60)->post(env('SOCKET_URL').'/placetel_accepted_notify', [
                 'user_id' => $item->user_id,
                 'from' => $from,
                 'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
@@ -71,14 +71,34 @@ class PlacetelNotifyController extends Controller
             ]);
             $result = json_decode($response->getBody()->getContents());
             if($result)
-                return 'Send notification to '.$request->peer.' successfully.';
+                return 'Send accepted notification to '.$request->peer.' successfully.';
             else
                 return 'The user is not available now.';
         }
     }
 
     public function hungupNotify($request) {
-        PlacetelAcceptedNotification::where('call_id', $request->call_id)->delete();
+        $notification = PlacetelAcceptedNotification::where('call_id', $request->call_id)->first();
+        if ($notification) {
+            PlacetelAcceptedNotification::where('call_id', $request->call_id)->delete();
+
+            // Get the user from peer
+            $item = PlacetelSipUserId::where('sipuid', $notification->peer)->first();
+            if(!$item) {
+                return 'Get hungup notification successfully. But user not found.';
+            } else {
+
+                // Call websocket endpoint
+                $response = Http::timeout(60)->post(env('SOCKET_URL').'/placetel_hungup_notify', [
+                    'user_id' => $item->user_id,
+                ]);
+                $result = json_decode($response->getBody()->getContents());
+                if($result)
+                    return 'Send hungup notification to '.$request->peer.' successfully.';
+                else
+                    return 'The user is not available now.';
+            }
+        }
         return 'Get Hungup notification successfully.';
     }
 
