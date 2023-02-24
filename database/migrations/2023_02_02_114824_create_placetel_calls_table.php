@@ -22,6 +22,7 @@ return new class extends Migration
             $table->longtext('response')->nullable();
             $table->text('note')->nullable();
             $table->boolean('unread')->default(0);
+            $table->datetime('placetel_received_at')->nullable();
             $table->timestamps();
         });
     }
