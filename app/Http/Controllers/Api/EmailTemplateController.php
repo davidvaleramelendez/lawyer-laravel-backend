@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\EmailTemplate;
 use App\Models\EmailTemplateAttachment;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpWord\Shared\Text;
@@ -96,7 +97,7 @@ class EmailTemplateController extends Controller
                 'startIndex' => $startIndex,
                 'endIndex' => $endIndex];
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -115,7 +116,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Success.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -152,7 +153,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template created successfully.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -200,7 +201,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template updated successfully.';
             $response['data'] = $data;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -229,7 +230,7 @@ class EmailTemplateController extends Controller
             $response['message'] = 'Email template deleted successfully.';
             $response['data'] = null;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -246,7 +247,7 @@ class EmailTemplateController extends Controller
             }
 
             return $macro;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -259,7 +260,7 @@ class EmailTemplateController extends Controller
             }
 
             return $subject;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -287,7 +288,7 @@ class EmailTemplateController extends Controller
 
             $this->templateData = str_replace($search, $replace, $this->templateData);
             return true;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -306,7 +307,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('Status', $case->Status);
             }
             return true;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -325,7 +326,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('message_id', $contact->message_id);
             }
             return true;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -350,7 +351,7 @@ class EmailTemplateController extends Controller
                 $this->setValue('Country', $user->Country);
             }
             return true;
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -382,7 +383,7 @@ class EmailTemplateController extends Controller
             $response['message'] = "Email template set successfully.";
             $response['data'] = $this->templateData;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
@@ -401,7 +402,7 @@ class EmailTemplateController extends Controller
             $response['message'] = "Success.";
             $response['data'] = $template;
             return response()->json($response);
-        } catch (\Exception$e) {
+        } catch (Exception $e) {
             $response = array();
             $response['flag'] = false;
             $response['message'] = $e->getMessage();
