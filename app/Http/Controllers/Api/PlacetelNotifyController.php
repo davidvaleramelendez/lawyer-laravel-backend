@@ -92,12 +92,16 @@ class PlacetelNotifyController extends Controller
         } else {
             $notification = PlacetelAcceptedNotification::where('peer', $item->sipuid)->with('user')->first();
             $user = $notification->user ?? null;
-            $data = [
-                'user_id' => $notification->user_id ?? null,
-                'from' => $notification->from_number ?? null,
-                'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
-                'name' => $user ? $user->name : '',
-            ];
+            if($notification) {
+                $data = [
+                    'user_id' => $notification->user_id ?? null,
+                    'from' => $notification->from_number ?? null,
+                    'photo' => ($user && $user->profile_photo_path) ? $user->profile_photo_path : '',
+                    'name' => $user ? $user->name : '',
+                ];
+            } else {
+                $data = null;
+            }       
             $response['flag'] = isset($notification);
             $response['message'] = $notification ? 'Success.' : 'Not Found';
             $response['data'] = $data;
