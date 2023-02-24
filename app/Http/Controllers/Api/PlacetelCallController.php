@@ -416,6 +416,7 @@ class PlacetelCallController extends Controller
                                 $createData->from_number = $apiData->from_number ?? null;
                                 $createData->response = json_encode($apiData);
                                 $createData->unread = $apiData->unread;
+                                $createData->placetel_received_at = $apiData->received_at ?? null;
                                 $createData->save();
                             }
                         }
