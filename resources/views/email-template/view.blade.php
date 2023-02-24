@@ -1,6 +1,5 @@
 <html>
     <head>
-
     </head>
     <body>
         <table style="font-family: Montserrat, -apple-system, 'Segoe UI', sans-serif; width: 100%;" width="100%" cellpadding="0" cellspacing="0" role="presentation">
@@ -43,17 +42,20 @@
                             </div>
                           </td>
                         </tr>
-                      </tbody></table>
+                      </tbody>
+                    </table>
                     </td>
                   </tr>
 
                   <tr>
                     <td style="font-family: 'Montserrat',Arial,sans-serif; height: 20px;" height="20"></td>
                   </tr>
+
                   <tr>
                     <td style="font-family: 'Montserrat',Arial,sans-serif; height: 16px;" height="16"></td>
                   </tr>
-                </tbody></table>
+                </tbody>
+              </table>
               </td>
             </tr>
           </tbody>
